@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+.venv-playwright/
+.env*
+*.log
+PFrontStockData/
+output/
+DataMap/
+config/research_watchlist.json
+.runtime/

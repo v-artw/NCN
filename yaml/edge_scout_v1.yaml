@@ -1,0 +1,126 @@
+# Edge Scout V1 策略配置
+# 所有实际下单功能必须默认关闭；完整策略依赖点时财务、事件和行业数据。
+
+schema_version: edge_scout_v1
+mode: read_only_research
+allow_live_order_submission: false
+production_enabled: false
+
+paths:
+  data_root: PFrontStockData
+  industry_map: ""
+  output_root: output/edge_scout
+
+universe:
+  market: main_board_a_share
+  include_prefixes: [sh.600, sh.601, sh.603, sh.605, sz.000, sz.001, sz.002, sz.003]
+  exclude_st: true
+  min_listing_days: 252
+  min_close_cny: 5.0
+  max_close_cny: 80.0
+  min_adv20_cny: 100000000.0
+  min_trading_days_60: 55
+  block_limit_up_entries: true
+  block_suspensions: true
+
+market_regime:
+  close_above_ma: 20
+  ma_slope_lookback: 5
+  max_5d_benchmark_drawdown: -0.03
+
+features:
+  pmkf_enabled: true
+  pmk_features_enabled: true
+  deploy_alpha_enabled: false  # P1-4 修复：MVP 未实现 Alpha adapter，必须为 false
+  ai_risk_review_enabled: false
+
+setup:
+  trend:
+    fast_ma: 20
+    slow_ma: 60
+    min_return_20d: 0.03
+    max_return_20d: 0.30
+  pullback:
+    high_lookback: 10
+    min_drawdown_from_high: 0.03
+    max_drawdown_from_high: 0.10
+    min_low_to_ma60_ratio: 0.98
+  candle:
+    enabled: [hammer, bullish_engulfing, piercing, morning_star]
+    hammer:
+      max_body_to_range: 0.40
+      min_lower_shadow_to_body: 2.0
+      max_upper_shadow_to_body: 0.50
+      min_close_location: 0.65
+  confirmation:
+    require_close_above_signal_high: true
+    min_volume_to_ma20: 1.05
+    execution_delay_trading_days: 2
+
+hard_gates:
+  require_t1_confirmation_for_production: true
+  risk_distance_min: 0.025
+  risk_distance_max: 0.060
+  reject_negative_pmkf_momentum: true
+  reject_long_upper_shadow: warn
+
+ranking:
+  max_production_candidates: 0
+  max_watchlist_candidates: 30
+  max_near_miss: 100
+  score_weights:
+    base_quality: 0.45
+    timing: 0.35
+    risk: 0.20
+
+# CNstock-inspired research discovery filter. This does not grant production eligibility.
+discovery:
+  enabled: true
+  max_price_cny: 20.0
+  min_amount_cny: 15000000.0
+  max_pct_chg: 7.0
+  max_ret_5d: 12.0
+  max_turn: 35.0
+  max_volume_ratio: 5.0
+
+# Native CNstock-compatible research pools. These never grant V1 production eligibility.
+cnstock_discovery:
+  strong_start:
+    min_base_score: 60.0
+    min_amount_cny: 30000000.0
+    max_pct_chg: 7.0
+    max_ret_5d: 12.0
+  profit_shadow:
+    min_base_score: 75.0
+    min_amount_cny: 30000000.0
+    max_pct_chg: 7.0
+    max_ret_5d: 8.0
+  low_position:
+    min_base_score: 75.0
+    min_amount_cny: 30000000.0
+    max_pct_chg: 5.0
+    max_ret_5d: 6.0
+
+risk:
+  atr_period: 14
+  stop_atr_multiple: 1.5
+  stop_signal_low_atr_buffer: 0.10
+  min_initial_stop_pct: 0.025
+  max_initial_stop_pct: 0.060
+  time_stop_day: 10
+  time_stop_min_r: 0.5
+  partial_take_profit_r: 1.5
+  final_take_profit_r: 2.0
+  trailing_ema_period: 5
+  max_holding_trading_days: 15
+  daily_loss_pause_pct: 0.02
+  peak_drawdown_pause_pct: 0.05
+  consecutive_stop_pause_count: 4
+  pause_trading_days: 5
+
+publication:
+  write_csv: true
+  write_json: true
+  write_markdown: true
+  write_manifest: true
+  update_latest_atomically: true

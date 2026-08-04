@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>NCN K线研究台</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div><strong>NCN</strong><span>K线研究台</span></div>
+    </div>
+    <div class="run-meta"><span id="runId">读取发布记录</span><span id="asOf">--</span><b>READ ONLY</b></div>
+  </header>
+
+  <main>
+    <section class="workspace">
+      <aside class="rail">
+        <div class="rail-head">
+          <div><span class="eyebrow">MANUAL RESEARCH</span><h1>我的监控</h1></div>
+          <span id="rowCount" class="count">0</span>
+        </form>
+        <form id="addStockForm" class="manual-add">
+          <label for="manualCode">输入沪深股票代码</label>
+          <div><input id="manualCode" inputmode="text" placeholder="如 600519 / sz.000001" autocomplete="off"><button type="submit">加入监控</button></div>
+          <small id="watchlistMessage">仅保存研究自选，不记录成本、数量或交易。</small>
+        </div>
+        <div id="watchlist" class="watchlist" role="listbox" aria-label="研究观察股票"></div>
+      </aside>
+
+      <section class="analysis">
+        <div class="instrument-head">
+          <div>
+            <span class="eyebrow" id="poolLabel">SELECTED INSTRUMENT</span>
+            <h2 id="codeLabel">--</h2>
+            <span id="stageLabel" class="stage">等待数据</span>
+          </div>
+          <div class="quote">
+            <strong id="lastClose">--</strong>
+            <span id="changeLabel">--</span>
+            <small id="snapshotTime">本地研究参考价</small>
+          </div>
+          <div class="chart-controls">
+            <div id="periodControl" class="period-control" role="group" aria-label="K线周期">
+              <button data-period="1d">日线</button><button data-period="60m">60m</button><button data-period="30m">30m</button><button data-period="15m">15m</button><button class="active" data-period="5m">5m</button><button data-period="1m">1m</button>
+            </div>
+            <div class="range-control" role="group" aria-label="K线数量">
+              <button data-limit="60">60根</button><button class="active" data-limit="120">120根</button><button data-limit="240">240根</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="source-strip">
+          <span id="freshnessStatus" class="freshness unavailable">未评估</span>
+          <span id="sourceLabel">来源：本地 BaoStock 研究数据</span>
+          <span id="sourceTime">数据时间：--</span>
+          <span id="refreshStatus" class="refresh-status">自动刷新准备中</span>
+        </div>
+
+        <section id="researchAlert" class="research-alert unavailable" aria-live="polite">
+          <span class="eyebrow">INDICATOR REMINDER</span>
+          <strong id="alertTitle">等待研究数据</strong>
+          <span id="alertDetail">提醒仅供人工研究复核</span>
+          <small id="alertEvidence"></small>
+        </section>
+
+        <div class="chart-shell">
+          <div class="legend">
+            <span><i class="ma20"></i>MA20</span><span><i class="ma60"></i>MA60</span>
+            <span><i class="confirmed"></i>已确认形态</span><span><i class="observed"></i>待确认 / 未确认</span><span><i class="forming"></i>形成中</span>
+          </div>
+          <canvas id="chart" aria-label="K线与成交量"></canvas>
+          <div id="tooltip" class="tooltip" hidden></div>
+          <div id="chartLoading" class="chart-loading">加载 K 线研究数据</div>
+        </div>
+
+        <div class="detail-grid">
+          <section class="signal-panel">
+            <div class="section-head"><div><span class="eyebrow">NISON OBSERVATIONS</span><h3>蜡烛观察</h3></div><span id="patternCount">0 项</span></div>
+            <div id="patternList" class="pattern-list"></div>
+          </section>
+          <section class="evidence-panel">
+            <div class="section-head"><div><span class="eyebrow">RESEARCH EVIDENCE</span><h3>扫描证据</h3></div></div>
+            <dl id="evidenceList"></dl>
+          </section>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer><strong>研究边界</strong><span>前复权数据仅用于研究展示。形态、参考价及确认状态不构成投资建议，不用于成交、收益或回测依据。</span></footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>

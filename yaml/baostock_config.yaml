@@ -1,0 +1,7 @@
+adjust_flag: '2'
+clean_before_download: false
+data_dir: ./PFrontStockData
+end_date: ''
+max_workers: 4
+start_date: '2015-01-01'
+stock_list_date: ''

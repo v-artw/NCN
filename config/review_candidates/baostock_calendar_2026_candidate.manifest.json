@@ -1,0 +1,18 @@
+{
+  "calendar_path": "config/review_candidates/baostock_calendar_2026_candidate.txt",
+  "calendar_sha256": "fd77a04f5268efd4803ca99877a0de4b126a51ad01a45b24c443afc8f8aa3ee7",
+  "first_trading_day": "2026-01-05",
+  "generated_at_utc": "2026-08-03T14:19:54.143232+00:00",
+  "last_trading_day": "2026-12-31",
+  "limitations": [
+    "provider_response_not_exchange_signed",
+    "must_be_human_reviewed_before_research_production_use"
+  ],
+  "provider": "BaoStock",
+  "provider_query": "query_trade_dates",
+  "requested_end_date": "2026-12-31",
+  "requested_start_date": "2026-01-01",
+  "review_status": "pending_human_approval",
+  "schema_version": "edge_scout_calendar_review_candidate_v1",
+  "trading_day_count": 242
+}

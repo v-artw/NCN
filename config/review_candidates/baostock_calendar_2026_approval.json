@@ -1,0 +1,22 @@
+{
+  "schema_version": "edge_scout_calendar_approval_v1",
+  "review_status": "approved_for_read_only_research_production",
+  "approved_scope": "edge_scout_read_only_research_production_only",
+  "approved_by": "workspace_owner",
+  "approved_at_local_date": "2026-08-03",
+  "calendar_path": "config/review_candidates/baostock_calendar_2026_candidate.txt",
+  "calendar_sha256": "fd77a04f5268efd4803ca99877a0de4b126a51ad01a45b24c443afc8f8aa3ee7",
+  "verification": {
+    "candidate_trading_day_count": 242,
+    "dates_through_2026_08_03": 140,
+    "local_reference_dates_matched": 140,
+    "missing_from_candidate": 0,
+    "missing_from_local_reference": 0
+  },
+  "limitations": [
+    "not_exchange_digitally_signed",
+    "not_approved_for_execution_prices",
+    "not_approved_for_backtest_returns",
+    "not_approved_for_paper_or_live_trading"
+  ]
+}
