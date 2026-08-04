@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from .contracts import EdgeScoutResult, ScoringResult, Tier
 from .candle_confirm import compute_candle_confirmation_features
@@ -78,14 +78,15 @@ def compute_timing_score(
     candle_features: dict[str, Any],
     candle_patterns: dict[str, list[bool]] | None = None,
     t1_observation: Any = None,
+    futu_bonus: float = 0.0,
 ) -> tuple[float, str]:
     """计算时机分数（0-35 分）。
 
     子项：
       - V1 蜡烛图形态：8 分
       - 趋势回踩位置：7 分
-      - T+1 价格确认：8 分（MVP 暂不使用）
-      - T+1 量能确认：5 分（MVP 暂不使用）
+      - T+1 价格确认：8 分
+      - T+1 量能确认：5 分
       - PMK/candle confirmation：4 分
       - 收盘位置与上影风险：3 分
 
@@ -126,6 +127,15 @@ def compute_timing_score(
         score += 3.0
         breakdown_parts.append("good_close_location")
 
+    if bool(getattr(t1_observation, "confirmed", False)):
+        score += 13.0
+        breakdown_parts.append("t1_price_volume_confirmed")
+
+    bounded_futu_bonus = min(max(float(futu_bonus), 0.0), 6.0)
+    if bounded_futu_bonus:
+        score += bounded_futu_bonus
+        breakdown_parts.append(f"futu={bounded_futu_bonus:.1f}")
+
     return min(score, 35.0), ";".join(breakdown_parts)
 
 
@@ -136,6 +146,7 @@ def compute_risk_score(
     close_now: float,
     min_risk_distance: float = 0.025,
     max_risk_distance: float = 0.060,
+    risk_codes: Sequence[str] = (),
 ) -> tuple[float, str]:
     """计算风险分数（0-20 分）。
 
@@ -194,7 +205,21 @@ def compute_risk_score(
     # 数据来源可信度（2 分）
     score += 2.0  # MVP 假设数据可信
 
-    return min(score, 20.0), ";".join(breakdown_parts)
+    risk_penalties = {
+        "clear_signal": 6.0,
+        "mhpg_outflow": 4.0,
+        "bear_divergence": 3.0,
+        "overbought_risk": 3.0,
+        "high_position_risk": 2.0,
+        "bearish_candle_risk": 4.0,
+    }
+    applied_risks = sorted(set(risk_codes) & risk_penalties.keys())
+    if applied_risks:
+        penalty = min(sum(risk_penalties[code] for code in applied_risks), 10.0)
+        score -= penalty
+        breakdown_parts.append(f"evidence_risk=-{penalty:.1f}({','.join(applied_risks)})")
+
+    return min(max(score, 0.0), 20.0), ";".join(breakdown_parts)
 
 
 def compute_edge_score(
@@ -357,6 +382,8 @@ def score_single_stock(
     config: Mapping[str, Any],
     candle_patterns: dict[str, list[bool]] | None = None,
     t1_observation: Any = None,
+    futu_bonus: float = 0.0,
+    futu_risk_codes: Sequence[str] = (),
 ) -> tuple[ScoringResult, str | None]:
     """对单只股票计算综合评分。
 
@@ -411,7 +438,12 @@ def score_single_stock(
 
     # 计算各分数
     base_quality = compute_base_quality_score(pmk_features)
-    timing, timing_breakdown = compute_timing_score(candle_features, candle_patterns, t1_observation)
+    timing, timing_breakdown = compute_timing_score(
+        candle_features,
+        candle_patterns,
+        t1_observation,
+        futu_bonus,
+    )
 
     # 使用真实 ATR14 而非布尔值替代（P0-5 修复）
     _atr14_raw = pmk_features.get("pmk_atr14", None)
@@ -426,6 +458,7 @@ def score_single_stock(
         signal_low=float(low[-1]) if low else 0,
         atr14=_atr14_real,
         close_now=float(close[-1]) if close else 0,
+        risk_codes=futu_risk_codes,
     )
 
     edge = compute_edge_score(base_quality, timing, risk)

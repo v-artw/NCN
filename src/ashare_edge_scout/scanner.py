@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from .candle_rules import CandleRuleSet, HammerRule
+from .candles import detect_bearish_risk_patterns
 
 from .candle_timing import (
     detect_candle_patterns,
@@ -805,6 +806,10 @@ def _scan_one_stock(
     try:
         # 检测 V1 蜡烛图形态（使用正确的 CandleRuleSet 类型）
         candle_patterns = detect_candle_patterns(records, candle_rule_set)
+        bearish_risk_patterns = detect_bearish_risk_patterns(records)
+        latest_bearish_risks = tuple(
+            name for name, values in bearish_risk_patterns.items() if values and values[-1]
+        )
         setup = evaluate_t_day_setup(records, config, candle_patterns)
 
         # 计算 PMK 特征
@@ -818,29 +823,12 @@ def _scan_one_stock(
         candle_features = compute_candle_confirmation_features(open_, high, low, close, volume)
         start_signals = compute_start_signals(high, low, close, volume)
 
-        # 计算综合评分
-        scoring_result, rejection_reason = score_single_stock(
-            code=code,
-            records=records,
-            config=config,
-            candle_patterns=candle_patterns,
-        )
-
         latest = records[-1]
         preclose = float(latest.get("preclose", 0) or 0)
         pct_chg = (close[-1] / preclose - 1.0) * 100.0 if preclose > 0 else 0.0
         ret_5d = (close[-1] / close[-6] - 1.0) * 100.0 if len(close) >= 6 and close[-6] > 0 else 0.0
         volume_ma20 = sum(volume[-20:]) / min(20, len(volume)) if volume else 0.0
         volume_ratio_20 = volume[-1] / volume_ma20 if volume_ma20 > 0 else 0.0
-        discovery_score, discovery_breakdown = compute_discovery_score(
-            scoring_result.edge_score,
-            pmk_features,
-            candle_features,
-            start_signals.count,
-            pct_chg,
-            ret_5d,
-            volume_ratio_20,
-        )
         discovery_tier = classify_discovery_tier(start_signals.count)
         discovery_eligible, discovery_rejections = _evaluate_discovery_eligibility(
             close=close[-1],
@@ -937,6 +925,30 @@ def _scan_one_stock(
         else:
             valid_setup_reason = price_volume_reason
 
+        # Recompute the unified score after T+1 is known. Positive Futu evidence
+        # is bounded inside timing; explicit Futu risks reduce the risk subscore.
+        scoring_result, rejection_reason = score_single_stock(
+            code=code,
+            records=records,
+            config=config,
+            candle_patterns=candle_patterns,
+            t1_observation=t1_obs if setup.valid else None,
+            futu_bonus=start_signals.futu_bonus,
+            futu_risk_codes=(
+                *start_signals.risk_codes,
+                *(("bearish_candle_risk",) if latest_bearish_risks else ()),
+            ),
+        )
+        discovery_score, discovery_breakdown = compute_discovery_score(
+            scoring_result.edge_score,
+            pmk_features,
+            candle_features,
+            start_signals.count,
+            pct_chg,
+            ret_5d,
+            volume_ratio_20,
+        )
+
         # Production eligibility requires a valid T-day setup and its T+1 confirmation.
         tier_type = classify_tier(
             edge_score=scoring_result.edge_score,
@@ -1018,6 +1030,7 @@ def _scan_one_stock(
             candle_volume_ratio_20=float(candle_features.get("candle_volume_ratio_20", 0.0)),
             candle_upper_shadow_pct=float(candle_features.get("candle_upper_shadow_pct", 1.0)),
             candle_long_upper_shadow_risk=bool(candle_features.get("candle_long_upper_shadow_risk")),
+            candle_bearish_risk_patterns=latest_bearish_risks,
             candle_bullish_reversal=bool(candle_features.get("candle_bullish_reversal")),
             candle_bullish_continuation=bool(candle_features.get("candle_bullish_continuation")),
             candle_box_breakout=bool(candle_features.get("candle_box_breakout")),

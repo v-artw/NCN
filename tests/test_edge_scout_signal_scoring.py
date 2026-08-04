@@ -2,6 +2,7 @@
 
 import pytest
 import numpy as np
+from types import SimpleNamespace
 
 from ashare_edge_scout.signal_scoring import (
     compute_base_quality_score,
@@ -46,6 +47,42 @@ def test_compute_timing_score():
     assert score > 0
 
 
+def test_timing_score_uses_confirmed_t1_and_bounds_futu_evidence():
+    candle_features = {
+        "candle_position_zone": "low",
+        "candle_close_location": 0.5,
+        "candle_confirm_score": 5.0,
+    }
+
+    base, _ = compute_timing_score(candle_features)
+    confirmed, breakdown = compute_timing_score(
+        candle_features,
+        t1_observation=SimpleNamespace(confirmed=True),
+        futu_bonus=100.0,
+    )
+
+    assert confirmed == 33.0
+    assert confirmed > base
+    assert "t1_price_volume_confirmed" in breakdown
+    assert "futu=6.0" in breakdown
+
+
+def test_unconfirmed_t1_does_not_receive_confirmation_points():
+    candle_features = {
+        "candle_position_zone": "low",
+        "candle_close_location": 0.5,
+        "candle_confirm_score": 5.0,
+    }
+
+    base, _ = compute_timing_score(candle_features)
+    unconfirmed, _ = compute_timing_score(
+        candle_features,
+        t1_observation=SimpleNamespace(confirmed=False),
+    )
+
+    assert unconfirmed == base
+
+
 def test_compute_risk_score():
     """测试风险分数计算。"""
 
@@ -58,6 +95,21 @@ def test_compute_risk_score():
 
     # 应该有一定分数
     assert score > 0
+
+
+def test_futu_and_candle_risks_reduce_but_do_not_invert_risk_score():
+    base, _ = compute_risk_score(10.0, 9.5, 0.3, 10.0)
+    penalized, breakdown = compute_risk_score(
+        10.0,
+        9.5,
+        0.3,
+        10.0,
+        risk_codes=("clear_signal", "bearish_candle_risk", "clear_signal"),
+    )
+
+    assert penalized == 2.0
+    assert penalized < base
+    assert "bearish_candle_risk" in breakdown
 
 
 def test_compute_edge_score():

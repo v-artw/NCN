@@ -78,6 +78,7 @@ class EdgeScoutResult:
     candle_volume_ratio_20: float | None = None
     candle_upper_shadow_pct: float | None = None
     candle_long_upper_shadow_risk: bool | None = None
+    candle_bearish_risk_patterns: tuple[str, ...] = ()
     candle_bullish_reversal: bool | None = None
     candle_bullish_continuation: bool | None = None
     candle_box_breakout: bool | None = None

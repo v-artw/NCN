@@ -99,6 +99,19 @@ def detect_bullish_patterns(bars: Sequence[Mapping[str, Any]]) -> dict[str, list
     }
 
 
+def detect_bearish_risk_patterns(bars: Sequence[Mapping[str, Any]]) -> dict[str, list[bool]]:
+    """Detect high-value bearish reversal warnings in an established rise."""
+
+    normalized = _normalize_bars(bars)
+    return {
+        "hanging_man": _detect_hanging_man_normalized(normalized),
+        "shooting_star": _detect_shooting_star_normalized(normalized),
+        "bearish_engulfing": _detect_bearish_engulfing_normalized(normalized),
+        "dark_cloud_cover": _detect_dark_cloud_cover_normalized(normalized),
+        "evening_star": _detect_evening_star_normalized(normalized),
+    }
+
+
 def detect_bullish_patterns_from_candle_rules(
     bars: Sequence[Mapping[str, Any]],
     rules: CandleRuleSet,
@@ -240,12 +253,115 @@ def _detect_morning_star_normalized(bars: Sequence[_Bar]) -> list[bool]:
     return result
 
 
+def _detect_hanging_man_normalized(bars: Sequence[_Bar]) -> list[bool]:
+    result: list[bool] = []
+    for index, bar in enumerate(bars):
+        if bar.range == 0:
+            result.append(False)
+            continue
+        close_location = (bar.close - bar.low) / bar.range
+        result.append(
+            _short_term_rise_before(bars, index)
+            and bar.lower_shadow >= 2.0 * bar.body
+            and bar.upper_shadow <= max(0.5 * bar.body, 0.1 * bar.range)
+            and bar.body / bar.range <= 0.40
+            and close_location >= 0.65
+        )
+    return result
+
+
+def _detect_shooting_star_normalized(bars: Sequence[_Bar]) -> list[bool]:
+    result: list[bool] = []
+    for index, bar in enumerate(bars):
+        if bar.range == 0:
+            result.append(False)
+            continue
+        body_location = (bar.body_low - bar.low) / bar.range
+        result.append(
+            _short_term_rise_before(bars, index)
+            and bar.upper_shadow >= 2.0 * bar.body
+            and bar.lower_shadow <= max(0.5 * bar.body, 0.1 * bar.range)
+            and bar.body / bar.range <= 0.40
+            and body_location <= 0.35
+        )
+    return result
+
+
+def _detect_bearish_engulfing_normalized(bars: Sequence[_Bar]) -> list[bool]:
+    result = [False] * len(bars)
+    for index in range(1, len(bars)):
+        previous = bars[index - 1]
+        current = bars[index]
+        result[index] = (
+            _short_term_rise_before(bars, index - 1)
+            and previous.is_bullish
+            and previous.range > 0
+            and previous.body / previous.range >= 0.35
+            and current.is_bearish
+            and current.body >= 1.10 * previous.body
+            and current.body_low <= previous.body_low
+            and current.body_high >= previous.body_high
+            and current.close <= previous.open
+        )
+    return result
+
+
+def _detect_dark_cloud_cover_normalized(bars: Sequence[_Bar]) -> list[bool]:
+    result = [False] * len(bars)
+    for index in range(1, len(bars)):
+        previous = bars[index - 1]
+        current = bars[index]
+        midpoint = (previous.open + previous.close) / 2.0
+        result[index] = (
+            _short_term_rise_before(bars, index - 1)
+            and previous.is_bullish
+            and previous.range > 0
+            and previous.body / previous.range >= 0.50
+            and current.is_bearish
+            and current.open >= previous.close
+            and current.high >= previous.high
+            and current.close < midpoint
+            and current.close > previous.open
+        )
+    return result
+
+
+def _detect_evening_star_normalized(bars: Sequence[_Bar]) -> list[bool]:
+    result = [False] * len(bars)
+    for index in range(2, len(bars)):
+        first = bars[index - 2]
+        second = bars[index - 1]
+        third = bars[index]
+        if first.range == 0 or second.range == 0 or third.range == 0:
+            continue
+        first_midpoint = (first.open + first.close) / 2.0
+        result[index] = (
+            _short_term_rise_before(bars, index - 2)
+            and first.is_bullish
+            and first.body / first.range >= 0.55
+            and second.body / second.range <= 0.25
+            and second.body_low > first.body_high
+            and third.is_bearish
+            and third.body / third.range >= 0.45
+            and third.close < first_midpoint
+        )
+    return result
+
+
 def _short_term_decline_before(bars: Sequence[_Bar], index: int) -> bool:
     if index < 3:
         return False
     prior_close = bars[index - 3].close
     recent_close = bars[index - 1].close
     return recent_close < prior_close
+
+
+def _short_term_rise_before(bars: Sequence[_Bar], index: int) -> bool:
+    if index < 3:
+        return False
+    prior_close = bars[index - 3].close
+    recent_close = bars[index - 1].close
+    return recent_close > prior_close
 
 
 def _validate_candle_rule_set(rules: CandleRuleSet) -> None:
