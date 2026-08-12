@@ -17,6 +17,24 @@ const compact = (value) => {
   return number(parsed, 0);
 };
 const truthy = (value) => String(value).toLowerCase() === "true";
+const EVIDENCE_LABELS = {
+  mhpg_inflow_confirmed: "MHPG 资金流确认", mhpg_outflow_warning: "MHPG 资金流出",
+  mhpg_bull_kd_cross: "MHPG KD 金叉", dxbd_extreme_overbought: "DXBD 极端过热",
+  dxbd_strong_breakout: "DXBD 强势突破", dxbd_high_risk: "DXBD 高位风险",
+  dxbd_cross_zero: "DXBD 上穿零轴", dxbd_extreme_accumulation: "DXBD 极弱区回升",
+  dxbd_weak_rebound: "DXBD 弱势区回升", dxbd_persistent_weakness: "DXBD 持续弱势",
+  bullcluster_oversold: "多周期动量低位", bullcluster_overbought: "多周期动量过热",
+  mfk4_low_zone_start: "MFK4 低位启动", mfk4_ma_dispersion: "MFK4 均线扩散",
+  dingdi_rising: "顶底线回升", dingdi_falling: "顶底线回落",
+  dingdi_high_risk: "顶底线高位", dingdi_safe_zone: "顶底线低位",
+  dingdi_safe_up: "顶底线低位回升", bull_divergence: "看涨背离",
+  bear_divergence: "看跌背离", gding_strong_pull: "GDing 强拉升观察",
+  bbuy_cross: "BBUY 金叉", clear_signal: "DXBD 极端过热",
+  overbought_risk: "超买风险", high_position_risk: "高位风险",
+  hanging_man: "吊颈线", shooting_star: "流星线", bearish_engulfing: "看跌吞没",
+  dark_cloud_cover: "乌云盖顶", evening_star: "黄昏星"
+};
+const evidenceText = (value) => String(value || "").split("|").filter(Boolean).map((code) => EVIDENCE_LABELS[code] || code.replaceAll("_", " ")).join(" · ") || "无";
 
 async function getJSON(url) {
   const response = await fetch(url, { cache: "no-store" });
@@ -253,17 +271,24 @@ function renderSource(data) {
 function renderPatterns(items) {
   $("patternCount").textContent = `${items.length} 项`;
   $("patternList").innerHTML = items.length ? items.slice().reverse().map((item) => {
+    if (item.kind === "risk") {
+      return `<div class="pattern-item risk"><time>${escapeHTML(item.date)}</time><span><strong>${escapeHTML(item.label)}</strong><small>顶部或上涨后的趋势变化风险，不构成做空结论</small></span><b class="status-dot risk">风险观察</b></div>`;
+    }
     const unit = state.period === "1d" ? "一日" : "一根";
     const status = item.status === "confirmed" ? "已获量价确认" : item.status === "pending" ? `等待后${unit}` : `未获后${unit}确认`;
     const detail = item.volume_ratio ? `确认日量比 ${number(item.volume_ratio, 2)}` : "形态观察，不独立构成结论";
     return `<div class="pattern-item"><time>${escapeHTML(item.date)}</time><span><strong>${escapeHTML(item.label)}</strong><small>${escapeHTML(detail)}</small></span><b class="status-dot ${item.status === "confirmed" ? "ok" : ""}">${status}</b></div>`;
-  }).join("") : '<div class="empty">当前区间未识别到启用的四类看涨形态</div>';
+  }).join("") : '<div class="empty">当前区间未识别到启用的看涨形态或看跌风险形态</div>';
 }
 
 function renderEvidence(row) {
   const evidence = [
-    ["Edge 分数", number(row.edge_score, 1)], ["CNstock 基础分", number(row.cnstock_base_score, 1)],
-    ["启动信号", row.start_signals?.replaceAll("|", " · ") || "无"], ["5日变化", `${number(row.ret_5d, 2)}%`],
+    ["Edge 分数", number(row.edge_score, 1)], ["基础质量", `${number(row.base_quality_score, 1)} / 45`],
+    ["时机评分", `${number(row.timing_score, 1)} / 35`], ["风险评分", `${number(row.risk_score, 1)} / 20`],
+    ["CNstock 基础分", number(row.cnstock_base_score, 1)], ["Futu 调整", number(row.futu_bonus, 1)],
+    ["启动信号", evidenceText(row.start_signals)], ["Futu 状态", evidenceText(row.futu_status_codes)],
+    ["Futu 风险", evidenceText(row.futu_risk_codes)], ["蜡烛风险", evidenceText(row.candle_bearish_risk_patterns)],
+    ["5日变化", `${number(row.ret_5d, 2)}%`],
     ["成交额", compact(row.amount_cny)], ["20日量比", number(row.volume_ratio_20, 2)],
     ["T日形态", row.t_day_patterns?.replaceAll("|", " · ") || "无"], ["量价确认", truthy(row.price_volume_confirmed) ? "是" : "否"],
     ["研究参考区间", `${number(row.stop_reference, 2)} - ${number(row.take_profit_reference, 2)}`], ["风险距离", `${number(Number(row.risk_distance_pct) * 100, 2)}%`]
@@ -308,7 +333,9 @@ function drawChart() {
   drawLine(ctx, bars, "ma20", x, y, "#397a94"); drawLine(ctx, bars, "ma60", x, y, "#c68b27");
   (state.chartData.annotations || []).forEach((item) => {
     const bar = bars[item.index]; if (!bar) return;
-    ctx.fillStyle = item.status === "confirmed" ? "#137a5c" : "#c68b27"; ctx.beginPath(); ctx.arc(x(item.index), y(bar.low) + 9, 3.5, 0, Math.PI * 2); ctx.fill();
+    const risk = item.kind === "risk";
+    ctx.fillStyle = risk ? "#c43d31" : item.status === "confirmed" ? "#137a5c" : "#c68b27";
+    ctx.beginPath(); ctx.arc(x(item.index), risk ? y(bar.high) - 9 : y(bar.low) + 9, 3.5, 0, Math.PI * 2); ctx.fill();
   });
   const dateStride = Math.max(1, Math.ceil(bars.length / 7)); ctx.fillStyle = "#66716b"; ctx.textAlign = "center";
   bars.forEach((bar, i) => { if (i % dateStride === 0 || i === bars.length - 1) ctx.fillText(formatAxisTime(bar.timestamp || bar.date), x(i), height - 6); });

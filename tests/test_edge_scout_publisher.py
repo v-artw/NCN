@@ -485,6 +485,11 @@ def test_daily_research_watchlist_prioritizes_confirmed_then_setup_then_cnstock_
             cnstock_base_score=80.0,
             discovery_eligible=discovery,
             start_signal_count=3 if pool else 2 if discovery else 0,
+            futu_bonus=4.0,
+            futu_status_codes=("mhpg_bull_kd_cross",),
+            futu_risk_codes=("high_position_risk",),
+            candle_bearish_risk_patterns=("shooting_star",),
+            t_day_patterns=("hammer",),
         )
 
     results = [
@@ -526,4 +531,12 @@ def test_daily_research_watchlist_prioritizes_confirmed_then_setup_then_cnstock_
         "discovery_watch",
     ]
     assert all(row["research_only"] == "True" for row in rows)
+    assert rows[0]["base_quality_score"] == "20.0"
+    assert rows[0]["timing_score"] == "12.0"
+    assert rows[0]["risk_score"] == "8.0"
+    assert rows[0]["futu_bonus"] == "4.0"
+    assert rows[0]["futu_status_codes"] == "mhpg_bull_kd_cross"
+    assert rows[0]["futu_risk_codes"] == "high_position_risk"
+    assert rows[0]["candle_bearish_risk_patterns"] == "shooting_star"
+    assert rows[0]["t_day_patterns"] == "hammer"
     assert "daily_research_watchlist.csv" in manifest["files"]

@@ -97,6 +97,27 @@ def test_candle_payload_marks_confirmed_book_pattern(tmp_path: Path) -> None:
     assert len(payload["bars"]) == 30
 
 
+def test_candle_payload_marks_bearish_pattern_as_risk_observation(tmp_path: Path) -> None:
+    data_root = tmp_path / "bars"
+    data_root.mkdir()
+    rows = []
+    for index in range(31):
+        close = 8.0 + index * 0.1
+        rows.append(_bar(index, close - 0.08, close + 0.12, close - 0.12, close, 100.0))
+    rows.append(_bar(31, 11.05, 11.8, 11.0, 11.15, 100.0))
+    pq.write_table(pa.Table.from_pylist(rows), data_root / "sh.600000.parquet")
+
+    context = create_context(ROOT, data_root=data_root)
+    payload = load_candle_research(context, "600000", limit=30)
+
+    shooting_star = next(
+        item for item in payload["annotations"] if item["pattern"] == "shooting_star"
+    )
+    assert shooting_star["kind"] == "risk"
+    assert shooting_star["status"] == "risk_observation"
+    assert shooting_star["label"] == "流星线"
+
+
 def test_intraday_payload_uses_provider_metadata_and_excludes_forming_pattern() -> None:
     now = datetime(2026, 8, 4, 10, 1, tzinfo=SHANGHAI)
     client = _FakeIntradayClient(now)
@@ -141,6 +162,11 @@ def test_web_assets_include_visibility_aware_auto_refresh() -> None:
     assert 'id="refreshStatus"' in markup
     assert 'id="addStockForm"' in markup
     assert 'id="researchAlert"' in markup
+    assert 'class="risk"' in markup
+    assert '["基础质量"' in script
+    assert '["时机评分"' in script
+    assert '["风险评分"' in script
+    assert "candle_bearish_risk_patterns" in script
 
 
 def test_research_alert_prioritizes_ma60_risk_over_pattern() -> None:
@@ -161,6 +187,33 @@ def test_research_alert_reports_confirmed_pattern_with_healthy_structure() -> No
     )
     assert alert["state"] == "bullish_setup_confirmed"
     assert alert["research_only"] is True
+
+
+def test_research_alert_prioritizes_latest_bearish_pattern_over_bullish_confirmation() -> None:
+    bar = _alert_bar(close=11.0, ma20=10.5, ma60=10.0)
+    bar.update({"open": 10.9, "high": 12.0, "low": 10.85})
+    bars = [bar]
+    alert = _build_research_alert(
+        bars,
+        [
+            {
+                "kind": "bullish",
+                "status": "confirmed",
+                "confirmation_date": "2026-08-04",
+                "label": "看涨吞没",
+            },
+            {
+                "kind": "risk",
+                "status": "risk_observation",
+                "date": "2026-08-04",
+                "label": "流星线",
+            },
+        ],
+    )
+
+    assert alert["state"] == "risk_observation"
+    assert alert["title"] == "看跌蜡烛风险观察"
+    assert alert["evidence"] == ["流星线"]
 
 
 def _alert_bar(*, close: float, ma20: float, ma60: float) -> dict[str, object]:

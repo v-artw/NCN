@@ -22,12 +22,12 @@
         <div class="rail-head">
           <div><span class="eyebrow">MANUAL RESEARCH</span><h1>我的监控</h1></div>
           <span id="rowCount" class="count">0</span>
-        </form>
+        </div>
         <form id="addStockForm" class="manual-add">
           <label for="manualCode">输入沪深股票代码</label>
           <div><input id="manualCode" inputmode="text" placeholder="如 600519 / sz.000001" autocomplete="off"><button type="submit">加入监控</button></div>
           <small id="watchlistMessage">仅保存研究自选，不记录成本、数量或交易。</small>
-        </div>
+        </form>
         <div id="watchlist" class="watchlist" role="listbox" aria-label="研究观察股票"></div>
       </aside>
 
@@ -70,7 +70,7 @@
         <div class="chart-shell">
           <div class="legend">
             <span><i class="ma20"></i>MA20</span><span><i class="ma60"></i>MA60</span>
-            <span><i class="confirmed"></i>已确认形态</span><span><i class="observed"></i>待确认 / 未确认</span><span><i class="forming"></i>形成中</span>
+            <span><i class="confirmed"></i>已确认看涨形态</span><span><i class="observed"></i>待确认 / 未确认</span><span><i class="risk"></i>看跌风险观察</span><span><i class="forming"></i>形成中</span>
           </div>
           <canvas id="chart" aria-label="K线与成交量"></canvas>
           <div id="tooltip" class="tooltip" hidden></div>

@@ -15,7 +15,7 @@ from typing import Any, Mapping, Sequence
 from urllib.parse import parse_qs, urlparse
 
 from .candle_rules import CandleRuleSet, HammerRule
-from .candles import detect_bullish_patterns_from_candle_rules
+from .candles import detect_bearish_risk_patterns, detect_bullish_patterns_from_candle_rules
 from .config import load_config, validate_config
 from .daily_bars import DataValidationError, load_local_daily_bars
 from .indicators import sma, volume_moving_average
@@ -45,6 +45,13 @@ _PATTERN_LABELS = {
     "bullish_engulfing": "看涨吞没",
     "piercing": "刺透形态",
     "morning_star": "启明星",
+}
+_BEARISH_RISK_PATTERN_LABELS = {
+    "hanging_man": "吊颈线",
+    "shooting_star": "流星线",
+    "bearish_engulfing": "看跌吞没",
+    "dark_cloud_cover": "乌云盖顶",
+    "evening_star": "黄昏星",
 }
 
 
@@ -182,6 +189,7 @@ def load_candle_research(
         raise ResearchWebError(exc.code, str(exc)) from exc
 
     patterns = detect_bullish_patterns_from_candle_rules(records, context.candle_rules)
+    bearish_risks = detect_bearish_risk_patterns(records)
     closes = [float(record["close"]) for record in records]
     volumes = [float(record["volume"]) for record in records]
     ma20 = sma(closes, 20)
@@ -194,6 +202,9 @@ def load_candle_research(
         volume_ma20,
         min_volume_ratio=context.confirmation_volume_ratio,
         chart_start=chart_start,
+    )
+    annotations.extend(
+        _build_bearish_risk_annotations(records, bearish_risks, chart_start=chart_start)
     )
     bars = [
         {
@@ -217,7 +228,7 @@ def load_candle_research(
         "period": "1d",
         "bars": bars,
         "annotations": annotations,
-        "pattern_labels": _PATTERN_LABELS,
+        "pattern_labels": {**_PATTERN_LABELS, **_BEARISH_RISK_PATTERN_LABELS},
         "provenance": {
             "provider": "local_baostock_parquet",
             "adjustment": "qfq_research_only",
@@ -302,8 +313,16 @@ def _load_intraday_candle_research(
             name: [*matches, *([False] if completed_count < len(records) else [])]
             for name, matches in completed_patterns.items()
         }
+        completed_bearish_risks = detect_bearish_risk_patterns(completed_records)
+        bearish_risks = {
+            name: [*matches, *([False] if completed_count < len(records) else [])]
+            for name, matches in completed_bearish_risks.items()
+        }
     else:
         patterns = {name: [False] * len(records) for name in _PATTERN_LABELS}
+        bearish_risks = {
+            name: [False] * len(records) for name in _BEARISH_RISK_PATTERN_LABELS
+        }
     closes = [float(record["close"]) for record in records]
     volumes = [float(record["volume"]) for record in records]
     ma20 = sma(closes, 20)
@@ -316,6 +335,7 @@ def _load_intraday_candle_research(
         min_volume_ratio=context.confirmation_volume_ratio,
         chart_start=0,
     )
+    annotations.extend(_build_bearish_risk_annotations(records, bearish_risks, chart_start=0))
     bars = [
         {
             **record,
@@ -332,7 +352,7 @@ def _load_intraday_candle_research(
         "period": period,
         "bars": bars,
         "annotations": annotations,
-        "pattern_labels": _PATTERN_LABELS,
+        "pattern_labels": {**_PATTERN_LABELS, **_BEARISH_RISK_PATTERN_LABELS},
         "provenance": {
             "provider": batch.provider,
             "adjustment": batch.adjustment,
@@ -596,9 +616,36 @@ def _build_pattern_annotations(
                     "date": _iso_date(records[index]["date"]),
                     "pattern": name,
                     "label": _PATTERN_LABELS.get(name, name),
+                    "kind": "bullish",
                     "status": status,
                     "confirmation_date": confirmation_date,
                     "volume_ratio": volume_ratio,
+                }
+            )
+    return annotations
+
+
+def _build_bearish_risk_annotations(
+    records: Sequence[Mapping[str, Any]],
+    patterns: Mapping[str, Sequence[bool]],
+    *,
+    chart_start: int,
+) -> list[dict[str, Any]]:
+    annotations: list[dict[str, Any]] = []
+    for name, matches in patterns.items():
+        for index, matched in enumerate(matches):
+            if not matched or index < chart_start:
+                continue
+            annotations.append(
+                {
+                    "index": index - chart_start,
+                    "date": _iso_date(records[index]["date"]),
+                    "pattern": name,
+                    "label": _BEARISH_RISK_PATTERN_LABELS.get(name, name),
+                    "kind": "risk",
+                    "status": "risk_observation",
+                    "confirmation_date": None,
+                    "volume_ratio": None,
                 }
             )
     return annotations
@@ -654,6 +701,20 @@ def _build_research_alert(
             "evidence": ["close_below_ma20", f"volume_ratio={volume_ratio:.2f}"],
             "research_only": True,
         }
+    latest_timestamp = str(latest.get("timestamp") or latest.get("date"))
+    latest_bearish_risks = [
+        item
+        for item in annotations
+        if item.get("kind") == "risk" and str(item.get("date")) == latest_timestamp
+    ]
+    if latest_bearish_risks:
+        return {
+            "state": "risk_observation",
+            "title": "看跌蜡烛风险观察",
+            "detail": "最新已完成 K 线出现趋势变化风险形态，仅用于降低看涨假设权重",
+            "evidence": [str(item.get("label")) for item in latest_bearish_risks],
+            "research_only": True,
+        }
     if upper_shadow_ratio > 0.40:
         return {
             "state": "risk_observation",
@@ -662,12 +723,11 @@ def _build_research_alert(
             "evidence": [f"upper_shadow_ratio={upper_shadow_ratio:.2f}"],
             "research_only": True,
         }
-
-    latest_timestamp = str(latest.get("timestamp") or latest.get("date"))
     confirmed = [
         item
         for item in annotations
-        if item.get("status") == "confirmed"
+        if item.get("kind", "bullish") == "bullish"
+        and item.get("status") == "confirmed"
         and str(item.get("confirmation_date")) == latest_timestamp
     ]
     if confirmed:
@@ -679,7 +739,11 @@ def _build_research_alert(
             "evidence": labels,
             "research_only": True,
         }
-    pending = [item for item in annotations if item.get("status") == "pending"]
+    pending = [
+        item
+        for item in annotations
+        if item.get("kind", "bullish") == "bullish" and item.get("status") == "pending"
+    ]
     if pending:
         return {
             "state": "setup_watch",
