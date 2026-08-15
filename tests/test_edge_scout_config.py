@@ -15,6 +15,9 @@ def test_load_config():
         assert isinstance(config, dict)
         assert "schema_version" in config
         assert "mode" in config
+        assert "market_regime" not in config
+        assert config["research_market_regime"]["enforcement"] == "none"
+        assert "score_weights" not in config["ranking"]
     else:
         with pytest.raises(FileNotFoundError):
             load_config(Path("nonexistent.yaml"))
@@ -58,6 +61,25 @@ def test_validate_config():
     with pytest.raises(ValueError, match="production_enabled"):
         validate_config(invalid_config, Path("test.yaml"))
 
+    invalid_config = {**valid_config, "ranking": {"score_weights": {"timing": 0.35}}}
+    with pytest.raises(ValueError, match="score_weights is unsupported"):
+        validate_config(invalid_config, Path("test.yaml"))
+
+    invalid_config = {**valid_config, "market_regime": {"ma_slope_lookback": 5}}
+    with pytest.raises(ValueError, match="market_regime is unsupported"):
+        validate_config(invalid_config, Path("test.yaml"))
+
+    invalid_config = {**valid_config, "mode": "read_only_paper"}
+    with pytest.raises(ValueError, match="read_only_research"):
+        validate_config(invalid_config, Path("test.yaml"))
+
+    invalid_config = {
+        **valid_config,
+        "research_market_regime": {"enforcement": "hard_gate"},
+    }
+    with pytest.raises(ValueError, match="enforcement must be 'none'"):
+        validate_config(invalid_config, Path("test.yaml"))
+
 
 def test_compute_config_sha256():
     """测试配置 SHA-256 计算。"""
@@ -80,6 +102,7 @@ def test_build_strategy_rule_set():
             "trend": {
                 "fast_ma": 20,
                 "slow_ma": 60,
+                "ma_slope_lookback": 5,
                 "min_return_20d": 0.03,
                 "max_return_20d": 0.30,
             },
@@ -98,9 +121,9 @@ def test_build_strategy_rule_set():
                 "execution_delay_trading_days": 2,
             },
         },
-        "market_regime": {
+        "research_market_regime": {
+            "enforcement": "none",
             "close_above_ma": 20,
-            "ma_slope_lookback": 5,
             "max_5d_benchmark_drawdown": -0.03,
         },
         "risk": {
@@ -111,4 +134,5 @@ def test_build_strategy_rule_set():
     rules = build_strategy_rule_set(config)
     assert rules["fast_ma"] == 20
     assert rules["slow_ma"] == 60
+    assert rules["ma_slope_lookback"] == 5
     assert rules["min_return_20d"] == 0.03

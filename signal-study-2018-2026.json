@@ -1,0 +1,667 @@
+{
+  "classification_only": true,
+  "date_range": {
+    "end": null,
+    "start": "2018-01-01"
+  },
+  "label": "within_T_plus_1_to_T_plus_5_close_reaches_3pct_up_without_3pct_close_drawdown",
+  "sampling": {
+    "actual_codes": 400,
+    "max_codes": 400,
+    "step": 5
+  },
+  "study": "t_day_signal_hit_rate",
+  "summary": {
+    "observations": 147192,
+    "years": {
+      "2018": {
+        "any_pattern": {
+          "hit_rate": 0.32381,
+          "n": 525,
+          "t5_rate": 0.470476
+        },
+        "baseline": {
+          "hit_rate": 0.268056,
+          "n": 14247,
+          "t5_rate": 0.422826
+        },
+        "bullish_engulfing": {
+          "hit_rate": 0.431138,
+          "n": 167,
+          "t5_rate": 0.508982
+        },
+        "dingdi_safe_up": {
+          "hit_rate": 0.222138,
+          "n": 3957,
+          "t5_rate": 0.357089
+        },
+        "dxbd_up": {
+          "hit_rate": 0.239583,
+          "n": 864,
+          "t5_rate": 0.363426
+        },
+        "gding_up": {
+          "hit_rate": 0.234424,
+          "n": 1894,
+          "t5_rate": 0.422914
+        },
+        "hammer": {
+          "hit_rate": 0.217557,
+          "n": 262,
+          "t5_rate": 0.40458
+        },
+        "mfk4_triggered": {
+          "hit_rate": 0.228357,
+          "n": 3061,
+          "t5_rate": 0.384515
+        },
+        "mhpg_buy": {
+          "hit_rate": 0.255814,
+          "n": 43,
+          "t5_rate": 0.27907
+        },
+        "morning_star": {
+          "hit_rate": 0.6,
+          "n": 25,
+          "t5_rate": 0.56
+        },
+        "piercing": {
+          "hit_rate": 0.383562,
+          "n": 73,
+          "t5_rate": 0.60274
+        },
+        "setup": {
+          "hit_rate": 0.125,
+          "n": 8,
+          "t5_rate": 0.125
+        },
+        "start_count_ge_2": {
+          "hit_rate": 0.231657,
+          "n": 2426,
+          "t5_rate": 0.38582
+        },
+        "start_count_ge_3": {
+          "hit_rate": 0.188489,
+          "n": 695,
+          "t5_rate": 0.286331
+        }
+      },
+      "2019": {
+        "any_pattern": {
+          "hit_rate": 0.299694,
+          "n": 327,
+          "t5_rate": 0.446483
+        },
+        "baseline": {
+          "hit_rate": 0.333122,
+          "n": 15769,
+          "t5_rate": 0.523495
+        },
+        "bullish_engulfing": {
+          "hit_rate": 0.304348,
+          "n": 92,
+          "t5_rate": 0.456522
+        },
+        "dingdi_safe_up": {
+          "hit_rate": 0.307462,
+          "n": 3672,
+          "t5_rate": 0.513889
+        },
+        "dxbd_up": {
+          "hit_rate": 0.318386,
+          "n": 892,
+          "t5_rate": 0.492152
+        },
+        "gding_up": {
+          "hit_rate": 0.343162,
+          "n": 1967,
+          "t5_rate": 0.572954
+        },
+        "hammer": {
+          "hit_rate": 0.298969,
+          "n": 194,
+          "t5_rate": 0.448454
+        },
+        "mfk4_triggered": {
+          "hit_rate": 0.34292,
+          "n": 3651,
+          "t5_rate": 0.518214
+        },
+        "mhpg_buy": {
+          "hit_rate": 0.313043,
+          "n": 115,
+          "t5_rate": 0.469565
+        },
+        "morning_star": {
+          "hit_rate": 0.0,
+          "n": 1,
+          "t5_rate": 0.0
+        },
+        "piercing": {
+          "hit_rate": 0.309524,
+          "n": 42,
+          "t5_rate": 0.428571
+        },
+        "setup": {
+          "hit_rate": 0.395349,
+          "n": 43,
+          "t5_rate": 0.488372
+        },
+        "start_count_ge_2": {
+          "hit_rate": 0.309524,
+          "n": 2268,
+          "t5_rate": 0.516314
+        },
+        "start_count_ge_3": {
+          "hit_rate": 0.29463,
+          "n": 689,
+          "t5_rate": 0.50508
+        }
+      },
+      "2020": {
+        "any_pattern": {
+          "hit_rate": 0.340206,
+          "n": 388,
+          "t5_rate": 0.487113
+        },
+        "baseline": {
+          "hit_rate": 0.33998,
+          "n": 16298,
+          "t5_rate": 0.471837
+        },
+        "bullish_engulfing": {
+          "hit_rate": 0.383459,
+          "n": 133,
+          "t5_rate": 0.511278
+        },
+        "dingdi_safe_up": {
+          "hit_rate": 0.315953,
+          "n": 3548,
+          "t5_rate": 0.470406
+        },
+        "dxbd_up": {
+          "hit_rate": 0.356004,
+          "n": 941,
+          "t5_rate": 0.477152
+        },
+        "gding_up": {
+          "hit_rate": 0.40801,
+          "n": 1598,
+          "t5_rate": 0.526909
+        },
+        "hammer": {
+          "hit_rate": 0.287958,
+          "n": 191,
+          "t5_rate": 0.450262
+        },
+        "mfk4_triggered": {
+          "hit_rate": 0.368581,
+          "n": 3953,
+          "t5_rate": 0.483177
+        },
+        "mhpg_buy": {
+          "hit_rate": 0.4,
+          "n": 205,
+          "t5_rate": 0.502439
+        },
+        "morning_star": {
+          "hit_rate": 0.55,
+          "n": 20,
+          "t5_rate": 0.75
+        },
+        "piercing": {
+          "hit_rate": 0.340909,
+          "n": 44,
+          "t5_rate": 0.454545
+        },
+        "setup": {
+          "hit_rate": 0.4,
+          "n": 20,
+          "t5_rate": 0.5
+        },
+        "start_count_ge_2": {
+          "hit_rate": 0.373516,
+          "n": 2190,
+          "t5_rate": 0.50411
+        },
+        "start_count_ge_3": {
+          "hit_rate": 0.341751,
+          "n": 594,
+          "t5_rate": 0.449495
+        }
+      },
+      "2021": {
+        "any_pattern": {
+          "hit_rate": 0.383234,
+          "n": 501,
+          "t5_rate": 0.510978
+        },
+        "baseline": {
+          "hit_rate": 0.334502,
+          "n": 16544,
+          "t5_rate": 0.502478
+        },
+        "bullish_engulfing": {
+          "hit_rate": 0.384615,
+          "n": 169,
+          "t5_rate": 0.467456
+        },
+        "dingdi_safe_up": {
+          "hit_rate": 0.321057,
+          "n": 3747,
+          "t5_rate": 0.498799
+        },
+        "dxbd_up": {
+          "hit_rate": 0.36,
+          "n": 1025,
+          "t5_rate": 0.483902
+        },
+        "gding_up": {
+          "hit_rate": 0.368993,
+          "n": 1748,
+          "t5_rate": 0.528604
+        },
+        "hammer": {
+          "hit_rate": 0.358491,
+          "n": 212,
+          "t5_rate": 0.523585
+        },
+        "mfk4_triggered": {
+          "hit_rate": 0.341943,
+          "n": 4220,
+          "t5_rate": 0.499763
+        },
+        "mhpg_buy": {
+          "hit_rate": 0.304348,
+          "n": 161,
+          "t5_rate": 0.403727
+        },
+        "morning_star": {
+          "hit_rate": 0.384615,
+          "n": 13,
+          "t5_rate": 0.846154
+        },
+        "piercing": {
+          "hit_rate": 0.429907,
+          "n": 107,
+          "t5_rate": 0.514019
+        },
+        "setup": {
+          "hit_rate": 0.333333,
+          "n": 39,
+          "t5_rate": 0.410256
+        },
+        "start_count_ge_2": {
+          "hit_rate": 0.347652,
+          "n": 2491,
+          "t5_rate": 0.510638
+        },
+        "start_count_ge_3": {
+          "hit_rate": 0.382114,
+          "n": 738,
+          "t5_rate": 0.51084
+        }
+      },
+      "2022": {
+        "any_pattern": {
+          "hit_rate": 0.295082,
+          "n": 366,
+          "t5_rate": 0.420765
+        },
+        "baseline": {
+          "hit_rate": 0.327062,
+          "n": 17593,
+          "t5_rate": 0.466094
+        },
+        "bullish_engulfing": {
+          "hit_rate": 0.231343,
+          "n": 134,
+          "t5_rate": 0.320896
+        },
+        "dingdi_safe_up": {
+          "hit_rate": 0.311094,
+          "n": 3867,
+          "t5_rate": 0.474011
+        },
+        "dxbd_up": {
+          "hit_rate": 0.287387,
+          "n": 1110,
+          "t5_rate": 0.454955
+        },
+        "gding_up": {
+          "hit_rate": 0.37487,
+          "n": 1926,
+          "t5_rate": 0.508827
+        },
+        "hammer": {
+          "hit_rate": 0.318471,
+          "n": 157,
+          "t5_rate": 0.496815
+        },
+        "mfk4_triggered": {
+          "hit_rate": 0.324225,
+          "n": 3806,
+          "t5_rate": 0.448502
+        },
+        "mhpg_buy": {
+          "hit_rate": 0.236364,
+          "n": 165,
+          "t5_rate": 0.357576
+        },
+        "morning_star": {
+          "hit_rate": 0.4,
+          "n": 10,
+          "t5_rate": 0.3
+        },
+        "piercing": {
+          "hit_rate": 0.353846,
+          "n": 65,
+          "t5_rate": 0.461538
+        },
+        "setup": {
+          "hit_rate": 0.375,
+          "n": 16,
+          "t5_rate": 0.5625
+        },
+        "start_count_ge_2": {
+          "hit_rate": 0.332701,
+          "n": 2636,
+          "t5_rate": 0.483308
+        },
+        "start_count_ge_3": {
+          "hit_rate": 0.348271,
+          "n": 781,
+          "t5_rate": 0.477593
+        }
+      },
+      "2023": {
+        "any_pattern": {
+          "hit_rate": 0.209622,
+          "n": 582,
+          "t5_rate": 0.38488
+        },
+        "baseline": {
+          "hit_rate": 0.255138,
+          "n": 18053,
+          "t5_rate": 0.456323
+        },
+        "bullish_engulfing": {
+          "hit_rate": 0.226087,
+          "n": 230,
+          "t5_rate": 0.365217
+        },
+        "dingdi_safe_up": {
+          "hit_rate": 0.242814,
+          "n": 4279,
+          "t5_rate": 0.444029
+        },
+        "dxbd_up": {
+          "hit_rate": 0.228883,
+          "n": 1101,
+          "t5_rate": 0.412352
+        },
+        "gding_up": {
+          "hit_rate": 0.285051,
+          "n": 2368,
+          "t5_rate": 0.462838
+        },
+        "hammer": {
+          "hit_rate": 0.195652,
+          "n": 230,
+          "t5_rate": 0.4
+        },
+        "mfk4_triggered": {
+          "hit_rate": 0.272692,
+          "n": 5101,
+          "t5_rate": 0.462654
+        },
+        "mhpg_buy": {
+          "hit_rate": 0.241706,
+          "n": 211,
+          "t5_rate": 0.398104
+        },
+        "morning_star": {
+          "hit_rate": 0.25,
+          "n": 28,
+          "t5_rate": 0.642857
+        },
+        "piercing": {
+          "hit_rate": 0.189474,
+          "n": 95,
+          "t5_rate": 0.315789
+        },
+        "setup": {
+          "hit_rate": 0.212121,
+          "n": 33,
+          "t5_rate": 0.393939
+        },
+        "start_count_ge_2": {
+          "hit_rate": 0.272,
+          "n": 3125,
+          "t5_rate": 0.46048
+        },
+        "start_count_ge_3": {
+          "hit_rate": 0.270909,
+          "n": 1100,
+          "t5_rate": 0.449091
+        }
+      },
+      "2024": {
+        "any_pattern": {
+          "hit_rate": 0.343003,
+          "n": 586,
+          "t5_rate": 0.43686
+        },
+        "baseline": {
+          "hit_rate": 0.332625,
+          "n": 18817,
+          "t5_rate": 0.450391
+        },
+        "bullish_engulfing": {
+          "hit_rate": 0.345178,
+          "n": 197,
+          "t5_rate": 0.497462
+        },
+        "dingdi_safe_up": {
+          "hit_rate": 0.35447,
+          "n": 4195,
+          "t5_rate": 0.46174
+        },
+        "dxbd_up": {
+          "hit_rate": 0.446789,
+          "n": 1090,
+          "t5_rate": 0.543119
+        },
+        "gding_up": {
+          "hit_rate": 0.412575,
+          "n": 2179,
+          "t5_rate": 0.505737
+        },
+        "hammer": {
+          "hit_rate": 0.293333,
+          "n": 225,
+          "t5_rate": 0.351111
+        },
+        "mfk4_triggered": {
+          "hit_rate": 0.339855,
+          "n": 4549,
+          "t5_rate": 0.447791
+        },
+        "mhpg_buy": {
+          "hit_rate": 0.469828,
+          "n": 232,
+          "t5_rate": 0.543103
+        },
+        "morning_star": {
+          "hit_rate": 0.521739,
+          "n": 23,
+          "t5_rate": 0.521739
+        },
+        "piercing": {
+          "hit_rate": 0.393103,
+          "n": 145,
+          "t5_rate": 0.475862
+        },
+        "setup": {
+          "hit_rate": 0.525,
+          "n": 40,
+          "t5_rate": 0.675
+        },
+        "start_count_ge_2": {
+          "hit_rate": 0.401435,
+          "n": 2927,
+          "t5_rate": 0.490263
+        },
+        "start_count_ge_3": {
+          "hit_rate": 0.433628,
+          "n": 904,
+          "t5_rate": 0.52323
+        }
+      },
+      "2025": {
+        "any_pattern": {
+          "hit_rate": 0.272201,
+          "n": 518,
+          "t5_rate": 0.469112
+        },
+        "baseline": {
+          "hit_rate": 0.311414,
+          "n": 18811,
+          "t5_rate": 0.531816
+        },
+        "bullish_engulfing": {
+          "hit_rate": 0.310881,
+          "n": 193,
+          "t5_rate": 0.445596
+        },
+        "dingdi_safe_up": {
+          "hit_rate": 0.296564,
+          "n": 4424,
+          "t5_rate": 0.527125
+        },
+        "dxbd_up": {
+          "hit_rate": 0.305124,
+          "n": 1288,
+          "t5_rate": 0.518634
+        },
+        "gding_up": {
+          "hit_rate": 0.305003,
+          "n": 1659,
+          "t5_rate": 0.520193
+        },
+        "hammer": {
+          "hit_rate": 0.262673,
+          "n": 217,
+          "t5_rate": 0.488479
+        },
+        "mfk4_triggered": {
+          "hit_rate": 0.284114,
+          "n": 4822,
+          "t5_rate": 0.484032
+        },
+        "mhpg_buy": {
+          "hit_rate": 0.35082,
+          "n": 305,
+          "t5_rate": 0.481967
+        },
+        "morning_star": {
+          "hit_rate": 0.333333,
+          "n": 12,
+          "t5_rate": 0.75
+        },
+        "piercing": {
+          "hit_rate": 0.206186,
+          "n": 97,
+          "t5_rate": 0.43299
+        },
+        "setup": {
+          "hit_rate": 0.210526,
+          "n": 38,
+          "t5_rate": 0.342105
+        },
+        "start_count_ge_2": {
+          "hit_rate": 0.285557,
+          "n": 2728,
+          "t5_rate": 0.508798
+        },
+        "start_count_ge_3": {
+          "hit_rate": 0.319095,
+          "n": 796,
+          "t5_rate": 0.505025
+        }
+      },
+      "2026": {
+        "any_pattern": {
+          "hit_rate": 0.266129,
+          "n": 372,
+          "t5_rate": 0.403226
+        },
+        "baseline": {
+          "hit_rate": 0.294937,
+          "n": 11060,
+          "t5_rate": 0.453255
+        },
+        "bullish_engulfing": {
+          "hit_rate": 0.275362,
+          "n": 138,
+          "t5_rate": 0.384058
+        },
+        "dingdi_safe_up": {
+          "hit_rate": 0.282435,
+          "n": 3137,
+          "t5_rate": 0.448518
+        },
+        "dxbd_up": {
+          "hit_rate": 0.317523,
+          "n": 759,
+          "t5_rate": 0.500659
+        },
+        "gding_up": {
+          "hit_rate": 0.29809,
+          "n": 1466,
+          "t5_rate": 0.441337
+        },
+        "hammer": {
+          "hit_rate": 0.240741,
+          "n": 162,
+          "t5_rate": 0.419753
+        },
+        "mfk4_triggered": {
+          "hit_rate": 0.289492,
+          "n": 2798,
+          "t5_rate": 0.437455
+        },
+        "mhpg_buy": {
+          "hit_rate": 0.371134,
+          "n": 97,
+          "t5_rate": 0.463918
+        },
+        "morning_star": {
+          "hit_rate": 0.363636,
+          "n": 11,
+          "t5_rate": 0.454545
+        },
+        "piercing": {
+          "hit_rate": 0.290323,
+          "n": 62,
+          "t5_rate": 0.387097
+        },
+        "setup": {
+          "hit_rate": 0.28,
+          "n": 25,
+          "t5_rate": 0.48
+        },
+        "start_count_ge_2": {
+          "hit_rate": 0.289523,
+          "n": 2138,
+          "t5_rate": 0.454163
+        },
+        "start_count_ge_3": {
+          "hit_rate": 0.297209,
+          "n": 609,
+          "t5_rate": 0.464696
+        }
+      }
+    }
+  }
+}

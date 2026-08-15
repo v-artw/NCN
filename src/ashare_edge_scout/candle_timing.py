@@ -116,7 +116,7 @@ def evaluate_t_day_setup(
     pullback = config.get("setup", {}).get("pullback", {})
     fast_ma = int(trend.get("fast_ma", 20))
     slow_ma = int(trend.get("slow_ma", 60))
-    slope_lookback = int(config.get("market_regime", {}).get("ma_slope_lookback", 5))
+    slope_lookback = int(trend.get("ma_slope_lookback", 5))
     high_lookback = int(pullback.get("high_lookback", 10))
     minimum_rows = max(slow_ma, fast_ma + slope_lookback, 21)
     matched_patterns = tuple(

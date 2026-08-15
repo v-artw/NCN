@@ -74,9 +74,9 @@ def validate_config(config: Mapping[str, Any], config_path: str | Path) -> None:
         )
 
     # 验证 mode
-    if config.get("mode") not in ("read_only_research", "read_only_paper"):
+    if config.get("mode") != "read_only_research":
         raise ValueError(
-            f"mode 必须是 'read_only_research' 或 'read_only_paper'，"
+            f"mode 必须是 'read_only_research'，"
             f"当前为 {config.get('mode')!r}"
         )
 
@@ -89,6 +89,24 @@ def validate_config(config: Mapping[str, Any], config_path: str | Path) -> None:
     if config.get("production_enabled") is not False:
         raise ValueError(
             "Edge Scout V1 production tier 必须显式关闭：production_enabled 必须为 false"
+        )
+
+    ranking = config.get("ranking", {})
+    if "score_weights" in ranking:
+        raise ValueError(
+            "ranking.score_weights is unsupported: V1 score components are already contribution points"
+        )
+
+    if "market_regime" in config:
+        raise ValueError(
+            "market_regime is unsupported in V1: use setup.trend for stock trend and "
+            "research_market_regime for non-enforcing benchmark study metadata"
+        )
+
+    research_regime = config.get("research_market_regime", {})
+    if research_regime and research_regime.get("enforcement") != "none":
+        raise ValueError(
+            "research_market_regime.enforcement must be 'none' in Edge Scout V1"
         )
 
 
@@ -116,7 +134,7 @@ def build_strategy_rule_set(config: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "fast_ma": int(config["setup"]["trend"]["fast_ma"]),
         "slow_ma": int(config["setup"]["trend"]["slow_ma"]),
-        "ma_slope_lookback": int(config["market_regime"]["ma_slope_lookback"]),
+        "ma_slope_lookback": int(config["setup"]["trend"]["ma_slope_lookback"]),
         "min_return_20d": float(config["setup"]["trend"]["min_return_20d"]),
         "max_return_20d": float(config["setup"]["trend"]["max_return_20d"]),
         "high_lookback": int(config["setup"]["pullback"]["high_lookback"]),

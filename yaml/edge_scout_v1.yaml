@@ -23,9 +23,11 @@ universe:
   block_limit_up_entries: true
   block_suspensions: true
 
-market_regime:
+# Research metadata only. V1 does not enforce a benchmark regime during scanning.
+research_market_regime:
+  enforcement: none
+  benchmark_code: sh.000001
   close_above_ma: 20
-  ma_slope_lookback: 5
   max_5d_benchmark_drawdown: -0.03
 
 features:
@@ -38,6 +40,7 @@ setup:
   trend:
     fast_ma: 20
     slow_ma: 60
+    ma_slope_lookback: 5
     min_return_20d: 0.03
     max_return_20d: 0.30
   pullback:
@@ -68,10 +71,6 @@ ranking:
   max_production_candidates: 0
   max_watchlist_candidates: 30
   max_near_miss: 100
-  score_weights:
-    base_quality: 0.45
-    timing: 0.35
-    risk: 0.20
 
 # CNstock-inspired research discovery filter. This does not grant production eligibility.
 discovery:
@@ -105,18 +104,8 @@ risk:
   atr_period: 14
   stop_atr_multiple: 1.5
   stop_signal_low_atr_buffer: 0.10
-  min_initial_stop_pct: 0.025
-  max_initial_stop_pct: 0.060
-  time_stop_day: 10
-  time_stop_min_r: 0.5
   partial_take_profit_r: 1.5
   final_take_profit_r: 2.0
-  trailing_ema_period: 5
-  max_holding_trading_days: 15
-  daily_loss_pause_pct: 0.02
-  peak_drawdown_pause_pct: 0.05
-  consecutive_stop_pause_count: 4
-  pause_trading_days: 5
 
 publication:
   write_csv: true

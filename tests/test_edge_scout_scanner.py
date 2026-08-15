@@ -34,6 +34,30 @@ def test_latest_minus_trading_days_auto_selects_t():
     features_with_suspended["sz.000001"] = MagicMock(records=[{"date": d} for d in dates[:3]])
     assert _latest_minus_trading_days(features_with_suspended, latest, days=2) == date(2026, 7, 28)
 
+    records_with_halt = [
+        {"date": d, "tradestatus": "0" if d == date(2026, 7, 29) else "1"}
+        for d in dates
+    ]
+    assert _latest_minus_trading_days(
+        {"sh.600000": MagicMock(records=records_with_halt)}, latest, days=2
+    ) == date(2026, 7, 27)
+
+
+def test_truncated_records_skips_suspension_when_finding_t1():
+    from ashare_edge_scout.scanner import _truncated_records
+
+    records = [
+        {"date": date(2026, 7, 28), "tradestatus": "1"},
+        {"date": date(2026, 7, 29), "tradestatus": "0"},
+        {"date": date(2026, 7, 30), "tradestatus": "1"},
+        {"date": date(2026, 7, 31), "tradestatus": "1"},
+    ]
+
+    truncated, post_t = _truncated_records(records, date(2026, 7, 28))
+
+    assert [row["date"] for row in truncated] == [date(2026, 7, 28)]
+    assert [row["date"] for row in post_t] == [date(2026, 7, 30), date(2026, 7, 31)]
+
 
 def test_run_edge_scout_scan():
     """测试 Edge Scout 扫描运行。"""

@@ -1,7 +1,9 @@
-"""综合评分模块。
+"""Read-only candidate scoring, universe gates, and research tiers.
 
-实现 edge_score = base_quality * 0.45 + timing * 0.35 + risk * 0.20。
-包含硬门槛检查和 A/B/C 分层。
+The three score components are contribution points with nominal caps of
+45/35/20. V1 adds them directly; it does not apply a second set of weights.
+Several originally reserved inputs are unavailable, so each component's
+implemented evidence is documented explicitly below.
 """
 
 from __future__ import annotations
@@ -20,15 +22,12 @@ def compute_base_quality_score(
     industry: str | None = None,
     alpha_score: float = 0.0,
 ) -> float:
-    """计算基础质量分数（0-45 分）。
+    """Compute implemented base-quality evidence within the 0-45 contract.
 
     子项：
       - PMKF 趋势质量：10 分
       - 相对强度：8 分
-      - 流动性安全：7 分
       - 波动控制：6 分
-      - Alpha/部署因子：8 分（MVP 暂不使用）
-      - 行业环境：4 分
       - 数据质量：2 分
 
     参数：
@@ -54,18 +53,9 @@ def compute_base_quality_score(
     elif pmk_features.get("pmk_rsi", 50) > 50:
         score += 4.0
 
-    # 流动性安全（7 分）- MVP 暂不使用
-    score += 0.0  # 占位
-
     # 波动控制（6 分）
     if pmk_features.get("pmk_atr_squeeze"):
         score += 6.0
-
-    # Alpha/部署因子（8 分）- MVP 暂不使用
-    score += 0.0  # 占位
-
-    # 行业环境（4 分）- MVP 暂不使用
-    score += 0.0  # 占位
 
     # 数据质量（2 分）
     if pmk_features.get("pmk_trend_confirmed"):
@@ -148,14 +138,11 @@ def compute_risk_score(
     max_risk_distance: float = 0.060,
     risk_codes: Sequence[str] = (),
 ) -> tuple[float, str]:
-    """计算风险分数（0-20 分）。
+    """Compute implemented risk-quality evidence within the 0-20 contract.
 
     子项：
       - 止损距离合理：6 分（2.5%-6.0% 最优）
       - ATR 风险：4 分
-      - 跳空/涨跌停风险：3 分（MVP 暂不使用）
-      - 组合暴露：3 分（MVP 暂不使用）
-      - 事件/舆情风险：2 分（MVP 暂不使用）
       - 数据来源可信度：2 分
 
     参数：
@@ -192,15 +179,6 @@ def compute_risk_score(
         if 0.01 <= atr_pct <= 0.05:
             score += 4.0
             breakdown_parts.append(f"atr_pct={atr_pct:.4f}")
-
-    # 跳空/涨跌停风险（3 分）- MVP 暂不使用
-    score += 0.0  # 占位
-
-    # 组合暴露（3 分）- MVP 暂不使用
-    score += 0.0  # 占位
-
-    # 事件/舆情风险（2 分）- MVP 暂不使用
-    score += 0.0  # 占位
 
     # 数据来源可信度（2 分）
     score += 2.0  # MVP 假设数据可信
@@ -350,28 +328,60 @@ def apply_hard_gates(
 
     failures: list[str] = []
 
-    # 检查是否主板普通 A 股
-    if not code.startswith(("sh.600", "sh.601", "sh.603", "sh.605", "sz.000", "sz.001", "sz.002", "sz.003")):
+    universe = config.get("universe", {})
+    prefixes = tuple(
+        str(prefix)
+        for prefix in universe.get(
+            "include_prefixes",
+            ("sh.600", "sh.601", "sh.603", "sh.605", "sz.000", "sz.001", "sz.002", "sz.003"),
+        )
+    )
+
+    if not prefixes or not code.startswith(prefixes):
         failures.append("not_main_board_a_share")
 
     # Point-in-time status: historical ST periods must not permanently reject a recovered stock.
-    if records and str(records[-1].get("isST", "0")) == "1":
+    if bool(universe.get("exclude_st", True)) and records and str(records[-1].get("isST", "0")) == "1":
         failures.append("is_st_stock")
 
-    # 检查上市天数（近似）
-    if len(records) < 252:
+    minimum_listing_days = int(universe.get("min_listing_days", 252))
+    if len(records) < minimum_listing_days:
         failures.append("insufficient_listing_days")
 
-    # 检查最新收盘价范围
     if records:
         try:
-            close = float(records[-1].get("close", 0))
-            if close < float(config.get("universe", {}).get("min_close_cny", 5.0)):
+            latest = records[-1]
+            close = float(latest.get("close", 0))
+            if close < float(universe.get("min_close_cny", 5.0)):
                 failures.append("close_too_low")
-            if close > float(config.get("universe", {}).get("max_close_cny", 80.0)):
+            if close > float(universe.get("max_close_cny", 80.0)):
                 failures.append("close_too_high")
+
+            if bool(universe.get("block_suspensions", True)) and str(latest.get("tradestatus", "0")) != "1":
+                failures.append("suspended_on_signal_date")
+
+            recent_60 = records[-60:]
+            trading_days_60 = sum(str(record.get("tradestatus", "0")) == "1" for record in recent_60)
+            if trading_days_60 < int(universe.get("min_trading_days_60", 55)):
+                failures.append("insufficient_trading_days_60")
+
+            minimum_adv20 = float(universe.get("min_adv20_cny", 0.0))
+            if minimum_adv20 > 0:
+                recent_amounts = [float(record.get("amount", 0) or 0) for record in records[-20:]]
+                if len(recent_amounts) < 20:
+                    failures.append("insufficient_adv20_history")
+                elif sum(recent_amounts) / 20.0 < minimum_adv20:
+                    failures.append("adv20_too_low")
+
+            preclose = float(latest.get("preclose", 0) or 0)
+            if (
+                bool(universe.get("block_limit_up_entries", True))
+                and preclose > 0
+                and close / preclose - 1.0 >= 0.095
+            ):
+                failures.append("near_limit_up_on_signal_date")
         except (ValueError, TypeError):
-            pass
+            failures.append("invalid_universe_gate_value")
 
     return len(failures) == 0, failures
 

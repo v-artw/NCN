@@ -215,10 +215,15 @@ def _latest_minus_trading_days(
         last = _to_date(records[-1].get("date"))
         if last is None or last.isoformat() != latest_str:
             continue
+        trading_records = [
+            record
+            for record in records
+            if str(record.get("tradestatus", "1")) == "1"
+        ]
         target_index = -days - 1
-        if len(records) < abs(target_index):
+        if len(trading_records) < abs(target_index):
             continue
-        d = _to_date(records[target_index].get("date"))
+        d = _to_date(trading_records[target_index].get("date"))
         if d is not None:
             candidates.append(d)
     return max(candidates) if candidates else None
@@ -253,13 +258,13 @@ def _truncated_records(
         else:
             break
 
-    # 提取 T+1 可用记录（as_of 之后的第一个交易日）
+    # 提取 as_of 之后的可交易记录，停牌行不属于 T+1/T+2 交易日。
     t1_records: list[dict[str, Any]] = []
     for r in records:
         d = _to_date(r.get("date"))
         if d is None:
             continue
-        if d.isoformat() > as_of_str:
+        if d.isoformat() > as_of_str and str(r.get("tradestatus", "1")) == "1":
             t1_records.append(r)
             if len(t1_records) >= 2:  # 最多到 T+1
                 break

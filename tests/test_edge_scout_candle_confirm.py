@@ -77,7 +77,7 @@ def test_t_day_setup_requires_enabled_pattern_on_signal_bar():
         })
 
     config = {
-        "market_regime": {"ma_slope_lookback": 5},
+        "research_market_regime": {"enforcement": "none"},
         "setup": {
             "trend": {
                 "fast_ma": 20,

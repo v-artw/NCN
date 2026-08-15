@@ -120,10 +120,10 @@ def within_v1_risk_range(
     risk_distance_pct: float,
     config: Mapping[str, Any],
 ) -> bool:
-    """判断参考风险距是否落在 V1 可交易风险范围 [risk_distance_min, risk_distance_max]。
+    """判断参考风险距是否落在 V1 研究展示范围 [risk_distance_min, risk_distance_max]。
 
     默认区间 [0.025, 0.060]（对应 V1 hard_gates risk_distance_min/max）。
-    超出该区间的研究参考价仅供观察，不满足 V1 入场风险约束，
+    超出该区间的研究参考价仅供观察，不满足 V1 研究展示约束，
     不应进入 TOP 参考价展示表。
     """
 

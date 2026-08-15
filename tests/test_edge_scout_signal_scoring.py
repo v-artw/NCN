@@ -162,3 +162,85 @@ def test_apply_hard_gates():
 
     assert not passed
     assert "is_st_stock" in failures
+
+
+def _gate_records(*, amount=120_000_000.0, tradestatus="1", is_st="0", close=10.0, preclose=10.0):
+    return [
+        {
+            "date": f"2026-01-{index + 1:02d}",
+            "code": "sh.600000",
+            "open": 10.0,
+            "high": max(close, 10.1),
+            "low": 9.9,
+            "close": close,
+            "preclose": preclose,
+            "volume": 10_000_000,
+            "amount": amount,
+            "turn": 1.0,
+            "tradestatus": tradestatus,
+            "isST": is_st,
+        }
+        for index in range(300)
+    ]
+
+
+def _gate_config(**overrides):
+    universe = {
+        "include_prefixes": ["sh.600"],
+        "exclude_st": True,
+        "min_listing_days": 252,
+        "min_close_cny": 5.0,
+        "max_close_cny": 80.0,
+        "min_adv20_cny": 100_000_000.0,
+        "min_trading_days_60": 55,
+        "block_limit_up_entries": True,
+        "block_suspensions": True,
+    }
+    universe.update(overrides)
+    return {"universe": universe}
+
+
+@pytest.mark.parametrize(
+    ("records", "failure"),
+    [
+        (_gate_records(amount=50_000_000.0), "adv20_too_low"),
+        (_gate_records(tradestatus="0"), "suspended_on_signal_date"),
+        (_gate_records(close=10.0, preclose=9.0), "near_limit_up_on_signal_date"),
+    ],
+)
+def test_configured_universe_gates_have_stable_rejection_reasons(records, failure):
+    passed, failures = apply_hard_gates("sh.600000", records, _gate_config())
+
+    assert not passed
+    assert failure in failures
+
+
+def test_trading_day_gate_counts_recent_60_rows():
+    records = _gate_records()
+    for record in records[-7:]:
+        record["tradestatus"] = "0"
+    records[-1]["tradestatus"] = "1"
+
+    passed, failures = apply_hard_gates("sh.600000", records, _gate_config())
+
+    assert not passed
+    assert "insufficient_trading_days_60" in failures
+
+
+def test_universe_boolean_gates_respect_config_switches():
+    records = _gate_records(tradestatus="0", is_st="1", close=10.0, preclose=9.0)
+
+    passed, failures = apply_hard_gates(
+        "sh.600000",
+        records,
+        _gate_config(
+            exclude_st=False,
+            block_suspensions=False,
+            block_limit_up_entries=False,
+            min_trading_days_60=0,
+            min_adv20_cny=0,
+        ),
+    )
+
+    assert passed
+    assert failures == []

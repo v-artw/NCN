@@ -1,0 +1,1146 @@
+{
+  "benchmark_regime": "sh.000001",
+  "classification_only": true,
+  "date_range": {
+    "end": null,
+    "start": "2021-01-01"
+  },
+  "known_biases": [
+    "current-file-universe survivorship and historical-membership bias",
+    "forward-adjusted equity history is not point-in-time adjustment-vintage data",
+    "no point-in-time industry, event, fundamental, or delisting data",
+    "overlapping five-day labels are correlated"
+  ],
+  "label": "within_T_plus_1_to_T_plus_5_close_reaches_3pct_up_without_3pct_close_drawdown",
+  "observations_considered": 4157182,
+  "selected_strategy": null,
+  "selection_protocol": {
+    "calibration": "2021-2022 candidate design and sanity check",
+    "holdout": "2025-2026 final one-time evaluation; not used for selection",
+    "min_validation_observations": 800,
+    "min_validation_year_observations": 250,
+    "stability_gate": "positive lift in each validation year and nonnegative aggregate calibration lift",
+    "validation": "2023-2024 strategy selection by 95pct Wilson lower bound"
+  },
+  "strategies": {
+    "admitted_baseline": {
+      "2021": {
+        "false_positive_rate": 0.654484,
+        "false_positives": 151127,
+        "hit_rate": 0.345516,
+        "hits": 79783,
+        "lift_vs_admitted": 0.0,
+        "n": 230910,
+        "t5_up_rate": 0.467455,
+        "wilson_lower_95": 0.343579
+      },
+      "2022": {
+        "false_positive_rate": 0.678768,
+        "false_positives": 185715,
+        "hit_rate": 0.321232,
+        "hits": 87891,
+        "lift_vs_admitted": 0.0,
+        "n": 273606,
+        "t5_up_rate": 0.438141,
+        "wilson_lower_95": 0.319485
+      },
+      "2023": {
+        "false_positive_rate": 0.72476,
+        "false_positives": 186954,
+        "hit_rate": 0.27524,
+        "hits": 70999,
+        "lift_vs_admitted": 0.0,
+        "n": 257953,
+        "t5_up_rate": 0.429315,
+        "wilson_lower_95": 0.27352
+      },
+      "2024": {
+        "false_positive_rate": 0.674458,
+        "false_positives": 187724,
+        "hit_rate": 0.325542,
+        "hits": 90609,
+        "lift_vs_admitted": 0.0,
+        "n": 278333,
+        "t5_up_rate": 0.448305,
+        "wilson_lower_95": 0.323803
+      },
+      "2025": {
+        "false_positive_rate": 0.677613,
+        "false_positives": 268856,
+        "hit_rate": 0.322387,
+        "hits": 127913,
+        "lift_vs_admitted": 0.0,
+        "n": 396769,
+        "t5_up_rate": 0.505934,
+        "wilson_lower_95": 0.320934
+      },
+      "2026": {
+        "false_positive_rate": 0.680501,
+        "false_positives": 162113,
+        "hit_rate": 0.319499,
+        "hits": 76113,
+        "lift_vs_admitted": 0.0,
+        "n": 238226,
+        "t5_up_rate": 0.444653,
+        "wilson_lower_95": 0.31763
+      },
+      "calibration": {
+        "false_positive_rate": 0.667654,
+        "false_positives": 336842,
+        "hit_rate": 0.332346,
+        "hits": 167674,
+        "lift_vs_admitted": 0.0,
+        "n": 504516,
+        "t5_up_rate": 0.451558,
+        "wilson_lower_95": 0.331048
+      },
+      "holdout": {
+        "false_positive_rate": 0.678697,
+        "false_positives": 430969,
+        "hit_rate": 0.321303,
+        "hits": 204026,
+        "lift_vs_admitted": 0.0,
+        "n": 634995,
+        "t5_up_rate": 0.482944,
+        "wilson_lower_95": 0.320156
+      },
+      "validation": {
+        "false_positive_rate": 0.698653,
+        "false_positives": 374678,
+        "hit_rate": 0.301347,
+        "hits": 161608,
+        "lift_vs_admitted": 0.0,
+        "n": 536286,
+        "t5_up_rate": 0.439171,
+        "wilson_lower_95": 0.30012
+      }
+    },
+    "mhpg": {
+      "2021": {
+        "false_positive_rate": 0.640902,
+        "false_positives": 1592,
+        "hit_rate": 0.359098,
+        "hits": 892,
+        "lift_vs_admitted": 0.013582,
+        "n": 2484,
+        "t5_up_rate": 0.452496,
+        "wilson_lower_95": 0.340463
+      },
+      "2022": {
+        "false_positive_rate": 0.691633,
+        "false_positives": 1893,
+        "hit_rate": 0.308367,
+        "hits": 844,
+        "lift_vs_admitted": -0.012865,
+        "n": 2737,
+        "t5_up_rate": 0.407746,
+        "wilson_lower_95": 0.291344
+      },
+      "2023": {
+        "false_positive_rate": 0.719833,
+        "false_positives": 2243,
+        "hit_rate": 0.280167,
+        "hits": 873,
+        "lift_vs_admitted": 0.004927,
+        "n": 3116,
+        "t5_up_rate": 0.410141,
+        "wilson_lower_95": 0.264677
+      },
+      "2024": {
+        "false_positive_rate": 0.682171,
+        "false_positives": 2904,
+        "hit_rate": 0.317829,
+        "hits": 1353,
+        "lift_vs_admitted": -0.007713,
+        "n": 4257,
+        "t5_up_rate": 0.436458,
+        "wilson_lower_95": 0.304011
+      },
+      "2025": {
+        "false_positive_rate": 0.679108,
+        "false_positives": 4476,
+        "hit_rate": 0.320892,
+        "hits": 2115,
+        "lift_vs_admitted": -0.001495,
+        "n": 6591,
+        "t5_up_rate": 0.485055,
+        "wilson_lower_95": 0.309729
+      },
+      "2026": {
+        "false_positive_rate": 0.658463,
+        "false_positives": 1525,
+        "hit_rate": 0.341537,
+        "hits": 791,
+        "lift_vs_admitted": 0.022038,
+        "n": 2316,
+        "t5_up_rate": 0.434801,
+        "wilson_lower_95": 0.3225
+      },
+      "calibration": {
+        "false_positive_rate": 0.667497,
+        "false_positives": 3485,
+        "hit_rate": 0.332503,
+        "hits": 1736,
+        "lift_vs_admitted": 0.000157,
+        "n": 5221,
+        "t5_up_rate": 0.429037,
+        "wilson_lower_95": 0.319851
+      },
+      "holdout": {
+        "false_positive_rate": 0.67374,
+        "false_positives": 6001,
+        "hit_rate": 0.32626,
+        "hits": 2906,
+        "lift_vs_admitted": 0.004957,
+        "n": 8907,
+        "t5_up_rate": 0.471988,
+        "wilson_lower_95": 0.3166
+      },
+      "validation": {
+        "false_positive_rate": 0.698088,
+        "false_positives": 5147,
+        "hit_rate": 0.301912,
+        "hits": 2226,
+        "lift_vs_admitted": 0.000565,
+        "n": 7373,
+        "t5_up_rate": 0.425336,
+        "wilson_lower_95": 0.291539
+      }
+    },
+    "mhpg_confirmed_quality": {
+      "2021": {
+        "false_positive_rate": 0.686869,
+        "false_positives": 272,
+        "hit_rate": 0.313131,
+        "hits": 124,
+        "lift_vs_admitted": -0.032385,
+        "n": 396,
+        "t5_up_rate": 0.411616,
+        "wilson_lower_95": 0.269433
+      },
+      "2022": {
+        "false_positive_rate": 0.747664,
+        "false_positives": 160,
+        "hit_rate": 0.252336,
+        "hits": 54,
+        "lift_vs_admitted": -0.068896,
+        "n": 214,
+        "t5_up_rate": 0.345794,
+        "wilson_lower_95": 0.198858
+      },
+      "2023": {
+        "false_positive_rate": 0.77551,
+        "false_positives": 304,
+        "hit_rate": 0.22449,
+        "hits": 88,
+        "lift_vs_admitted": -0.05075,
+        "n": 392,
+        "t5_up_rate": 0.339286,
+        "wilson_lower_95": 0.185972
+      },
+      "2024": {
+        "false_positive_rate": 0.63913,
+        "false_positives": 588,
+        "hit_rate": 0.36087,
+        "hits": 332,
+        "lift_vs_admitted": 0.035328,
+        "n": 920,
+        "t5_up_rate": 0.479348,
+        "wilson_lower_95": 0.330474
+      },
+      "2025": {
+        "false_positive_rate": 0.709677,
+        "false_positives": 1298,
+        "hit_rate": 0.290323,
+        "hits": 531,
+        "lift_vs_admitted": -0.032064,
+        "n": 1829,
+        "t5_up_rate": 0.458174,
+        "wilson_lower_95": 0.269977
+      },
+      "2026": {
+        "false_positive_rate": 0.689008,
+        "false_positives": 257,
+        "hit_rate": 0.310992,
+        "hits": 116,
+        "lift_vs_admitted": -0.008507,
+        "n": 373,
+        "t5_up_rate": 0.402145,
+        "wilson_lower_95": 0.266142
+      },
+      "calibration": {
+        "false_positive_rate": 0.708197,
+        "false_positives": 432,
+        "hit_rate": 0.291803,
+        "hits": 178,
+        "lift_vs_admitted": -0.040543,
+        "n": 610,
+        "t5_up_rate": 0.388525,
+        "wilson_lower_95": 0.25712
+      },
+      "holdout": {
+        "false_positive_rate": 0.706176,
+        "false_positives": 1555,
+        "hit_rate": 0.293824,
+        "hits": 647,
+        "lift_vs_admitted": -0.027479,
+        "n": 2202,
+        "t5_up_rate": 0.448683,
+        "wilson_lower_95": 0.27517
+      },
+      "validation": {
+        "false_positive_rate": 0.679878,
+        "false_positives": 892,
+        "hit_rate": 0.320122,
+        "hits": 420,
+        "lift_vs_admitted": 0.018775,
+        "n": 1312,
+        "t5_up_rate": 0.4375,
+        "wilson_lower_95": 0.295434
+      }
+    },
+    "mhpg_regime": {
+      "2021": {
+        "false_positive_rate": 0.658849,
+        "false_positives": 618,
+        "hit_rate": 0.341151,
+        "hits": 320,
+        "lift_vs_admitted": -0.004365,
+        "n": 938,
+        "t5_up_rate": 0.41791,
+        "wilson_lower_95": 0.311514
+      },
+      "2022": {
+        "false_positive_rate": 0.764415,
+        "false_positives": 464,
+        "hit_rate": 0.235585,
+        "hits": 143,
+        "lift_vs_admitted": -0.085647,
+        "n": 607,
+        "t5_up_rate": 0.311367,
+        "wilson_lower_95": 0.203553
+      },
+      "2023": {
+        "false_positive_rate": 0.758947,
+        "false_positives": 721,
+        "hit_rate": 0.241053,
+        "hits": 229,
+        "lift_vs_admitted": -0.034187,
+        "n": 950,
+        "t5_up_rate": 0.336842,
+        "wilson_lower_95": 0.214931
+      },
+      "2024": {
+        "false_positive_rate": 0.664912,
+        "false_positives": 1516,
+        "hit_rate": 0.335088,
+        "hits": 764,
+        "lift_vs_admitted": 0.009546,
+        "n": 2280,
+        "t5_up_rate": 0.459211,
+        "wilson_lower_95": 0.316004
+      },
+      "2025": {
+        "false_positive_rate": 0.697943,
+        "false_positives": 3258,
+        "hit_rate": 0.302057,
+        "hits": 1410,
+        "lift_vs_admitted": -0.02033,
+        "n": 4668,
+        "t5_up_rate": 0.47108,
+        "wilson_lower_95": 0.289052
+      },
+      "2026": {
+        "false_positive_rate": 0.673287,
+        "false_positives": 678,
+        "hit_rate": 0.326713,
+        "hits": 329,
+        "lift_vs_admitted": 0.007214,
+        "n": 1007,
+        "t5_up_rate": 0.387289,
+        "wilson_lower_95": 0.298451
+      },
+      "calibration": {
+        "false_positive_rate": 0.700324,
+        "false_positives": 1082,
+        "hit_rate": 0.299676,
+        "hits": 463,
+        "lift_vs_admitted": -0.03267,
+        "n": 1545,
+        "t5_up_rate": 0.376052,
+        "wilson_lower_95": 0.277352
+      },
+      "holdout": {
+        "false_positive_rate": 0.693568,
+        "false_positives": 3936,
+        "hit_rate": 0.306432,
+        "hits": 1739,
+        "lift_vs_admitted": -0.014871,
+        "n": 5675,
+        "t5_up_rate": 0.456211,
+        "wilson_lower_95": 0.294571
+      },
+      "validation": {
+        "false_positive_rate": 0.69257,
+        "false_positives": 2237,
+        "hit_rate": 0.30743,
+        "hits": 993,
+        "lift_vs_admitted": 0.006083,
+        "n": 3230,
+        "t5_up_rate": 0.42322,
+        "wilson_lower_95": 0.291754
+      }
+    },
+    "mhpg_regime_no_risk": {
+      "2021": {
+        "false_positive_rate": 0.66285,
+        "false_positives": 521,
+        "hit_rate": 0.33715,
+        "hits": 265,
+        "lift_vs_admitted": -0.008366,
+        "n": 786,
+        "t5_up_rate": 0.409669,
+        "wilson_lower_95": 0.304964
+      },
+      "2022": {
+        "false_positive_rate": 0.751938,
+        "false_positives": 388,
+        "hit_rate": 0.248062,
+        "hits": 128,
+        "lift_vs_admitted": -0.07317,
+        "n": 516,
+        "t5_up_rate": 0.323643,
+        "wilson_lower_95": 0.21275
+      },
+      "2023": {
+        "false_positive_rate": 0.76125,
+        "false_positives": 609,
+        "hit_rate": 0.23875,
+        "hits": 191,
+        "lift_vs_admitted": -0.03649,
+        "n": 800,
+        "t5_up_rate": 0.34375,
+        "wilson_lower_95": 0.2105
+      },
+      "2024": {
+        "false_positive_rate": 0.677604,
+        "false_positives": 1301,
+        "hit_rate": 0.322396,
+        "hits": 619,
+        "lift_vs_admitted": -0.003146,
+        "n": 1920,
+        "t5_up_rate": 0.447396,
+        "wilson_lower_95": 0.301862
+      },
+      "2025": {
+        "false_positive_rate": 0.702286,
+        "false_positives": 2734,
+        "hit_rate": 0.297714,
+        "hits": 1159,
+        "lift_vs_admitted": -0.024673,
+        "n": 3893,
+        "t5_up_rate": 0.467249,
+        "wilson_lower_95": 0.283555
+      },
+      "2026": {
+        "false_positive_rate": 0.679341,
+        "false_positives": 536,
+        "hit_rate": 0.320659,
+        "hits": 253,
+        "lift_vs_admitted": 0.00116,
+        "n": 789,
+        "t5_up_rate": 0.387833,
+        "wilson_lower_95": 0.289028
+      },
+      "calibration": {
+        "false_positive_rate": 0.698157,
+        "false_positives": 909,
+        "hit_rate": 0.301843,
+        "hits": 393,
+        "lift_vs_admitted": -0.030503,
+        "n": 1302,
+        "t5_up_rate": 0.375576,
+        "wilson_lower_95": 0.277521
+      },
+      "holdout": {
+        "false_positive_rate": 0.698419,
+        "false_positives": 3270,
+        "hit_rate": 0.301581,
+        "hits": 1412,
+        "lift_vs_admitted": -0.019722,
+        "n": 4682,
+        "t5_up_rate": 0.453866,
+        "wilson_lower_95": 0.288601
+      },
+      "validation": {
+        "false_positive_rate": 0.702206,
+        "false_positives": 1910,
+        "hit_rate": 0.297794,
+        "hits": 810,
+        "lift_vs_admitted": -0.003553,
+        "n": 2720,
+        "t5_up_rate": 0.416912,
+        "wilson_lower_95": 0.280904
+      }
+    },
+    "mhpg_regime_no_risk_healthy_volume": {
+      "2021": {
+        "false_positive_rate": 0.666134,
+        "false_positives": 417,
+        "hit_rate": 0.333866,
+        "hits": 209,
+        "lift_vs_admitted": -0.01165,
+        "n": 626,
+        "t5_up_rate": 0.404153,
+        "wilson_lower_95": 0.298035
+      },
+      "2022": {
+        "false_positive_rate": 0.73297,
+        "false_positives": 269,
+        "hit_rate": 0.26703,
+        "hits": 98,
+        "lift_vs_admitted": -0.054202,
+        "n": 367,
+        "t5_up_rate": 0.346049,
+        "wilson_lower_95": 0.22435
+      },
+      "2023": {
+        "false_positive_rate": 0.763385,
+        "false_positives": 442,
+        "hit_rate": 0.236615,
+        "hits": 137,
+        "lift_vs_admitted": -0.038625,
+        "n": 579,
+        "t5_up_rate": 0.352332,
+        "wilson_lower_95": 0.203803
+      },
+      "2024": {
+        "false_positive_rate": 0.646059,
+        "false_positives": 836,
+        "hit_rate": 0.353941,
+        "hits": 458,
+        "lift_vs_admitted": 0.028399,
+        "n": 1294,
+        "t5_up_rate": 0.464451,
+        "wilson_lower_95": 0.328354
+      },
+      "2025": {
+        "false_positive_rate": 0.698751,
+        "false_positives": 1902,
+        "hit_rate": 0.301249,
+        "hits": 820,
+        "lift_vs_admitted": -0.021138,
+        "n": 2722,
+        "t5_up_rate": 0.469508,
+        "wilson_lower_95": 0.284303
+      },
+      "2026": {
+        "false_positive_rate": 0.689781,
+        "false_positives": 378,
+        "hit_rate": 0.310219,
+        "hits": 170,
+        "lift_vs_admitted": -0.00928,
+        "n": 548,
+        "t5_up_rate": 0.390511,
+        "wilson_lower_95": 0.272922
+      },
+      "calibration": {
+        "false_positive_rate": 0.690836,
+        "false_positives": 686,
+        "hit_rate": 0.309164,
+        "hits": 307,
+        "lift_vs_admitted": -0.023182,
+        "n": 993,
+        "t5_up_rate": 0.382679,
+        "wilson_lower_95": 0.281201
+      },
+      "holdout": {
+        "false_positive_rate": 0.697248,
+        "false_positives": 2280,
+        "hit_rate": 0.302752,
+        "hits": 990,
+        "lift_vs_admitted": -0.018551,
+        "n": 3270,
+        "t5_up_rate": 0.456269,
+        "wilson_lower_95": 0.287244
+      },
+      "validation": {
+        "false_positive_rate": 0.682328,
+        "false_positives": 1278,
+        "hit_rate": 0.317672,
+        "hits": 595,
+        "lift_vs_admitted": 0.016325,
+        "n": 1873,
+        "t5_up_rate": 0.429792,
+        "wilson_lower_95": 0.296979
+      }
+    },
+    "mhpg_regime_no_risk_liquid": {
+      "2021": {
+        "false_positive_rate": 0.66285,
+        "false_positives": 521,
+        "hit_rate": 0.33715,
+        "hits": 265,
+        "lift_vs_admitted": -0.008366,
+        "n": 786,
+        "t5_up_rate": 0.409669,
+        "wilson_lower_95": 0.304964
+      },
+      "2022": {
+        "false_positive_rate": 0.751938,
+        "false_positives": 388,
+        "hit_rate": 0.248062,
+        "hits": 128,
+        "lift_vs_admitted": -0.07317,
+        "n": 516,
+        "t5_up_rate": 0.323643,
+        "wilson_lower_95": 0.21275
+      },
+      "2023": {
+        "false_positive_rate": 0.76125,
+        "false_positives": 609,
+        "hit_rate": 0.23875,
+        "hits": 191,
+        "lift_vs_admitted": -0.03649,
+        "n": 800,
+        "t5_up_rate": 0.34375,
+        "wilson_lower_95": 0.2105
+      },
+      "2024": {
+        "false_positive_rate": 0.677604,
+        "false_positives": 1301,
+        "hit_rate": 0.322396,
+        "hits": 619,
+        "lift_vs_admitted": -0.003146,
+        "n": 1920,
+        "t5_up_rate": 0.447396,
+        "wilson_lower_95": 0.301862
+      },
+      "2025": {
+        "false_positive_rate": 0.702286,
+        "false_positives": 2734,
+        "hit_rate": 0.297714,
+        "hits": 1159,
+        "lift_vs_admitted": -0.024673,
+        "n": 3893,
+        "t5_up_rate": 0.467249,
+        "wilson_lower_95": 0.283555
+      },
+      "2026": {
+        "false_positive_rate": 0.679341,
+        "false_positives": 536,
+        "hit_rate": 0.320659,
+        "hits": 253,
+        "lift_vs_admitted": 0.00116,
+        "n": 789,
+        "t5_up_rate": 0.387833,
+        "wilson_lower_95": 0.289028
+      },
+      "calibration": {
+        "false_positive_rate": 0.698157,
+        "false_positives": 909,
+        "hit_rate": 0.301843,
+        "hits": 393,
+        "lift_vs_admitted": -0.030503,
+        "n": 1302,
+        "t5_up_rate": 0.375576,
+        "wilson_lower_95": 0.277521
+      },
+      "holdout": {
+        "false_positive_rate": 0.698419,
+        "false_positives": 3270,
+        "hit_rate": 0.301581,
+        "hits": 1412,
+        "lift_vs_admitted": -0.019722,
+        "n": 4682,
+        "t5_up_rate": 0.453866,
+        "wilson_lower_95": 0.288601
+      },
+      "validation": {
+        "false_positive_rate": 0.702206,
+        "false_positives": 1910,
+        "hit_rate": 0.297794,
+        "hits": 810,
+        "lift_vs_admitted": -0.003553,
+        "n": 2720,
+        "t5_up_rate": 0.416912,
+        "wilson_lower_95": 0.280904
+      }
+    },
+    "mhpg_regime_no_risk_not_extended": {
+      "2021": {
+        "false_positive_rate": 0.666154,
+        "false_positives": 433,
+        "hit_rate": 0.333846,
+        "hits": 217,
+        "lift_vs_admitted": -0.01167,
+        "n": 650,
+        "t5_up_rate": 0.424615,
+        "wilson_lower_95": 0.298662
+      },
+      "2022": {
+        "false_positive_rate": 0.75286,
+        "false_positives": 329,
+        "hit_rate": 0.24714,
+        "hits": 108,
+        "lift_vs_admitted": -0.074092,
+        "n": 437,
+        "t5_up_rate": 0.327231,
+        "wilson_lower_95": 0.209016
+      },
+      "2023": {
+        "false_positive_rate": 0.769755,
+        "false_positives": 565,
+        "hit_rate": 0.230245,
+        "hits": 169,
+        "lift_vs_admitted": -0.044995,
+        "n": 734,
+        "t5_up_rate": 0.337875,
+        "wilson_lower_95": 0.20124
+      },
+      "2024": {
+        "false_positive_rate": 0.680493,
+        "false_positives": 1214,
+        "hit_rate": 0.319507,
+        "hits": 570,
+        "lift_vs_admitted": -0.006035,
+        "n": 1784,
+        "t5_up_rate": 0.446188,
+        "wilson_lower_95": 0.298277
+      },
+      "2025": {
+        "false_positive_rate": 0.705898,
+        "false_positives": 2573,
+        "hit_rate": 0.294102,
+        "hits": 1072,
+        "lift_vs_admitted": -0.028285,
+        "n": 3645,
+        "t5_up_rate": 0.470233,
+        "wilson_lower_95": 0.279532
+      },
+      "2026": {
+        "false_positive_rate": 0.673157,
+        "false_positives": 484,
+        "hit_rate": 0.326843,
+        "hits": 235,
+        "lift_vs_admitted": 0.007344,
+        "n": 719,
+        "t5_up_rate": 0.396384,
+        "wilson_lower_95": 0.293556
+      },
+      "calibration": {
+        "false_positive_rate": 0.701012,
+        "false_positives": 762,
+        "hit_rate": 0.298988,
+        "hits": 325,
+        "lift_vs_admitted": -0.033358,
+        "n": 1087,
+        "t5_up_rate": 0.385465,
+        "wilson_lower_95": 0.272518
+      },
+      "holdout": {
+        "false_positive_rate": 0.700504,
+        "false_positives": 3057,
+        "hit_rate": 0.299496,
+        "hits": 1307,
+        "lift_vs_admitted": -0.021807,
+        "n": 4364,
+        "t5_up_rate": 0.458066,
+        "wilson_lower_95": 0.286087
+      },
+      "validation": {
+        "false_positive_rate": 0.706513,
+        "false_positives": 1779,
+        "hit_rate": 0.293487,
+        "hits": 739,
+        "lift_vs_admitted": -0.00786,
+        "n": 2518,
+        "t5_up_rate": 0.414615,
+        "wilson_lower_95": 0.276026
+      }
+    },
+    "mhpg_regime_no_risk_quality_close": {
+      "2021": {
+        "false_positive_rate": 0.6843,
+        "false_positives": 401,
+        "hit_rate": 0.3157,
+        "hits": 185,
+        "lift_vs_admitted": -0.029816,
+        "n": 586,
+        "t5_up_rate": 0.390785,
+        "wilson_lower_95": 0.279371
+      },
+      "2022": {
+        "false_positive_rate": 0.748555,
+        "false_positives": 259,
+        "hit_rate": 0.251445,
+        "hits": 87,
+        "lift_vs_admitted": -0.069787,
+        "n": 346,
+        "t5_up_rate": 0.323699,
+        "wilson_lower_95": 0.20863
+      },
+      "2023": {
+        "false_positive_rate": 0.768966,
+        "false_positives": 446,
+        "hit_rate": 0.231034,
+        "hits": 134,
+        "lift_vs_admitted": -0.044206,
+        "n": 580,
+        "t5_up_rate": 0.334483,
+        "wilson_lower_95": 0.198568
+      },
+      "2024": {
+        "false_positive_rate": 0.669231,
+        "false_positives": 957,
+        "hit_rate": 0.330769,
+        "hits": 473,
+        "lift_vs_admitted": 0.005227,
+        "n": 1430,
+        "t5_up_rate": 0.457343,
+        "wilson_lower_95": 0.306865
+      },
+      "2025": {
+        "false_positive_rate": 0.713606,
+        "false_positives": 1951,
+        "hit_rate": 0.286394,
+        "hits": 783,
+        "lift_vs_admitted": -0.035993,
+        "n": 2734,
+        "t5_up_rate": 0.456474,
+        "wilson_lower_95": 0.269757
+      },
+      "2026": {
+        "false_positive_rate": 0.68,
+        "false_positives": 391,
+        "hit_rate": 0.32,
+        "hits": 184,
+        "lift_vs_admitted": 0.000501,
+        "n": 575,
+        "t5_up_rate": 0.396522,
+        "wilson_lower_95": 0.283174
+      },
+      "calibration": {
+        "false_positive_rate": 0.708155,
+        "false_positives": 660,
+        "hit_rate": 0.291845,
+        "hits": 272,
+        "lift_vs_admitted": -0.040501,
+        "n": 932,
+        "t5_up_rate": 0.36588,
+        "wilson_lower_95": 0.26356
+      },
+      "holdout": {
+        "false_positive_rate": 0.707767,
+        "false_positives": 2342,
+        "hit_rate": 0.292233,
+        "hits": 967,
+        "lift_vs_admitted": -0.02907,
+        "n": 3309,
+        "t5_up_rate": 0.446056,
+        "wilson_lower_95": 0.276985
+      },
+      "validation": {
+        "false_positive_rate": 0.69801,
+        "false_positives": 1403,
+        "hit_rate": 0.30199,
+        "hits": 607,
+        "lift_vs_admitted": 0.000643,
+        "n": 2010,
+        "t5_up_rate": 0.421891,
+        "wilson_lower_95": 0.282312
+      }
+    },
+    "setup": {
+      "2021": {
+        "false_positive_rate": 0.621849,
+        "false_positives": 370,
+        "hit_rate": 0.378151,
+        "hits": 225,
+        "lift_vs_admitted": 0.032635,
+        "n": 595,
+        "t5_up_rate": 0.477311,
+        "wilson_lower_95": 0.340085
+      },
+      "2022": {
+        "false_positive_rate": 0.679818,
+        "false_positives": 448,
+        "hit_rate": 0.320182,
+        "hits": 211,
+        "lift_vs_admitted": -0.00105,
+        "n": 659,
+        "t5_up_rate": 0.409712,
+        "wilson_lower_95": 0.285691
+      },
+      "2023": {
+        "false_positive_rate": 0.748318,
+        "false_positives": 556,
+        "hit_rate": 0.251682,
+        "hits": 187,
+        "lift_vs_admitted": -0.023558,
+        "n": 743,
+        "t5_up_rate": 0.366083,
+        "wilson_lower_95": 0.221808
+      },
+      "2024": {
+        "false_positive_rate": 0.650685,
+        "false_positives": 475,
+        "hit_rate": 0.349315,
+        "hits": 255,
+        "lift_vs_admitted": 0.023773,
+        "n": 730,
+        "t5_up_rate": 0.439726,
+        "wilson_lower_95": 0.3156
+      },
+      "2025": {
+        "false_positive_rate": 0.653846,
+        "false_positives": 714,
+        "hit_rate": 0.346154,
+        "hits": 378,
+        "lift_vs_admitted": 0.023767,
+        "n": 1092,
+        "t5_up_rate": 0.470696,
+        "wilson_lower_95": 0.31852
+      },
+      "2026": {
+        "false_positive_rate": 0.682119,
+        "false_positives": 309,
+        "hit_rate": 0.317881,
+        "hits": 144,
+        "lift_vs_admitted": -0.001618,
+        "n": 453,
+        "t5_up_rate": 0.432671,
+        "wilson_lower_95": 0.276684
+      },
+      "calibration": {
+        "false_positive_rate": 0.652313,
+        "false_positives": 818,
+        "hit_rate": 0.347687,
+        "hits": 436,
+        "lift_vs_admitted": 0.015341,
+        "n": 1254,
+        "t5_up_rate": 0.441786,
+        "wilson_lower_95": 0.32183
+      },
+      "holdout": {
+        "false_positive_rate": 0.662136,
+        "false_positives": 1023,
+        "hit_rate": 0.337864,
+        "hits": 522,
+        "lift_vs_admitted": 0.016561,
+        "n": 1545,
+        "t5_up_rate": 0.459547,
+        "wilson_lower_95": 0.314707
+      },
+      "validation": {
+        "false_positive_rate": 0.699932,
+        "false_positives": 1031,
+        "hit_rate": 0.300068,
+        "hits": 442,
+        "lift_vs_admitted": -0.001279,
+        "n": 1473,
+        "t5_up_rate": 0.40258,
+        "wilson_lower_95": 0.277209
+      }
+    },
+    "start2_regime_no_risk_liquid": {
+      "2021": {
+        "false_positive_rate": 0.692927,
+        "false_positives": 6632,
+        "hit_rate": 0.307073,
+        "hits": 2939,
+        "lift_vs_admitted": -0.038443,
+        "n": 9571,
+        "t5_up_rate": 0.415631,
+        "wilson_lower_95": 0.297911
+      },
+      "2022": {
+        "false_positive_rate": 0.697248,
+        "false_positives": 4104,
+        "hit_rate": 0.302752,
+        "hits": 1782,
+        "lift_vs_admitted": -0.01848,
+        "n": 5886,
+        "t5_up_rate": 0.428474,
+        "wilson_lower_95": 0.291146
+      },
+      "2023": {
+        "false_positive_rate": 0.762007,
+        "false_positives": 6045,
+        "hit_rate": 0.237993,
+        "hits": 1888,
+        "lift_vs_admitted": -0.037247,
+        "n": 7933,
+        "t5_up_rate": 0.371234,
+        "wilson_lower_95": 0.22875
+      },
+      "2024": {
+        "false_positive_rate": 0.689631,
+        "false_positives": 6857,
+        "hit_rate": 0.310369,
+        "hits": 3086,
+        "lift_vs_admitted": -0.015173,
+        "n": 9943,
+        "t5_up_rate": 0.413256,
+        "wilson_lower_95": 0.30135
+      },
+      "2025": {
+        "false_positive_rate": 0.704405,
+        "false_positives": 20084,
+        "hit_rate": 0.295595,
+        "hits": 8428,
+        "lift_vs_admitted": -0.026792,
+        "n": 28512,
+        "t5_up_rate": 0.505015,
+        "wilson_lower_95": 0.290326
+      },
+      "2026": {
+        "false_positive_rate": 0.710325,
+        "false_positives": 5483,
+        "hit_rate": 0.289675,
+        "hits": 2236,
+        "lift_vs_admitted": -0.029824,
+        "n": 7719,
+        "t5_up_rate": 0.386967,
+        "wilson_lower_95": 0.279662
+      },
+      "calibration": {
+        "false_positive_rate": 0.694572,
+        "false_positives": 10736,
+        "hit_rate": 0.305428,
+        "hits": 4721,
+        "lift_vs_admitted": -0.026918,
+        "n": 15457,
+        "t5_up_rate": 0.420521,
+        "wilson_lower_95": 0.298216
+      },
+      "holdout": {
+        "false_positive_rate": 0.705666,
+        "false_positives": 25567,
+        "hit_rate": 0.294334,
+        "hits": 10664,
+        "lift_vs_admitted": -0.026969,
+        "n": 36231,
+        "t5_up_rate": 0.479865,
+        "wilson_lower_95": 0.289663
+      },
+      "validation": {
+        "false_positive_rate": 0.72175,
+        "false_positives": 12902,
+        "hit_rate": 0.27825,
+        "hits": 4974,
+        "lift_vs_admitted": -0.023097,
+        "n": 17876,
+        "t5_up_rate": 0.394607,
+        "wilson_lower_95": 0.271729
+      }
+    }
+  },
+  "study": "full_universe_joint_strategy_precision_v1",
+  "universe": {
+    "all_eligible_dates": true,
+    "current_main_board_files": 3196
+  },
+  "validation_ranking": [
+    {
+      "calibration_lift": -0.023182,
+      "eligible": false,
+      "minimum_validation_year_lift": -0.038625,
+      "minimum_validation_year_n": 579,
+      "strategy": "mhpg_regime_no_risk_healthy_volume",
+      "validation_hit_rate": 0.317672,
+      "validation_n": 1873,
+      "validation_wilson_lower_95": 0.296979
+    },
+    {
+      "calibration_lift": -0.040543,
+      "eligible": false,
+      "minimum_validation_year_lift": -0.05075,
+      "minimum_validation_year_n": 392,
+      "strategy": "mhpg_confirmed_quality",
+      "validation_hit_rate": 0.320122,
+      "validation_n": 1312,
+      "validation_wilson_lower_95": 0.295434
+    },
+    {
+      "calibration_lift": -0.03267,
+      "eligible": false,
+      "minimum_validation_year_lift": -0.034187,
+      "minimum_validation_year_n": 950,
+      "strategy": "mhpg_regime",
+      "validation_hit_rate": 0.30743,
+      "validation_n": 3230,
+      "validation_wilson_lower_95": 0.291754
+    },
+    {
+      "calibration_lift": 0.000157,
+      "eligible": false,
+      "minimum_validation_year_lift": -0.007713,
+      "minimum_validation_year_n": 3116,
+      "strategy": "mhpg",
+      "validation_hit_rate": 0.301912,
+      "validation_n": 7373,
+      "validation_wilson_lower_95": 0.291539
+    },
+    {
+      "calibration_lift": -0.040501,
+      "eligible": false,
+      "minimum_validation_year_lift": -0.044206,
+      "minimum_validation_year_n": 580,
+      "strategy": "mhpg_regime_no_risk_quality_close",
+      "validation_hit_rate": 0.30199,
+      "validation_n": 2010,
+      "validation_wilson_lower_95": 0.282312
+    },
+    {
+      "calibration_lift": -0.030503,
+      "eligible": false,
+      "minimum_validation_year_lift": -0.03649,
+      "minimum_validation_year_n": 800,
+      "strategy": "mhpg_regime_no_risk",
+      "validation_hit_rate": 0.297794,
+      "validation_n": 2720,
+      "validation_wilson_lower_95": 0.280904
+    },
+    {
+      "calibration_lift": -0.030503,
+      "eligible": false,
+      "minimum_validation_year_lift": -0.03649,
+      "minimum_validation_year_n": 800,
+      "strategy": "mhpg_regime_no_risk_liquid",
+      "validation_hit_rate": 0.297794,
+      "validation_n": 2720,
+      "validation_wilson_lower_95": 0.280904
+    },
+    {
+      "calibration_lift": 0.015341,
+      "eligible": false,
+      "minimum_validation_year_lift": -0.023558,
+      "minimum_validation_year_n": 730,
+      "strategy": "setup",
+      "validation_hit_rate": 0.300068,
+      "validation_n": 1473,
+      "validation_wilson_lower_95": 0.277209
+    },
+    {
+      "calibration_lift": -0.033358,
+      "eligible": false,
+      "minimum_validation_year_lift": -0.044995,
+      "minimum_validation_year_n": 734,
+      "strategy": "mhpg_regime_no_risk_not_extended",
+      "validation_hit_rate": 0.293487,
+      "validation_n": 2518,
+      "validation_wilson_lower_95": 0.276026
+    },
+    {
+      "calibration_lift": -0.026918,
+      "eligible": false,
+      "minimum_validation_year_lift": -0.037247,
+      "minimum_validation_year_n": 7933,
+      "strategy": "start2_regime_no_risk_liquid",
+      "validation_hit_rate": 0.27825,
+      "validation_n": 17876,
+      "validation_wilson_lower_95": 0.271729
+    }
+  ]
+}
