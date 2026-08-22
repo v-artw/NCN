@@ -1,5 +1,49 @@
 # Reviewer Handoff
 
+## Task: Finish documentation and repository state
+
+### Changed Files
+- `pyproject.toml` and `requirements.txt`: replaced the obsolete scanner-only package/dependency description with the current phased production-adjacent research workbench scope.
+- `remote-server.md`: aligned remote-validation scope with research, Demo/Paper, PMKF/MKF, AI review, risk, and audit workflows while preserving explicit live-trading prohibitions.
+- `docs/USER_MANUAL.md` and `docs/USER_MANUAL.html`: updated the full-suite baseline from `494 passed, 3 skipped` to the verified `497 passed, 3 skipped`.
+- `.gitignore`: now ignores the local imported `CNstock-main` reference archive/tree and local `session-ses_*.md` transcripts.
+- `HANDOFF.md`: reconciled the completion audit and checkpoint state with the existing commit.
+
+### Behavior / Logic Changes
+- None. These changes update package/documentation metadata and local Git hygiene only.
+
+### Validation
+- Parsed `pyproject.toml` with Python `tomllib` and verified the new package description includes Demo/Paper scope.
+- Verified both manuals contain the current `497 passed, 3 skipped` baseline, no current manual text retains `494 passed`, and the HTML remains self-contained without scripts.
+- Verified `remote-server.md` contains the current phased scope and explicit prohibitions for live broker login, live orders, leverage, and unattended real-money execution.
+- Verified `.gitignore` matches `CNstock-main/`, `CNstock-main.zip`, and both local `session-ses_*.md` files; Git status now shows only the seven intentional cleanup files.
+- Stale current-state phrases were removed from package/remote/manual/checkpoint documentation. Older `494 passed, 3 skipped` references that remain deeper in `HANDOFF.md` are immutable historical validation records, not the current baseline.
+- `git diff --check` passed. Runtime tests were not rerun because no runtime code or configuration behavior changed; the immediately preceding full suite remains `497 passed, 3 skipped`.
+
+### Risks / Review Notes
+- The cleanup is being committed separately on `chore/ncn-structured-research-checkpoint`; no push was requested or performed.
+- Live broker login, live order submission, leverage, unattended real-money execution, real account identifiers, and real-money P&L remain prohibited.
+- Next exact action: verify the cleanup commit and keep the branch local unless the user separately requests push or merge.
+
+## Task: Audit completion of all user requirements
+
+### Changed Files
+- `HANDOFF.md`: recorded the requirement-completion audit only; no runtime, strategy, configuration, or research evidence changed.
+
+### Behavior / Logic Changes
+- None.
+
+### Validation
+- Reconstructed the genuine user-request sequence from the session transcript and accounted for superseded requests: Claude Artifact publication was replaced by the repository HTML manual; per-business Doris settings were replaced by central `yaml/ai_providers.yaml`; root-JSON analysis was followed by an explicit migration request.
+- Verified commit `1630be6` contains the approved package extraction and compatibility aliases, integrated Demo/Paper/PMKF/MKF Web scope, centralized Doris `Qwen3.8-27B-4bit` configuration, Markdown/HTML manuals, README synchronization, 20-file research JSON migration, regression tests, and fail-closed no-live-order governance.
+- The pre-commit full suite passed (`497 passed, 3 skipped`); migration validation passed on Doris (`4 passed`) and locally (`40 passed`).
+
+### Risks / Review Notes
+- The core approved implementation requirements are complete. The stale package/remote/manual/checkpoint text identified by this audit was corrected in the newer documentation-cleanup entry above.
+- Literal feature-for-feature parity with every CNstock Portfolio/SuperTrader behavior is neither implemented nor authorized. The approved NCN-native Demo/Paper/PMKF/MKF scope is present; broker login, live/force-buy/background real-order behavior remain intentionally excluded, while optional non-live enhancements such as factor save/import UX or paper evaluate-once were not part of the accepted MVP.
+- The branch is committed locally at `1630be6` but not pushed; push was not requested. Imported `CNstock-main` material and local session notes are now intentionally ignored.
+- Next exact action: use the newer documentation-cleanup entry above for current state; do not expand into live trading or claim full CNstock execution parity.
+
 ## Task: Commit structured NCN checkpoint
 
 ### Changed Files
@@ -18,9 +62,9 @@
 - The immediately preceding migration validation also passed on Doris (`4 passed`) and locally (`40 passed`).
 
 ### Risks / Review Notes
-- The checkpoint is intentionally broad because the working tree contains interdependent package extraction, compatibility aliases, documentation, tests, configuration, and evidence accumulated across prior authorized phases.
-- No push is authorized by this commit request.
-- Next exact action: inspect the staged snapshot for secrets and unintended imported files, then commit with the required co-author trailer.
+- The checkpoint is intentionally broad because the working tree contained interdependent package extraction, compatibility aliases, documentation, tests, configuration, and evidence accumulated across prior authorized phases.
+- Commit `1630be6` (`Integrate structured research and paper workflows`) was created successfully on `chore/ncn-structured-research-checkpoint`; no push was requested or performed.
+- Next exact action: use the newer documentation-cleanup entry above for post-commit state.
 
 ## Task: Migrate root-level research JSON artifacts
 
@@ -90,7 +134,7 @@
 
 ### Risks / Review Notes
 - README remains a concise overview; detailed operating procedures belong in `docs/USER_MANUAL.md`.
-- Next exact action: review both documents together; Artifact publishing remains pending until a claude.ai subscription login is available.
+- Artifact publishing was later superseded by the user's request to keep `docs/USER_MANUAL.html` in the repository; no Artifact publication remains pending.
 
 ## Task: Write the NCN operator user manual
 
@@ -110,9 +154,8 @@
 - Artifact publish was attempted but blocked because this session authenticates with `ANTHROPIC_AUTH_TOKEN` rather than a claude.ai subscription login. No auth settings were changed.
 
 ### Risks / Review Notes
-- README still contains older top-level scope wording that says portfolio/paper are absent; the user manual uses current governance and implementation instead. Update README separately if it should become the authoritative overview.
-- The HTML remains at `/tmp/ncn-user-manual.html`; publishing later requires a claude.ai login with Artifact access.
-- Next exact action: review `docs/USER_MANUAL.md`; optionally update README scope wording and publish the existing HTML after login.
+- This entry records the state when the manual was first written. README was subsequently synchronized, and the HTML was subsequently stored at `docs/USER_MANUAL.html` at the user's request.
+- Claude Artifact publication was superseded and is not pending.
 
 ## Task: Repair Doris authentication and complete bounded AI smoke
 

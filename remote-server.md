@@ -4,7 +4,8 @@ This document is the shared operational reference for AI tools working on NCN re
 
 ## Non-Negotiable Boundaries
 
-- NCN is a read-only A-share research scanner. Do not add trading, broker, account, portfolio, return, or execution functionality.
+- NCN is a phased production-adjacent A-share research workbench. Remote validation may cover research, Demo Portfolio, paper/simulation, PMKF/MKF, AI review, risk controls, and audit workflows.
+- Do not add or validate live broker login, live order submission, leverage, custody/settlement behavior, unattended real-money execution, real account identifiers, or real-money P&L.
 - Use remote systems for validation and bounded research computation only.
 - Do not modify remote data, delete remote outputs, or run destructive Git commands unless the user explicitly requests it.
 - Do not copy `Key/`, `.env*`, `.runtime/`, `output/`, or `config/research_watchlist.json` between machines.

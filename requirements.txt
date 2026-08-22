@@ -1,6 +1,6 @@
-# NCN read-only research scanner requirements
-# Generated from this project's pyproject.toml plus safe read-only dependencies
-# needed for CNstock-style news fetch and read-only web UI experiments.
+# NCN phased production-adjacent research workbench requirements
+# Generated from this project's pyproject.toml plus dependencies for bounded
+# news context, Web, Demo/Paper analysis, PMKF/MKF, AI review, and audit workflows.
 #
 # Deliberately excluded from CNstock-main requirements:
 # - torch / torchvision (deep learning runtime not required for NCN scanner setup)

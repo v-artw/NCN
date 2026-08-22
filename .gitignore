@@ -14,3 +14,8 @@ Message/
 config/research_watchlist.json
 .runtime/
 Key/
+
+# Local imported reference material and session transcripts
+CNstock-main/
+CNstock-main.zip
+session-ses_*.md

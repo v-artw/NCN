@@ -47,7 +47,7 @@ NCN 是一个分阶段 production-adjacent 的 A 股研究系统。当前允许�
 当前完整测试基准：
 
 ```text
-494 passed, 3 skipped
+497 passed, 3 skipped
 ```
 
 ## 3. 统一入口
@@ -724,7 +724,7 @@ git diff --check
 当前通过状态：
 
 ```text
-494 passed, 3 skipped
+497 passed, 3 skipped
 ```
 
 ## 19. 快速参考
@@ -775,4 +775,4 @@ PYTHONPATH=src .venv/bin/python -B scripts/smoke_ai_provider.py \
 
 ---
 
-最后更新依据：项目完整测试 `494 passed, 3 skipped`；Doris `Qwen3.8-27B-4bit` models/chat 与隔离三候选 MKF、SMC/news smoke 均已通过。
+最后更新依据：项目完整测试 `497 passed, 3 skipped`；Doris `Qwen3.8-27B-4bit` models/chat 与隔离三候选 MKF、SMC/news smoke 均已通过。

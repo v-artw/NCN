@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ashare-edge-scout"
 version = "1.0.0"
-description = "Standalone read-only A-share Edge Scout research scanner"
+description = "A-share research, demo/paper analysis, PMKF/MKF, AI review, and audit workbench"
 requires-python = ">=3.12,<3.15"
 dependencies = [
     "baostock>=0.8.9",
