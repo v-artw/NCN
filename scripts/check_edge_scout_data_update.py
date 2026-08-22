@@ -4,11 +4,12 @@
 from __future__ import annotations
 
 import argparse
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 import json
 import os
 from pathlib import Path
 import sys
+from zoneinfo import ZoneInfo
 
 import baostock as bs
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -16,16 +17,18 @@ SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from ashare_edge_scout.data_sources import get_parquet_latest_date_coverage
+from ashare_edge_scout.data.data_sources import get_parquet_latest_date_coverage, get_parquet_latest_date_coverage_details
 
 
 CURRENT = 0
 UPDATE_REQUIRED = 10
 CHECK_FAILED = 2
+DAILY_DATA_READY_TIME = time(18, 0)
+SHANGHAI_TZ = ZoneInfo("Asia/Shanghai")
 
 
 def local_date_state(data_root: Path) -> tuple[date | None, int, int]:
-    """Return latest date, files on that date, and readable parquet file count."""
+    """Return latest date, files on that date, and expected parquet file count."""
     return get_parquet_latest_date_coverage(data_root)
 
 
@@ -66,6 +69,12 @@ def latest_remote_trade_date(*, today: date, lookback_days: int = 45) -> date:
         bs.logout()
 
 
+def latest_completed_daily_date(now: datetime | None = None) -> date:
+    """Return the latest calendar date whose daily research bar can be complete."""
+    now = now.astimezone(SHANGHAI_TZ) if now else datetime.now(SHANGHAI_TZ)
+    return now.date() if now.time() >= DAILY_DATA_READY_TIME else now.date() - timedelta(days=1)
+
+
 def update_decision(
     local_latest: date | None,
     remote_latest: date,
@@ -95,7 +104,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-root", required=True, type=Path)
     parser.add_argument("--summary-json", type=Path)
-    parser.add_argument("--today", type=date.fromisoformat, default=date.today())
+    parser.add_argument(
+        "--today",
+        type=date.fromisoformat,
+        help="override the completed daily-data cutoff date for deterministic checks",
+    )
     parser.add_argument("--minimum-latest-coverage-ratio", type=float, default=0.95)
     parser.add_argument(
         "--remote-date",
@@ -110,9 +123,13 @@ def main() -> int:
     try:
         if not 0.0 <= args.minimum_latest_coverage_ratio <= 1.0:
             raise ValueError("minimum latest coverage ratio must be between 0 and 1")
-        local_latest, latest_count, readable_count = local_date_state(args.data_root)
-        coverage_ratio = latest_count / readable_count if readable_count else 0.0
-        remote_latest = args.remote_date or latest_remote_trade_date(today=args.today)
+        coverage = get_parquet_latest_date_coverage_details(args.data_root)
+        local_latest = coverage.observed_latest_trade_date
+        latest_count = coverage.latest_file_count
+        expected_count = coverage.expected_file_count
+        coverage_ratio = coverage.observed_coverage_ratio
+        cutoff_date = args.today or latest_completed_daily_date()
+        remote_latest = args.remote_date or latest_remote_trade_date(today=cutoff_date)
         action = update_decision(
             local_latest,
             remote_latest,
@@ -126,8 +143,12 @@ def main() -> int:
             "data_root": str(args.data_root),
             "local_latest_trade_date": local_latest.isoformat() if local_latest else None,
             "local_latest_file_count": latest_count,
-            "local_readable_file_count": readable_count,
+            "local_expected_file_count": expected_count,
+            "local_readable_file_count": coverage.readable_file_count,
+            "local_skipped_file_count": coverage.skipped_file_count,
             "local_latest_coverage_ratio": coverage_ratio,
+            "local_readable_latest_coverage_ratio": coverage.readable_latest_coverage_ratio,
+            "local_coverage_denominator": "expected_file_count",
             "minimum_latest_coverage_ratio": args.minimum_latest_coverage_ratio,
             "remote_latest_trade_date": remote_latest.isoformat(),
         }

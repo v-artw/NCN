@@ -194,6 +194,8 @@ def test_summary_counts_unexpected_error_separately():
 
     def fake_publish_scan_results(**kwargs):
         captured["summary"] = kwargs["summary"]
+        captured["prospective_eligible"] = kwargs["prospective_eligible"]
+        captured["visible_data_through"] = kwargs["visible_data_through"]
 
     with tempfile.TemporaryDirectory() as temp_dir, \
         patch("ashare_edge_scout.scanner.load_config", return_value={"ranking": {}}), \
@@ -221,6 +223,8 @@ def test_summary_counts_unexpected_error_separately():
     assert summary.scored_count == 1
     assert summary.unexpected_error_count == 1
     assert summary.no_tier_reason_counts == {"missing_value": 1}
+    assert captured["prospective_eligible"] is False
+    assert captured["visible_data_through"] == scan_date
 
 
 def test_top_reference_prices_excludes_out_of_v1_risk_range():

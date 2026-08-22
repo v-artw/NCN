@@ -1,0 +1,36 @@
+# CNstock-compatible MKF news context config.
+# This file intentionally mirrors the easy-to-edit uppercase style from CNstock-main/yaml/PmkfConfig.yaml.
+
+ENABLED: true
+FETCH_ONLINE_BY_DEFAULT: true
+
+NEWS_LIMIT: 5
+NEWS_DAYS: 7
+ENABLE_NEWS_CACHE: true
+NEWS_CACHE_DIR: "./Message"
+ENABLE_AUTO_CLEANUP: true
+CACHE_RETENTION_DAYS: 7
+
+ENABLE_GOOGLE_NEWS: true
+ENABLE_EASTMONEY_NEWS: true
+ENABLE_EASTMONEY_ANNOUNCEMENTS: true
+TIMEOUT_SECONDS: 8
+
+FATAL_RISK_WORDS:
+  - "收到立案告知书"
+  - "退市整理期"
+  - "强制退市"
+  - "财务造假被罚"
+  - "停牌核查"
+  - "证监会处罚"
+
+ATTENTION_WORDS:
+  - "立案"
+  - "减持"
+  - "警示"
+  - "违规"
+  - "处罚"
+  - "问询"
+  - "内幕交易"
+  - "暴雷"
+  - "限售股解禁"

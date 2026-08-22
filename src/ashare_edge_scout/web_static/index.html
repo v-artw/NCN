@@ -13,7 +13,7 @@
       <span class="brand-mark" aria-hidden="true"></span>
       <div><strong>NCN</strong><span>K线研究台</span></div>
     </div>
-    <div class="run-meta"><span id="runId">读取发布记录</span><span id="asOf">--</span><b>READ ONLY</b></div>
+    <div class="run-meta"><span id="runId">读取发布记录</span><span id="asOf">--</span><b>DEMO / PAPER ONLY · LIVE ORDERS OFF</b></div>
   </header>
 
   <main>
@@ -87,11 +87,38 @@
             <dl id="evidenceList"></dl>
           </section>
         </div>
+
+        <div class="ops-grid">
+          <section class="ops-panel">
+            <div class="section-head"><div><span class="eyebrow">DEMO PORTFOLIO</span><h3>Demo portfolio</h3></div><button id="refreshDemo" type="button">刷新</button></div>
+            <p class="boundary-note">Paper-only · No broker connection · Live orders off · No live order submission</p>
+            <form id="demoAddForm" class="inline-form">
+              <input id="demoCode" placeholder="600000 / sz.000001" autocomplete="off">
+              <select id="demoState"><option>WATCH</option><option>RESEARCH_REVIEW</option><option>PAPER_PRE_BUY</option><option>PAPER_HOLD</option><option>PAPER_EXITED</option></select>
+              <button type="submit">加入 Demo</button>
+            </form>
+            <div id="demoPortfolio" class="ops-list empty">等待 demo portfolio</div>
+          </section>
+          <section class="ops-panel">
+            <div class="section-head"><div><span class="eyebrow">PAPER MONITOR</span><h3>Paper monitor</h3></div><button id="refreshPaper" type="button">刷新</button></div>
+            <p class="boundary-note">Simulated only · Not execution feed · No live account</p>
+            <div id="paperMonitor" class="ops-list empty">等待 paper status</div>
+          </section>
+          <section class="ops-panel">
+            <div class="section-head"><div><span class="eyebrow">PMKF / MKF</span><h3>PMKF/MKF dashboard</h3></div><button id="refreshPmkf" type="button">刷新</button></div>
+            <p class="boundary-note">Precomputed reports + bounded single-code analysis only</p>
+            <div id="pmkfPanel" class="ops-list empty">等待 PMKF/MKF 数据</div>
+          </section>
+          <section class="ops-panel">
+            <div class="section-head"><div><span class="eyebrow">AUDIT / RISK</span><h3>边界与审计</h3></div></div>
+            <div id="auditRisk" class="ops-list empty">Live orders off</div>
+          </section>
+        </div>
       </section>
     </section>
   </main>
 
-  <footer><strong>研究边界</strong><span>前复权数据仅用于研究展示。形态、参考价及确认状态不构成投资建议，不用于成交、收益或回测依据。</span></footer>
+  <footer><strong>研究边界</strong><span>前复权数据仅用于研究展示。Demo portfolio 与 Paper monitor 仅用于模拟/人工复核；No broker connection，Live orders off，No live order submission。</span></footer>
   <script src="/app.js" defer></script>
 </body>
 </html>

@@ -2,9 +2,43 @@
 # 所有实际下单功能必须默认关闭；完整策略依赖点时财务、事件和行业数据。
 
 schema_version: edge_scout_v1
-mode: read_only_research
+mode: phased_production_adjacent
+allow_demo_portfolio: true
+allow_paper_trading: true
 allow_live_order_submission: false
 production_enabled: false
+
+demo_portfolio:
+  enabled: true
+  state_root: output/edge_scout/demo_portfolios
+  audit_root: output/edge_scout/audit_logs
+  factor_root: output/edge_scout/demo_factors
+  default_portfolio_id: default
+  initial_capital: 20000.0
+  max_portfolios: 5
+  max_positions: 20
+  max_import_positions: 50
+  allow_factor_upload: false
+  max_factor_bytes: 32768
+
+paper_trading:
+  enabled: true
+  state_root: output/edge_scout/paper_trading
+  engine_enabled: false
+  manual_intents_enabled: false
+  max_snapshot_codes: 20
+  max_evaluate_codes: 20
+  price_source: research_snapshot_with_local_fallback
+  allow_live_order_submission: false
+
+paper_risk:
+  max_position_pct: 0.20
+  max_daily_paper_intents: 2
+  max_hold_positions: 5
+  t1_sell_lock: true
+  block_limit_up_entries: true
+  stop_atr_multiple: 1.5
+  take_profit_r: 1.5
 
 paths:
   data_root: PFrontStockData

@@ -20,10 +20,10 @@ from typing import Any
 
 import pandas as pd
 
-from ashare_edge_scout.candle_timing import evaluate_t_day_setup
-from ashare_edge_scout.candles import detect_bullish_patterns
+from ashare_edge_scout.signals.candle_timing import evaluate_t_day_setup
+from ashare_edge_scout.signals.candles import detect_bullish_patterns
 from ashare_edge_scout.config import load_config
-from ashare_edge_scout.start_signals import compute_start_signals
+from ashare_edge_scout.signals.start_signals import compute_start_signals
 
 
 PREFIXES = ("sh.600", "sh.601", "sh.603", "sh.605", "sz.000", "sz.001", "sz.002", "sz.003")
@@ -196,6 +196,11 @@ def main() -> None:
     result = {
         "study": "t_day_signal_hit_rate",
         "classification_only": True,
+        "historical_research_only": True,
+        "not_prospective_evidence": True,
+        "no_execution_or_pnl": True,
+        "raw_future_rows_exposed": False,
+        "label_inputs_ephemeral": True,
         "label": "within_T_plus_1_to_T_plus_5_close_reaches_3pct_up_without_3pct_close_drawdown",
         "sampling": {"max_codes": args.max_codes, "actual_codes": len(paths), "step": args.step},
         "date_range": {"start": args.start_date, "end": args.end_date},

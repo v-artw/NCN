@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import csv
 import json
+import threading
+import urllib.request
 from datetime import datetime, timedelta
+from http.server import HTTPServer
 from pathlib import Path
 
 import pyarrow as pa
@@ -16,6 +19,7 @@ from ashare_edge_scout.research_web import (
     load_candle_research,
     load_dashboard,
     load_snapshot_research,
+    make_handler,
     normalize_a_share_code,
     _build_research_alert,
 )
@@ -25,12 +29,103 @@ from ashare_edge_scout.research_watchlist import add_research_code
 ROOT = Path(__file__).parents[1]
 
 
+def test_web_subpackage_exports_compatibility_symbols() -> None:
+    from ashare_edge_scout.web import create_context as package_create_context
+    from ashare_edge_scout.web.context import ResearchWebContext as package_context
+    from ashare_edge_scout.web.routes.demo import demo_portfolio_status_payload as package_demo_payload
+    from ashare_edge_scout.web.routes.market import load_dashboard as package_market_dashboard
+    from ashare_edge_scout.web.routes.paper import paper_status_for_portfolio as package_paper_payload
+    from ashare_edge_scout.web.routes.pmkf_mkf import pmkf_mkf_summary_payload as package_pmkf_summary
+    from ashare_edge_scout.web.routes.watchlist import research_watchlist_payload as package_watchlist_payload
+    from ashare_edge_scout.portfolio import load_portfolio as package_load_portfolio
+    from ashare_edge_scout.demo_portfolio_state import load_portfolio as flat_load_portfolio
+    from ashare_edge_scout.pmkf_mkf import apply_pmkf as package_apply_pmkf
+    from ashare_edge_scout.pmkf import apply_pmkf as flat_apply_pmkf
+
+    assert package_create_context is create_context
+    assert package_context.__name__ == "ResearchWebContext"
+    assert callable(package_demo_payload)
+    assert callable(package_market_dashboard)
+    assert callable(package_paper_payload)
+    assert callable(package_pmkf_summary)
+    assert callable(package_watchlist_payload)
+    assert package_load_portfolio is flat_load_portfolio
+    assert package_apply_pmkf is flat_apply_pmkf
+
+
+def test_health_endpoint_does_not_require_a_publication(tmp_path: Path) -> None:
+    context = create_context(ROOT, output_root=tmp_path / "missing-output")
+    server = HTTPServer(("127.0.0.1", 0), make_handler(context))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{server.server_port}/api/health", timeout=2
+        ) as response:
+            payload = json.load(response)
+        assert payload["status"] == "ok"
+        assert payload["read_only"] is True
+        assert payload["mode"] == "phased_production_adjacent"
+        assert payload["allow_demo_portfolio"] is True
+        assert payload["allow_paper_trading"] is True
+        assert payload["allow_live_order_submission"] is False
+        assert payload["production_enabled"] is False
+        assert payload["live_broker_enabled"] is False
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
 def test_normalize_a_share_code() -> None:
     assert normalize_a_share_code("600000") == "sh.600000"
     assert normalize_a_share_code("000001") == "sz.000001"
     assert normalize_a_share_code("SH.600000") == "sh.600000"
     with pytest.raises(ResearchWebError, match="无法识别"):
         normalize_a_share_code("../600000")
+
+
+def test_load_dashboard_returns_manual_rows_without_publication(tmp_path: Path) -> None:
+    output_root = tmp_path / "missing-output"
+    watchlist_path = tmp_path / "research_watchlist.json"
+    add_research_code(watchlist_path, "600000", normalize=normalize_a_share_code)
+    context = create_context(ROOT, output_root=output_root, watchlist_path=watchlist_path)
+
+    payload = load_dashboard(context)
+
+    assert payload["latest"]["status"] == "no_publication"
+    assert payload["summary"]["status"] == "no_publication"
+    assert payload["watchlist"] == [{
+        "rank": "1",
+        "code": "sh.600000",
+        "watch_stage": "manual_research",
+        "research_only": "True",
+        "selection_reason": "manual_research_selection",
+    }]
+    assert payload["selected_codes"] == ["sh.600000"]
+    assert payload["manual_selection_enabled"] is True
+    assert payload["research_only"] is True
+
+
+def test_dashboard_endpoint_returns_manual_rows_without_publication(tmp_path: Path) -> None:
+    watchlist_path = tmp_path / "research_watchlist.json"
+    add_research_code(watchlist_path, "600000", normalize=normalize_a_share_code)
+    context = create_context(ROOT, output_root=tmp_path / "missing-output", watchlist_path=watchlist_path)
+    server = HTTPServer(("127.0.0.1", 0), make_handler(context))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{server.server_port}/api/dashboard", timeout=2
+        ) as response:
+            payload = json.load(response)
+        assert response.status == 200
+        assert payload["latest"]["status"] == "no_publication"
+        assert payload["selected_codes"] == ["sh.600000"]
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
 
 
 def test_load_dashboard_reads_only_latest_publication(tmp_path: Path) -> None:
@@ -167,6 +262,16 @@ def test_web_assets_include_visibility_aware_auto_refresh() -> None:
     assert '["时机评分"' in script
     assert '["风险评分"' in script
     assert "candle_bearish_risk_patterns" in script
+    assert "row.buy_reference || row.research_close" not in script
+    assert '$("lastClose").textContent = number(row.research_close || row.close, 2);' in script
+    assert "Demo portfolio" in markup
+    assert "Paper-only" in markup
+    assert "No broker connection" in markup
+    assert "Live orders off" in markup
+    assert "No live order submission" in markup
+    assert "force buy" not in markup.lower()
+    assert "force_buy" not in script
+    assert "/api/paper/intent" not in script
 
 
 def test_research_alert_prioritizes_ma60_risk_over_pattern() -> None:

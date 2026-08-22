@@ -19,7 +19,7 @@ from typing import Any, Mapping
 import numpy as np
 import pandas as pd
 
-from ashare_edge_scout.candles import detect_bullish_patterns
+from ashare_edge_scout.signals.candles import detect_bullish_patterns
 from ashare_edge_scout.config import load_config
 
 
@@ -378,6 +378,11 @@ def main() -> None:
     result = {
         "study": "full_universe_joint_strategy_precision_v1",
         "classification_only": True,
+        "historical_research_only": True,
+        "not_prospective_evidence": True,
+        "no_execution_or_pnl": True,
+        "raw_future_rows_exposed": False,
+        "label_inputs_ephemeral": True,
         "label": "within_T_plus_1_to_T_plus_5_close_reaches_3pct_up_without_3pct_close_drawdown",
         "selection_protocol": {
             "calibration": "2021-2022 candidate design and sanity check",

@@ -45,9 +45,17 @@ def test_freshness_requires_current_enough_data_and_t_plus_two_binding():
         covered_count=9,
         input_count=10,
         now=datetime(2026, 8, 1, tzinfo=timezone.utc),
+        readable_count=9,
+        skipped_count=1,
     )
     assert evidence.lag_trading_days == 0
     assert evidence.observed_coverage_ratio == 0.9
+    payload = evidence.as_dict()
+    assert payload["coverage_expected_file_count"] == 10
+    assert payload["coverage_readable_file_count"] == 9
+    assert payload["coverage_skipped_file_count"] == 1
+    assert payload["coverage_latest_file_count"] == 9
+    assert payload["coverage_denominator"] == "expected_file_count"
 
 
 def test_freshness_rejects_stale_data_and_insufficient_coverage():

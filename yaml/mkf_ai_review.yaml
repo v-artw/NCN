@@ -1,0 +1,14 @@
+ai_config: "yaml/ai_providers.yaml"
+news_config: "yaml/mkf_news_context.yaml"
+
+review:
+  committee_enabled: true
+  technical_context:
+    enabled: true
+    lookback_bars: 60
+    recent_daily_bars: 8
+    include_candlestick_patterns: true
+    include_candle_confirmation: true
+    include_ohlcv_indicators: true
+    use_pmkf_kalman: false
+    use_futu_fields: false

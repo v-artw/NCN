@@ -64,6 +64,7 @@ def test_publish_scan_results():
         assert (run_target / "summary.json").exists()
         assert (run_target / "report.md").exists()
         assert (run_target / "manifest.json").exists()
+        assert (run_target / "prospective_snapshot.json").exists()
 
         # 验证 latest.json
         latest_path = run_directory / "latest.json"
@@ -540,3 +541,50 @@ def test_daily_research_watchlist_prioritizes_confirmed_then_setup_then_cnstock_
     assert rows[0]["candle_bearish_risk_patterns"] == "shooting_star"
     assert rows[0]["t_day_patterns"] == "hammer"
     assert "daily_research_watchlist.csv" in manifest["files"]
+    assert "prospective_snapshot.json" in manifest["files"]
+
+
+def test_prospective_snapshot_freezes_baseline_selected_reasons_and_hashes(tmp_path):
+    from datetime import datetime, timezone
+
+    scan_date = __import__("datetime").date(2026, 7, 28)
+    visible_date = __import__("datetime").date(2026, 7, 30)
+    selected_tier = Tier("sh.600001", scan_date, "watchlist", 55.0, 25.0, 20.0, 10.0)
+    baseline_tier = Tier("sh.600002", scan_date, "near_miss", 40.0, 20.0, 12.0, 8.0)
+    results = [
+        EdgeScoutResult(
+            code="sh.600001", as_of=scan_date, status="admitted", tier=selected_tier,
+            research_close=10.0, valid_setup_confirmed=True, t_day_setup_valid=True,
+            start_signal_count=3, start_signals=("mhpg_buy",),
+            futu_risk_codes=("high_position_risk",), limitations=("research_only",),
+        ),
+        EdgeScoutResult(
+            code="sh.600002", as_of=scan_date, status="admitted", tier=baseline_tier,
+            research_close=20.0, valid_setup_confirmed=False, t_day_setup_valid=False,
+            discovery_eligible=False, start_signal_count=1, limitations=("research_only",),
+        ),
+    ]
+    summary = EdgeScoutScanSummary(
+        schema_version="edge_scout_v1", status="success", run_id="market-prospective",
+        as_of=scan_date, input_code_count=2, admitted_count=2, rejected_count=0,
+        production_candidate_count=0, watchlist_count=1, near_miss_count=1,
+        inputs={"config_sha256": "abc123"},
+    )
+    target = publish_scan_results(
+        tmp_path, run_id="market-prospective", results=results,
+        production_candidates=[], watchlist_candidates=[selected_tier],
+        near_miss_candidates=[baseline_tier], summary=summary,
+        prospective_eligible=True, visible_data_through=visible_date,
+        published_at_utc=datetime(2026, 7, 30, 10, tzinfo=timezone.utc),
+    )
+    snapshot = json.loads((target / "prospective_snapshot.json").read_text(encoding="utf-8"))
+    manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
+    assert snapshot["prospective_eligible"] is True
+    assert snapshot["visible_data_through"] == "2026-07-30"
+    assert snapshot["config_sha256"] == "abc123"
+    assert len(snapshot["baseline_rows"]) == 2
+    assert [row["code"] for row in snapshot["selected_rows"]] == ["sh.600001"]
+    assert snapshot["selected_rows"][0]["selection_reason"] == "v1_t_setup_and_t1_confirmation"
+    assert snapshot["selected_rows"][0]["futu_risk_codes"] == ["high_position_risk"]
+    assert snapshot["source_artifacts"]["results.jsonl"] == manifest["files"]["results.jsonl"]["sha256"]
+    assert "prospective_snapshot.json" in manifest["files"]

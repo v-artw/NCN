@@ -28,8 +28,10 @@ def test_validate_config():
 
     valid_config = {
         "schema_version": "edge_scout_v1",
-        "mode": "read_only_research",
+        "mode": "phased_production_adjacent",
         "production_enabled": False,
+        "allow_demo_portfolio": True,
+        "allow_paper_trading": True,
         "paths": {},
         "universe": {},
         "features": {},
@@ -37,9 +39,37 @@ def test_validate_config():
         "ranking": {},
         "risk": {},
         "publication": {},
+        "demo_portfolio": {
+            "enabled": True,
+            "state_root": "output/edge_scout/demo_portfolios",
+            "audit_root": "output/edge_scout/audit_logs",
+            "factor_root": "output/edge_scout/demo_factors",
+            "initial_capital": 20000.0,
+            "max_portfolios": 5,
+            "max_positions": 20,
+            "max_import_positions": 50,
+            "max_factor_bytes": 32768,
+        },
+        "paper_trading": {
+            "enabled": True,
+            "state_root": "output/edge_scout/paper_trading",
+            "max_snapshot_codes": 20,
+            "max_evaluate_codes": 20,
+            "allow_live_order_submission": False,
+        },
+        "paper_risk": {
+            "max_position_pct": 0.2,
+            "max_daily_paper_intents": 2,
+            "max_hold_positions": 5,
+            "t1_sell_lock": True,
+            "block_limit_up_entries": True,
+            "stop_atr_multiple": 1.5,
+            "take_profit_r": 1.5,
+        },
     }
 
     validate_config(valid_config, Path("test.yaml"))
+    validate_config({**valid_config, "mode": "read_only_research"}, Path("test.yaml"))
 
     # 缺少必需字段
     invalid_config = {"schema_version": "edge_scout_v1"}
@@ -70,7 +100,7 @@ def test_validate_config():
         validate_config(invalid_config, Path("test.yaml"))
 
     invalid_config = {**valid_config, "mode": "read_only_paper"}
-    with pytest.raises(ValueError, match="read_only_research"):
+    with pytest.raises(ValueError, match="phased_production_adjacent"):
         validate_config(invalid_config, Path("test.yaml"))
 
     invalid_config = {
@@ -78,6 +108,27 @@ def test_validate_config():
         "research_market_regime": {"enforcement": "hard_gate"},
     }
     with pytest.raises(ValueError, match="enforcement must be 'none'"):
+        validate_config(invalid_config, Path("test.yaml"))
+
+    invalid_config = {
+        **valid_config,
+        "allow_demo_portfolio": False,
+    }
+    with pytest.raises(ValueError, match="allow_demo_portfolio"):
+        validate_config(invalid_config, Path("test.yaml"))
+
+    invalid_config = {
+        **valid_config,
+        "demo_portfolio": {**valid_config["demo_portfolio"], "state_root": "../outside"},
+    }
+    with pytest.raises(ValueError, match="output/edge_scout"):
+        validate_config(invalid_config, Path("test.yaml"))
+
+    invalid_config = {
+        **valid_config,
+        "paper_trading": {**valid_config["paper_trading"], "allow_live_order_submission": True},
+    }
+    with pytest.raises(ValueError, match="allow_live_order_submission"):
         validate_config(invalid_config, Path("test.yaml"))
 
 

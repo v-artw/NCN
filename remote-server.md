@@ -1,0 +1,199 @@
+# NCN Remote Server Guide
+
+This document is the shared operational reference for AI tools working on NCN remote environments. It contains connection metadata and safe commands only. Do not add passwords, private keys, API keys, or other credentials here.
+
+## Non-Negotiable Boundaries
+
+- NCN is a read-only A-share research scanner. Do not add trading, broker, account, portfolio, return, or execution functionality.
+- Use remote systems for validation and bounded research computation only.
+- Do not modify remote data, delete remote outputs, or run destructive Git commands unless the user explicitly requests it.
+- Do not copy `Key/`, `.env*`, `.runtime/`, `output/`, or `config/research_watchlist.json` between machines.
+- Record substantive remote validation in `HANDOFF.md`: environment used, command, worker count for studies, and relevant result.
+
+## Environment Priority
+
+Always attempt environments in this order. Fall back only when the earlier environment is unreachable, lacks a supported Python environment, or is unsuitable for the workload.
+
+1. WSL, first choice for normal tests when reachable.
+2. Doris, second choice and preferred for larger data-backed studies.
+3. Local MacBook Air, last resort.
+
+## WSL Test Host
+
+| Field | Value |
+| --- | --- |
+| Host | `10.20.98.161` |
+| SSH port | `22` |
+| User | `adminwsl` |
+| Project directory | `/home/adminwsl/NCN` |
+| Default private key | `~/.ssh/id_ed25519` |
+| Intended use | Remote pytest, bounded Linux validation |
+| Recent status | SSH was recently unreliable: timeout or closure during banner exchange. Recheck before use. |
+
+Use the project wrapper rather than constructing ad hoc sync commands:
+
+```bash
+./scripts/remote_test_env.sh check
+./scripts/remote_test_env.sh sync-code
+./scripts/remote_test_env.sh sync-data
+./scripts/remote_test_env.sh setup
+./scripts/remote_test_env.sh test tests/test_news_ai_review.py -q
+```
+
+Run the complete remote preparation and default test suite only when data synchronization is actually required:
+
+```bash
+./scripts/remote_test_env.sh all
+```
+
+The wrapper uses key-only SSH with a 10-second connection timeout and synchronizes source/configuration while excluding Git metadata, virtual environments, runtime/output directories, data during `sync-code`, local watchlist, and environment files. `sync-data` separately copies `PFrontStockData/`.
+
+Override only when a different approved WSL endpoint is necessary:
+
+```bash
+NCN_REMOTE_TEST_HOST=host NCN_REMOTE_TEST_USER=user \
+NCN_REMOTE_TEST_PORT=22 NCN_REMOTE_TEST_DIR=/home/user/NCN \
+NCN_REMOTE_TEST_KEY="$HOME/.ssh/id_ed25519" \
+./scripts/remote_test_env.sh check
+```
+
+For an interactive remote shell:
+
+```bash
+./scripts/remote_test_env.sh shell
+```
+
+### WSL Capacity
+
+- Hardware: ThinkPad P16V / WSL2, 20 logical CPUs observed, 32 GB physical RAM.
+- The `omlx` service can reserve about 30 GB, leaving roughly 2 GB for NCN.
+- Before a substantial study, run `./scripts/remote_test_env.sh check` and inspect memory remotely with `free -h`.
+- For compute jobs set `OMP_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`, `MKL_NUM_THREADS=1`, and `NUMEXPR_NUM_THREADS=1`.
+- Keep workers low, normally 4-8 at most. Do not run full-universe signal studies if memory headroom is not clearly sufficient.
+
+### WSL Study Lifecycle
+
+The wrapper manages the checkpointed signal-hit-rate study without leaving an interactive terminal open:
+
+```bash
+./scripts/remote_test_env.sh study-start --workers 4
+./scripts/remote_test_env.sh study-status
+./scripts/remote_test_env.sh study-fetch result.json
+./scripts/remote_test_env.sh study-stop
+```
+
+Its default remote artifacts are under `.runtime/`; they are intentionally not synced as source code.
+
+### WSL Recovery (Windows Host)
+
+If SSH is reachable at TCP level but does not return an SSH banner, the Windows/WSL host needs repair. From an elevated Windows PowerShell session in this repository, run:
+
+```powershell
+.\scripts\start_wsl_then_bootstrap_remote_test_windows.ps1
+```
+
+This starts the `Ubuntu` WSL distribution, installs/starts OpenSSH, enables key-only access, recreates the Windows-to-WSL port proxy, and permits local-subnet access on port `22`. It requires administrator privileges and must not be run remotely by an AI without user authorization.
+
+## Doris / Maxstudio Host
+
+| Field | Value |
+| --- | --- |
+| Host | `ts.dorisw.kdns.fr` |
+| SSH port | `56731` |
+| User | `chinaadmin` |
+| Project directory | `~/NCN` |
+| Default private key | `~/.ssh/id_ed25519` |
+| Intended use | Data-backed backtests and larger bounded studies |
+| Recent status | SSH reachable; system `python3` was `3.9.6`, which is unsupported by NCN. Install or use an isolated verified `>=3.12,<3.15` virtual environment. |
+
+Use explicit, key-only SSH options. Verify the host and Python environment before syncing or executing:
+
+```bash
+ssh -p 56731 -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes \
+  -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 \
+  chinaadmin@ts.dorisw.kdns.fr \
+  'cd "$HOME/NCN" && hostname && python3 --version && test -x .venv-doris/bin/python && .venv-doris/bin/python --version'
+```
+
+### Unsupported System Python
+
+If the remote system `python3` is outside NCN's supported range (`>=3.12,<3.15`), do not run tests or backtests with it. Create an isolated virtual environment in the remote project directory using an already available compatible interpreter, then use that virtual environment for every NCN command.
+
+```bash
+# Replace python3.14 with the compatible interpreter confirmed on the remote host.
+ssh -p 56731 -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes \
+  -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 \
+  chinaadmin@ts.dorisw.kdns.fr \
+  'cd "$HOME/NCN" && python3.14 -m venv .venv-doris && .venv-doris/bin/python -m pip install --upgrade pip && .venv-doris/bin/python -m pip install -e ".[test]"'
+```
+
+Do not replace or modify the remote system Python. If no compatible interpreter is installed, report that blocker and request authorization before installing one. Recent validated work used `.venv-doris/bin/python`; verify it before reuse:
+
+```bash
+.venv-doris/bin/python --version
+```
+
+Synchronize only intended files. Example for a focused test change:
+
+```bash
+rsync -az -e "ssh -p 56731 -i $HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10" \
+  src/ashare_edge_scout/example.py \
+  chinaadmin@ts.dorisw.kdns.fr:NCN/src/ashare_edge_scout/
+
+rsync -az -e "ssh -p 56731 -i $HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10" \
+  tests/test_example.py \
+  chinaadmin@ts.dorisw.kdns.fr:NCN/tests/
+```
+
+Do not use broad `--delete` synchronization against Doris unless the user explicitly authorizes it.
+
+Run focused tests and every remote backtest with the verified virtual environment, never `python3` directly:
+
+```bash
+ssh -p 56731 -i "$HOME/.ssh/id_ed25519" -o IdentitiesOnly=yes \
+  -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 \
+  chinaadmin@ts.dorisw.kdns.fr \
+  'cd "$HOME/NCN" && .venv-doris/bin/python -m pytest tests/test_example.py -q'
+```
+
+### Doris Capacity
+
+- Hardware: Maxstudio / M4 Max, 64 GB RAM.
+- The `omlx` service can reserve about 30 GB, leaving about 34 GB for NCN.
+- Check memory pressure before a backtest using `memory_pressure` (macOS) and verify that `omlx` remains responsive.
+- CPU-bound studies may use 12-16 workers; memory-bound studies should use 8-10 workers.
+- For long calculations, set BLAS/OpenMP thread counts to `1` per worker and use a detached process with a PID, log, checkpoint/output file, and explicit status checks.
+
+## Common Validation Rules
+
+- Supported Python is `>=3.12,<3.15`. Do not validate with an unsupported interpreter.
+- When a remote system Python is incompatible, install/use a project-local virtual environment from a compatible interpreter and run all remote tests, scans, and backtests through its `bin/python`.
+- Run the smallest relevant test first. Use the full suite only when scope warrants it.
+- For strategy research, pre-register the hypothesis, fixed candidate set, thresholds, budget, and pass/fail implementation decision before computation.
+- Remote research artifacts must be copied back and hash-checked before they are relied upon. Preserve immutable output evidence; do not overwrite a completed result.
+- Never expose the local proxy or persist proxy variables globally. If a remote task requires Internet access, use a session-scoped reverse SSH tunnel to local `127.0.0.1:1082`, then verify it with a bounded request before downloading anything.
+
+## Local Fallback
+
+If WSL is unavailable and Doris is unavailable or has no supported Python environment, use the local project environment:
+
+```bash
+.venv/bin/python -m pytest tests/test_example.py -q
+```
+
+State the WSL and Doris failure reason plus the local command in `HANDOFF.md`.
+
+## Useful Project Commands
+
+```bash
+./scripts/setup.sh
+.venv/bin/python -m pytest -q
+./scripts/edge_scout_web_control.sh status
+git diff --check
+```
+
+For Web changes, also run:
+
+```bash
+node --check src/ashare_edge_scout/web_static/app.js
+```

@@ -20,8 +20,8 @@ SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from ashare_edge_scout.contracts import EdgeScoutResult, Tier
-from ashare_edge_scout.data_sources import get_parquet_codes, load_stock_records
+from ashare_edge_scout.data.contracts import EdgeScoutResult, Tier
+from ashare_edge_scout.data.data_sources import get_parquet_codes, load_stock_records
 from ashare_edge_scout.admission import load_research_window_daily_bars
 from ashare_edge_scout.scanner import (
     EdgeScoutScanInput,
@@ -30,7 +30,7 @@ from ashare_edge_scout.scanner import (
     _to_date,
     run_edge_scout_scan,
 )
-from ashare_edge_scout.signal_scoring import (
+from ashare_edge_scout.signals.signal_scoring import (
     apply_hard_gates,
     classify_tier,
     score_single_stock,

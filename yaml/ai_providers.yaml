@@ -1,0 +1,79 @@
+schema_version: ncn_ai_providers_v1
+enabled: true
+provider: local_finance
+timeout_seconds: 120
+temperature: 0
+seed: 42
+response_format:
+  type: json_object
+
+providers:
+  local_finance:
+    enabled: true
+    name: Doris Local Finance AI
+    base_url: http://ts.dorisw.kdns.fr:18090/v1
+    model: Qwen3.8-27B-4bit
+    key_file: Key/ts.key
+    api_key_env: EDGE_SCOUT_LOCAL_AI_API_KEY
+    timeout_seconds: 120
+    extra_options:
+      chat_template_kwargs:
+        enable_thinking: false
+
+  deepseek:
+    enabled: true
+    name: DeepSeek
+    base_url: https://api.deepseek.com/v1
+    model: deepseek-v4-flash
+    key_file: Key/deepseek.key
+    timeout_seconds: 120
+
+  deepseek_chat:
+    enabled: false
+    name: DeepSeek Chat
+    base_url: https://api.deepseek.com/v1
+    model: deepseek-chat
+    key_file: Key/deepseek.key
+    timeout_seconds: 120
+
+  deepseek_pro:
+    enabled: false
+    name: DeepSeek V4 Pro
+    base_url: https://api.deepseek.com
+    model: deepseek-v4-pro
+    key_file: Key/deepseek.key
+    timeout_seconds: 180
+    extra_options:
+      reasoning_effort: high
+
+  lmstudio_finance_8b:
+    enabled: false
+    name: Legacy LM Studio Finance 8B
+    base_url: http://127.0.0.1:1234/v1
+    model: qwen3-8b-finance-v1.0.1-merged-v2
+    key_file: Key/lmstudio.key
+    timeout_seconds: 180
+
+  tongyi:
+    enabled: false
+    name: Alibaba Tongyi Qwen Plus
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    model: qwen-plus
+    key_file: Key/tongyi.key
+    timeout_seconds: 120
+
+  kimi:
+    enabled: false
+    name: Moonshot Kimi
+    base_url: https://api.moonshot.cn/v1
+    model: moonshot-v1-8k
+    key_file: Key/kimi.key
+    timeout_seconds: 120
+
+  zhipu:
+    enabled: false
+    name: Zhipu GLM
+    base_url: https://open.bigmodel.cn/api/paas/v4
+    model: glm-4-flash
+    key_file: Key/zhipu.key
+    timeout_seconds: 120

@@ -36,6 +36,11 @@ class FreshnessEvidence:
     observed_coverage_ratio: float
     minimum_coverage_ratio: float
     lag_trading_days: int
+    coverage_expected_file_count: int
+    coverage_readable_file_count: int | None = None
+    coverage_skipped_file_count: int | None = None
+    coverage_latest_file_count: int | None = None
+    coverage_denominator: str = "expected_file_count"
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -46,6 +51,11 @@ class FreshnessEvidence:
             "observed_coverage_ratio": self.observed_coverage_ratio,
             "minimum_coverage_ratio": self.minimum_coverage_ratio,
             "lag_trading_days": self.lag_trading_days,
+            "coverage_expected_file_count": self.coverage_expected_file_count,
+            "coverage_readable_file_count": self.coverage_readable_file_count,
+            "coverage_skipped_file_count": self.coverage_skipped_file_count,
+            "coverage_latest_file_count": self.coverage_latest_file_count,
+            "coverage_denominator": self.coverage_denominator,
         }
 
 
@@ -90,6 +100,8 @@ def validate_freshness(
     covered_count: int,
     input_count: int,
     now: datetime,
+    readable_count: int | None = None,
+    skipped_count: int | None = None,
 ) -> FreshnessEvidence:
     """Fail closed on future, stale, incomplete, or calendar-inconsistent data."""
 
@@ -136,6 +148,10 @@ def validate_freshness(
         observed_coverage_ratio=ratio,
         minimum_coverage_ratio=policy.minimum_coverage_ratio,
         lag_trading_days=lag,
+        coverage_expected_file_count=input_count,
+        coverage_readable_file_count=readable_count,
+        coverage_skipped_file_count=skipped_count,
+        coverage_latest_file_count=covered_count,
     )
 
 

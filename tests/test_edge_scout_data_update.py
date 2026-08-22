@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 import importlib.util
 from pathlib import Path
 import sys
@@ -26,6 +26,10 @@ def test_latest_local_date_reads_parquet_maximum(tmp_path: Path) -> None:
     )
 
     assert module.local_date_state(tmp_path) == (date(2026, 8, 1), 1, 2)
+    details = module.get_parquet_latest_date_coverage_details(tmp_path)
+    assert details.expected_file_count == 2
+    assert details.readable_file_count == 2
+    assert details.skipped_file_count == 0
 
 
 def test_update_decision_skips_equal_and_requires_newer_remote() -> None:
@@ -39,6 +43,15 @@ def test_update_decision_skips_equal_and_requires_newer_remote() -> None:
     ) == "update_required"
     with pytest.raises(RuntimeError, match="local data is newer"):
         module.update_decision(date(2026, 8, 1), date(2026, 7, 31))
+
+
+def test_latest_completed_daily_date_uses_previous_day_before_evening_publish_time() -> None:
+    assert module.latest_completed_daily_date(
+        datetime(2026, 8, 17, 17, 59, tzinfo=module.SHANGHAI_TZ)
+    ) == date(2026, 8, 16)
+    assert module.latest_completed_daily_date(
+        datetime(2026, 8, 17, 18, 0, tzinfo=module.SHANGHAI_TZ)
+    ) == date(2026, 8, 17)
 
 
 def test_latest_remote_trade_date_uses_baostock_calendar(monkeypatch: pytest.MonkeyPatch) -> None:

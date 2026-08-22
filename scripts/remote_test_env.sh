@@ -31,7 +31,7 @@ Commands:
   study-start  Start/resume a detached checkpointed signal hit-rate study.
   study-status Show detached study PID, progress, and result state.
   study-stop   Stop the detached study process.
-  study-fetch  Copy the completed study JSON to the local current directory.
+  study-fetch  Copy the completed study JSON to the structured local evidence path.
   shell        Open an interactive shell in the remote project directory.
   all          Run check, sync-code, sync-data, setup, and the default test suite.
 
@@ -124,8 +124,12 @@ sync_code() {
     --exclude '/.venv/' \
     --exclude '/.venv-playwright/' \
     --exclude '/.pytest_cache/' \
+    --exclude '/__pycache__/' \
+    --exclude '**/__pycache__/' \
     --exclude '/.runtime/' \
     --exclude '/.opencode/' \
+    --exclude '/.claude/settings.local.json' \
+    --exclude '/Key/' \
     --exclude '/PFrontStockData/' \
     --exclude '/output/' \
     --exclude '/config/research_watchlist.json' \
@@ -180,7 +184,8 @@ study_stop() {
 
 study_fetch() {
   local result="${NCN_REMOTE_STUDY_RESULT:-.runtime/signal-study-2018-2026.json}"
-  local destination="${1:-signal-study-2018-2026.json}"
+  local destination="${1:-docs/research/results/strategy/signal-study-2018-2026.json}"
+  mkdir -p "$(dirname "${destination}")"
   scp \
     -P "${REMOTE_PORT}" \
     -i "${SSH_KEY}" \

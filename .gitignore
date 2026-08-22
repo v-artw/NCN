@@ -10,5 +10,7 @@ __pycache__/
 PFrontStockData/
 output/
 DataMap/
+Message/
 config/research_watchlist.json
 .runtime/
+Key/

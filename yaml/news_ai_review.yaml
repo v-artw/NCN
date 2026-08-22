@@ -1,0 +1,8 @@
+ai_config: "yaml/ai_providers.yaml"
+
+news:
+  days: 7
+  cache_dir: ".runtime/news_cache"
+  refresh_hours: 6
+  per_source_limit: 100
+  timeout_seconds: 10

@@ -12,7 +12,7 @@ from pathlib import Path
 from collections.abc import Callable
 from typing import Any, Mapping, Sequence
 
-from .daily_bars import (
+from .data.daily_bars import (
     DataValidationError,
     REQUIRED_DAILY_BAR_FIELDS,
     load_local_daily_bars,

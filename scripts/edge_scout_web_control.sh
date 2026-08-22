@@ -45,7 +45,7 @@ managed_pid() {
 health_check() {
     "${PYTHON}" -c \
         'import sys, urllib.request; urllib.request.urlopen(sys.argv[1], timeout=1).read(1)' \
-        "http://${HOST}:${PORT}/api/dashboard" >/dev/null 2>&1
+        "http://${HOST}:${PORT}/api/health" >/dev/null 2>&1
 }
 
 start_web() {

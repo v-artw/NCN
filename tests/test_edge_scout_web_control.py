@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import socket
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -18,7 +19,7 @@ def test_web_control_script_starts_reports_and_stops(tmp_path: Path) -> None:
         **os.environ,
         "EDGE_SCOUT_WEB_PORT": str(port),
         "EDGE_SCOUT_WEB_RUNTIME_DIR": str(tmp_path / "runtime"),
-        "VENV_PYTHON": str(ROOT / ".venv" / "bin" / "python"),
+        "VENV_PYTHON": sys.executable,
     }
     try:
         started = _run("start", environment)

@@ -9,7 +9,11 @@ import hashlib
 from pathlib import Path
 from typing import Any, Mapping
 
+from .paper_risk import normalize_paper_risk
+
 import yaml
+
+ALLOWED_MODES = {"read_only_research", "phased_production_adjacent"}
 
 
 def load_config(config_path: str | Path) -> dict[str, Any]:
@@ -74,9 +78,9 @@ def validate_config(config: Mapping[str, Any], config_path: str | Path) -> None:
         )
 
     # 验证 mode
-    if config.get("mode") != "read_only_research":
+    if config.get("mode") not in ALLOWED_MODES:
         raise ValueError(
-            f"mode 必须是 'read_only_research'，"
+            f"mode 必须是 {sorted(ALLOWED_MODES)!r} 之一，"
             f"当前为 {config.get('mode')!r}"
         )
 
@@ -108,6 +112,63 @@ def validate_config(config: Mapping[str, Any], config_path: str | Path) -> None:
         raise ValueError(
             "research_market_regime.enforcement must be 'none' in Edge Scout V1"
         )
+
+    _validate_demo_portfolio_config(config, config_path)
+    _validate_paper_trading_config(config, config_path)
+    normalize_paper_risk(config.get("paper_risk"))
+
+
+def _validate_demo_portfolio_config(config: Mapping[str, Any], config_path: str | Path) -> None:
+    demo = config.get("demo_portfolio", {})
+    if not demo:
+        return
+    if not isinstance(demo, Mapping):
+        raise ValueError("demo_portfolio must be a mapping")
+    if demo.get("enabled") and config.get("allow_demo_portfolio") is not True:
+        raise ValueError("demo_portfolio.enabled requires allow_demo_portfolio: true")
+    if demo.get("allow_live_order_submission", False):
+        raise ValueError("demo_portfolio must not allow live order submission")
+    _validate_state_root(demo.get("state_root", ""), config_path, "demo_portfolio.state_root")
+    _validate_state_root(demo.get("audit_root", ""), config_path, "demo_portfolio.audit_root")
+    _validate_state_root(demo.get("factor_root", ""), config_path, "demo_portfolio.factor_root")
+    if int(demo.get("max_portfolios", 0)) < 1:
+        raise ValueError("demo_portfolio.max_portfolios must be >= 1")
+    if int(demo.get("max_positions", 0)) < 1:
+        raise ValueError("demo_portfolio.max_positions must be >= 1")
+    if int(demo.get("max_import_positions", 0)) < 1:
+        raise ValueError("demo_portfolio.max_import_positions must be >= 1")
+    if int(demo.get("max_factor_bytes", 0)) < 1 or int(demo.get("max_factor_bytes", 0)) > 262144:
+        raise ValueError("demo_portfolio.max_factor_bytes is invalid")
+    if float(demo.get("initial_capital", 0.0)) <= 0:
+        raise ValueError("demo_portfolio.initial_capital must be > 0")
+
+
+def _validate_paper_trading_config(config: Mapping[str, Any], config_path: str | Path) -> None:
+    paper = config.get("paper_trading", {})
+    if not paper:
+        return
+    if not isinstance(paper, Mapping):
+        raise ValueError("paper_trading must be a mapping")
+    if paper.get("enabled") and config.get("allow_paper_trading") is not True:
+        raise ValueError("paper_trading.enabled requires allow_paper_trading: true")
+    if paper.get("allow_live_order_submission", False):
+        raise ValueError("paper_trading.allow_live_order_submission must be false")
+    _validate_state_root(paper.get("state_root", ""), config_path, "paper_trading.state_root")
+    if int(paper.get("max_snapshot_codes", 0)) < 1:
+        raise ValueError("paper_trading.max_snapshot_codes must be >= 1")
+    if int(paper.get("max_evaluate_codes", 0)) < 1:
+        raise ValueError("paper_trading.max_evaluate_codes must be >= 1")
+
+
+def _validate_state_root(value: Any, config_path: str | Path, label: str) -> None:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{label} must be a non-empty relative path")
+    path = Path(value)
+    if path.is_absolute() or ".." in path.parts:
+        raise ValueError(f"{label} must stay under output/edge_scout or .runtime")
+    normalized = path.as_posix()
+    if not (normalized == ".runtime" or normalized.startswith(".runtime/") or normalized == "output/edge_scout" or normalized.startswith("output/edge_scout/")):
+        raise ValueError(f"{label} must stay under output/edge_scout or .runtime")
 
 
 def compute_config_sha256(config_path: str | Path) -> str:

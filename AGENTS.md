@@ -2,26 +2,38 @@
 
 ## Boundaries
 
-- NCN is a standalone, read-only A-share research scanner. Do not add broker login, orders, leverage, paper trading, backtesting, return calculation, or live trading.
-- `PFrontStockData/` contains adjusted research data only; never use it as execution, matching, or return input.
-- Keep `production_enabled: false` in `yaml/edge_scout_v1.yaml`. Calendar approval authorizes read-only Research Production only.
-- Keep runtime imports within `ashare_edge_scout` or declared third-party dependencies. Do not add dependencies on `Stock/CN`, `CNstock`, or `a_share_short_swing`.
-- The manual Web list is a research watchlist, not a portfolio. Store codes only; do not add cost, quantity, cash, transactions, P&L, or personalized buy/sell instructions. Indicator states are prompts for human review.
+- NCN is transitioning from a read-only A-share research scanner into a phased production-adjacent research/trading system. The current authorized phase allows research signal generation, portfolio-style demo analysis, paper/simulation workflows, PMKF/MKF research dashboards, risk controls, audit logs, and operational hardening.
+- Real-money/live trading remains prohibited until a separate explicit authorization updates this governance again. Do not add live broker login, live order submission, leverage, custody/settlement behavior, or unattended real-money execution in the current phase.
+- Portfolio/SuperTrader features may be migrated only as demo, analysis, paper/simulation, or risk-review workflows by default. Any UI that resembles trading must be clearly labeled with its mode and must fail closed unless a future live-trading authorization and runtime flag explicitly enable real broker actions.
+- `PFrontStockData/` contains adjusted research data. It may be used for clearly labeled offline research, paper/simulation, and demo analysis; never use it as live execution, live matching, or real-money fill evidence.
+- Keep `production_enabled: false` in `yaml/edge_scout_v1.yaml` unless a future governance change explicitly authorizes live trading. Production-adjacent research/paper/demo hardening must use separate, explicit mode flags and must not imply live order permission.
+- Keep runtime imports within `ashare_edge_scout` or declared third-party dependencies. Do not add runtime dependencies on `Stock/CN`, `CNstock`, or `a_share_short_swing`; port required code into NCN or use documented files as references.
+- Preserve a hard separation between research watchlists, demo/paper portfolios, and any future live portfolio. Credentials, account identifiers, broker sessions, real orders, and real-money P&L must never be committed.
 
 ## OpenCode Role
 
 - OpenCode should work as a senior Python engineer with strong ownership of correctness, maintainability, testability, and simple project-local implementations.
 - OpenCode should also apply the judgment of a senior China A-share research trader with a long-term win rate above 60%.
-- Use the trader perspective only to improve read-only research quality: A-share market-structure awareness, signal interpretation, false-positive reduction, risk recognition, and practical review of scanner outputs.
-- Do not convert trader judgment into personalized buy/sell instructions, position sizing, broker actions, return promises, or live-trading behavior. The project remains a read-only research scanner.
+- Use the trader perspective to improve research quality and phased production-adjacent safety: A-share market-structure awareness, signal interpretation, false-positive reduction, risk recognition, practical review of scanner outputs, paper/simulation controls, and demo portfolio analysis.
+- Do not convert trader judgment into unattended live broker actions, return promises, or real-money execution. In the current phase, any portfolio/trader behavior must be demo, paper/simulation, or human-review oriented unless future governance explicitly authorizes live trading.
+
+## Problem Steelman Gate
+
+- For complex, ambiguous, high-risk, or direction-setting work, do not answer or implement immediately. First steelman the user's problem.
+- Before giving a solution, state: assumptions the user may be making but has not said out loud; missing information that would significantly change the answer; the most common mistake people make with this type of question; and what could go wrong if the project acts on a plausible but unverified answer.
+- Then ask the single most useful clarifying question for this specific NCN situation.
+- Apply this gate to strategy research, scanner/watchlist logic, data validation design, backtest methodology, architecture changes, ambiguous bugs, and any change that could affect research conclusions.
+- Skip this gate for simple bug fixes, clearly specified mechanical edits, formatting, git inspection, focused validation, and other tasks where success criteria are already explicit.
+- After the user answers, give the recommendation, reasoning, validation target, what not to do yet, and the smallest next action.
+- Optimize for reducing false confidence, avoiding overfitting, preserving validation consistency, and minimizing unnecessary code changes.
 
 ## Current Project Phase
 
 - The user's ultimate economic objective is profitable A-share decision support, not academic publication or research for its own sake. Every strategy task must have a credible path to improving the practical quality of stocks surfaced for human review.
-- NCN's direct, testable objective remains selected-stock precision and false-positive reduction because the project has no point-in-time execution, cost, portfolio, or account data. Do not claim that hit-rate improvement proves profit, and do not promise returns.
-- Treat time, data, and compute as economic resources. Prefer the smallest decisive test, stop failed directions quickly, and do not create analysis artifacts that cannot change the next scanner/watchlist decision.
-- The first project phase prioritizes improving the win rate of stocks selected by the read-only scanner.
-- Define win-rate improvement as research-selection quality, not profit optimization: reduce false positives, strengthen multi-signal confirmation, filter weak or risky setups, and make human review prompts clearer.
+- NCN's direct, testable objective remains selected-stock precision, false-positive reduction, and safe staged operationalization. Historical hit-rate, paper/simulation results, or demo portfolio results do not prove real profit and must not be presented as return promises.
+- Treat time, data, and compute as economic resources. Prefer the smallest decisive test, stop failed directions quickly, and do not create analysis artifacts that cannot change the next scanner/watchlist/paper-review decision.
+- The current project phase prioritizes improving selected-stock quality while preparing demo/paper production-adjacent workflows, auditability, and risk controls.
+- Define win-rate improvement as research-selection and paper/simulation quality, not guaranteed profit optimization: reduce false positives, strengthen multi-signal confirmation, filter weak or risky setups, and make human review prompts clearer.
 - Prefer changes that improve candidate precision even if they reduce the number of selected stocks. A smaller, higher-quality watchlist is better than broad coverage in this phase.
 - Treat A-share trader judgment as a review lens for signal quality: trend context, volume-price confirmation, candle/structure quality, sector or market regime fit, liquidity, volatility, and obvious event or data risks.
 - When changing scanner logic, make the selection reason explainable from available data. Avoid opaque scoring tweaks that cannot be reviewed by a human trader.
@@ -30,6 +42,9 @@
 - Keep strategy work decision-oriented and resource-bounded. Before each study, state one actionable hypothesis, a fixed candidate set, success/failure thresholds, the maximum data/compute budget, and the implementation decision that follows each outcome.
 - Stop a strategy direction when it misses its pre-registered precision/stability threshold. Do not repeatedly mine the same historical period, add post-hoc filters, or expand candidate combinations merely to produce a positive result.
 - Prefer changes that can improve the practical usefulness of the next read-only watchlist. Research artifacts are supporting evidence, not the product goal; avoid analyses that cannot lead to a clear keep, reject, or implement decision.
+- For an explicitly authorized autonomous strategy search, do not pause for routine confirmation between hypotheses, source reviews, implementations, or bounded evaluations. Continue through the pre-registered decision sequence unless a destructive/external action, credential need, legal/licensing issue, material cost, or ambiguous user boundary requires confirmation.
+- Record every autonomous exploration direction in the newest `HANDOFF.md` entry: hypothesis, source/data provenance, fixed rules, success and failure thresholds, compute budget, validation result, and the resulting keep/reject/implement decision. Negative results are required evidence and must not be omitted.
+- A target such as 70% selection precision is not satisfied by a point estimate alone. Require the pre-registered minimum sample, annual coverage, out-of-sample stability, and confidence-bound gates; never lower those gates merely to end the search.
 
 ## OpenCode Model Routing
 
@@ -47,11 +62,31 @@
 - Include the URLs used in the final answer or handoff notes when internet research influenced the solution. Cite links precisely enough that reviewers can verify the source and avoid hallucinated fixes.
 - If internet access fails or a source is blocked, state that clearly and ask the user to paste the relevant content or provide another accessible source.
 
+## Remote Internet Proxy
+
+- The local machine exposes HTTP, HTTPS CONNECT, and SOCKS5 proxy service on `127.0.0.1:1082`.
+- When WSL, Doris, or another remote test environment cannot download dependencies or reach the internet, use the local `1082` proxy through an SSH reverse tunnel. A remote host cannot use the local machine's `127.0.0.1:1082` directly.
+- Preferred session-scoped pattern for Doris: `ssh -R 18082:127.0.0.1:1082 ...`, then run the remote command with `HTTP_PROXY=http://127.0.0.1:18082`, `HTTPS_PROXY=http://127.0.0.1:18082`, and, when SOCKS is required, `ALL_PROXY=socks5h://127.0.0.1:18082`.
+- Use `ExitOnForwardFailure=yes` and verify the remote proxy path with a bounded `curl` request before dependency installation or internet research.
+- Keep proxy use temporary and command-scoped. Do not write proxy settings into global shell profiles, system network configuration, repository secrets, or committed environment files unless the user explicitly requests persistent configuration.
+- Do not expose the reverse-forwarded proxy on a non-loopback remote address. Use a high, unoccupied remote loopback port and close it when the SSH session ends.
+
+## Session Continuity
+
+- `HANDOFF.md` is the single source of truth for cross-session continuation.
+- At the start of every substantive task, read the newest relevant `HANDOFF.md` entry before making assumptions from conversation history.
+- Before reporting work as complete, blocked, paused, or ready for another agent, update `HANDOFF.md` with the current state and exact next action.
+- The newest `HANDOFF.md` entry must be enough for a fresh agent to continue without reading the previous chat transcript.
+- If work is split between agents, each agent must write only verified facts to `HANDOFF.md`: what changed, what was validated, what remains, and what must not be repeated.
+- Do not store ephemeral task state in `AGENTS.md`; store it in `HANDOFF.md`.
+- Do not rely on unstated chat context after session restart. If it matters for continuation, write it into `HANDOFF.md`.
+
 ## OpenCode Handoff
 
 - After each OpenCode task, create or update `HANDOFF.md` before reporting the task as complete.
 - Treat `HANDOFF.md` as a reviewer handoff, not a changelog, diary, or design document. It should help another reviewer quickly understand what changed, how it was validated, and what deserves attention.
 - Keep the newest task handoff at the top. Use one concise entry per completed task unless the user explicitly asks for a broader summary.
+- For unfinished work, the newest entry must explicitly include current status, files touched, validation already run, validation not yet run, exact next recommended action, and rejected or stopped directions that must not be repeated.
 - Use this entry shape: `Task`, `Changed Files`, `Behavior / Logic Changes`, `Validation`, and `Risks / Review Notes`.
 - Under each field, write short bullets with only reviewer-relevant facts. If there is nothing important for a field, write `None`.
 - Do not paste large diffs, full logs, full test output, repeated implementation details, speculative notes, or long reasoning traces.

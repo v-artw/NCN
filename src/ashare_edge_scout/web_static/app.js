@@ -52,11 +52,13 @@ async function postJSON(url, payload) {
 
 async function loadDashboard() {
   try {
-    const data = await getJSON("/api/dashboard");
+    const [data, health] = await Promise.all([getJSON("/api/dashboard"), getJSON("/api/health")]);
     state.rows = data.watchlist;
     $("runId").textContent = data.latest.run_id;
     $("asOf").textContent = `T日 ${data.summary.as_of}`;
+    renderBoundary(health);
     renderWatchlist();
+    await Promise.allSettled([loadDemoPortfolio(), loadPaperMonitor(), loadPmkfPanel()]);
     if (state.rows.length) selectRow(state.rows[0]);
   } catch (error) {
     $("watchlist").innerHTML = `<div class="empty">${escapeHTML(error.message)}</div>`;
@@ -93,14 +95,14 @@ async function selectRow(row) {
   $("codeLabel").textContent = row.code;
   $("poolLabel").textContent = (row.cnstock_pool || "RESEARCH OBSERVATION").replaceAll("_", " ").toUpperCase();
   $("stageLabel").textContent = row.watch_stage || "研究观察";
-  $("lastClose").textContent = number(row.buy_reference || row.research_close, 2);
+  $("lastClose").textContent = number(row.research_close || row.close, 2);
   const change = Number(row.pct_chg);
   $("changeLabel").textContent = Number.isFinite(change) ? `${change >= 0 ? "+" : ""}${number(change, 2)}% / T日` : "T日研究价";
   $("changeLabel").className = Number.isFinite(change) ? (change >= 0 ? "up" : "down") : "";
   $("snapshotTime").textContent = "本地研究参考价";
   renderEvidence(row);
   scheduleImmediateRefresh();
-  await Promise.allSettled([loadCandles(), loadSnapshot(row.code)]);
+  await Promise.allSettled([loadCandles(), loadSnapshot(row.code), loadPmkfPanel()]);
 }
 
 async function loadCandles({ silent = false } = {}) {
@@ -281,6 +283,65 @@ function renderPatterns(items) {
   }).join("") : '<div class="empty">当前区间未识别到启用的看涨形态或看跌风险形态</div>';
 }
 
+function renderBoundary(health) {
+  $("auditRisk").innerHTML = [
+    ["Mode", health.mode],
+    ["Demo portfolio", health.allow_demo_portfolio ? "enabled" : "disabled"],
+    ["Paper trading", health.allow_paper_trading ? "enabled" : "disabled"],
+    ["Live orders", health.allow_live_order_submission ? "ON" : "off"],
+    ["Broker connection", health.live_broker_enabled ? "connected" : "none"],
+    ["Production", health.production_enabled ? "ON" : "off"]
+  ].map(([label, value]) => `<div class="ops-row"><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong></div>`).join("");
+}
+
+async function loadDemoPortfolio() {
+  const data = await getJSON("/api/demo-portfolio/status?portfolio_id=default");
+  const portfolio = data.portfolio;
+  const positions = Object.values(portfolio.positions || {});
+  $("demoPortfolio").className = "ops-list";
+  $("demoPortfolio").innerHTML = `
+    <div class="metric-strip"><span>Demo cash <b>${number(portfolio.demo_cash, 2)}</b></span><span>Max equity high <b>${number(portfolio.demo_max_equity_high, 2)}</b></span><span>Positions <b>${positions.length}/${portfolio.settings.max_positions}</b></span></div>
+    ${positions.length ? positions.map((item) => `<div class="ops-row"><span><b>${escapeHTML(item.code)}</b><small>${escapeHTML(item.state)} · ${escapeHTML(item.note || "Paper-only review")}</small></span><strong>${number(item.reference_price, 2)}</strong></div>`).join("") : '<div class="empty">暂无 demo positions</div>'}
+    <div class="factor-line">Factors: ${(data.factors || []).map((item) => escapeHTML(item.filename)).join(" · ") || "none"}</div>`;
+}
+
+async function addDemoPosition(event) {
+  event.preventDefault();
+  const code = $("demoCode").value.trim();
+  if (!code) return;
+  try {
+    await postJSON("/api/demo-portfolio/add", { portfolio_id: "default", code, state: $("demoState").value });
+    $("demoCode").value = "";
+    await Promise.allSettled([loadDemoPortfolio(), loadPaperMonitor()]);
+  } catch (error) {
+    $("demoPortfolio").innerHTML = `<div class="empty">${escapeHTML(error.message)}</div>`;
+  }
+}
+
+async function loadPaperMonitor() {
+  const data = await getJSON("/api/paper/status?portfolio_id=default");
+  $("paperMonitor").className = "ops-list";
+  $("paperMonitor").innerHTML = `
+    <div class="metric-strip"><span>Sim cash <b>${number(data.simulated_cash, 2)}</b></span><span>Positions <b>${data.simulated_positions.length}</b></span><span>Broker <b>${escapeHTML(data.broker_connection)}</b></span></div>
+    <div class="ops-row"><span>Risk controls</span><strong>${escapeHTML(Math.round(data.risk_controls.max_position_pct * 100))}% max position</strong></div>
+    <div class="ops-row"><span>Freshness</span><strong>${escapeHTML((data.freshness_warnings || []).join(" · ") || "research data checked")}</strong></div>
+    ${(data.recent_events || []).slice(-5).reverse().map((item) => `<div class="ops-row"><span>${escapeHTML(item.event_type)}</span><strong>${formatTimestamp(item.created_at)}</strong></div>`).join("") || '<div class="empty">暂无 paper history</div>'}`;
+}
+
+async function loadPmkfPanel() {
+  const [summary, codeData] = await Promise.allSettled([
+    getJSON("/api/pmkf-mkf/summary"),
+    state.selected?.code ? getJSON(`/api/pmkf-mkf/code?code=${encodeURIComponent(state.selected.code)}`) : Promise.resolve(null)
+  ]);
+  const summaryData = summary.status === "fulfilled" ? summary.value : { latest_reports: [], warnings: [summary.reason.message] };
+  const codePayload = codeData.status === "fulfilled" ? codeData.value : null;
+  $("pmkfPanel").className = "ops-list";
+  $("pmkfPanel").innerHTML = `
+    <div class="ops-row"><span>Reports</span><strong>${summaryData.report_count || 0}</strong></div>
+    <div class="ops-row"><span>Warnings</span><strong>${escapeHTML((summaryData.warnings || []).join(" · "))}</strong></div>
+    ${codePayload ? `<div class="ops-row"><span>${escapeHTML(codePayload.code)} PMKF slope</span><strong>${number(codePayload.pmkf_slope, 4)}</strong></div><div class="ops-row"><span>MKF red/blue</span><strong>${number(codePayload.mkf_lines.momentum, 2)} / ${number(codePayload.mkf_lines.near, 2)}</strong></div>` : '<div class="empty">选择股票后显示单代码 PMKF/MKF</div>'}`;
+}
+
 function renderEvidence(row) {
   const evidence = [
     ["Edge 分数", number(row.edge_score, 1)], ["基础质量", `${number(row.base_quality_score, 1)} / 45`],
@@ -353,6 +414,10 @@ function formatTimestamp(value) { if (!value) return "--"; const date = new Date
 function formatAxisTime(value) { if (state.period === "1d") return String(value).slice(5, 10); const text = formatTimestamp(value); return text.slice(-5); }
 
 $("addStockForm").addEventListener("submit", addStock);
+$("demoAddForm").addEventListener("submit", addDemoPosition);
+$("refreshDemo").addEventListener("click", loadDemoPortfolio);
+$("refreshPaper").addEventListener("click", loadPaperMonitor);
+$("refreshPmkf").addEventListener("click", loadPmkfPanel);
 document.querySelectorAll(".range-control button").forEach((button) => button.addEventListener("click", () => { document.querySelectorAll(".range-control button").forEach((b) => b.classList.remove("active")); button.classList.add("active"); state.limit = Number(button.dataset.limit); state.nextCandlesAt = 0; loadCandles(); }));
 document.querySelectorAll(".period-control button").forEach((button) => button.addEventListener("click", () => { document.querySelectorAll(".period-control button").forEach((b) => b.classList.remove("active")); button.classList.add("active"); state.period = button.dataset.period; state.nextCandlesAt = 0; loadCandles(); }));
 $("chart").addEventListener("mousemove", (event) => { if (!state.chartData) return; const rect = event.currentTarget.getBoundingClientRect(), step = Number(event.currentTarget.dataset.step), left = Number(event.currentTarget.dataset.left); const index = Math.max(0, Math.min(state.chartData.bars.length - 1, Math.floor((event.clientX - rect.left - left) / step))); state.hoverIndex = index; const bar = state.chartData.bars[index]; const tip = $("tooltip"); tip.hidden = false; tip.style.left = `${Math.min(rect.width - 145, event.clientX - rect.left + 12)}px`; tip.style.top = `${Math.max(48, event.clientY - rect.top - 52)}px`; tip.innerHTML = `${formatTimestamp(bar.timestamp || bar.date)}${bar.is_forming ? " · 形成中" : ""}<br>开 ${number(bar.open)}　高 ${number(bar.high)}<br>低 ${number(bar.low)}　收 ${number(bar.close)}<br>量 ${compact(bar.volume)}`; drawChart(); });

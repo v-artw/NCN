@@ -1,0 +1,210 @@
+{
+  "classification_only": true,
+  "comparisons": {
+    "confirmed_vs_legacy_same_post_confirmation_horizon": {
+      "calibration_2021_2024": {
+        "candidate_retention": 0.6443768996960486,
+        "precision_lift": 0.012301427997935377,
+        "relative_fpr_reduction": 0.01909042363830546,
+        "wilson_lower_change": 6.238681610892804e-05
+      },
+      "holdout_2025_2026": {
+        "candidate_retention": 0.7164179104477612,
+        "precision_lift": 0.05959784411276953,
+        "relative_fpr_reduction": 0.08618105515587528,
+        "wilson_lower_change": 0.044967941713142695
+      }
+    },
+    "support_reclaim_t_vs_legacy_same_t_horizon": {
+      "calibration_2021_2024": {
+        "candidate_retention": 1.0182370820668694,
+        "precision_lift": -0.009027809281858201,
+        "relative_fpr_reduction": -0.013624537861152973,
+        "wilson_lower_change": -0.008169205551583236
+      },
+      "holdout_2025_2026": {
+        "candidate_retention": 1.0746268656716418,
+        "precision_lift": 0.038764510779436157,
+        "relative_fpr_reduction": 0.05605515587529969,
+        "wilson_lower_change": 0.038202103561778084
+      }
+    }
+  },
+  "decision": {
+    "comparisons": {
+      "calibration_2021_2024": {
+        "candidate_retention": 0.6443768996960486,
+        "precision_lift": 0.012301427997935377,
+        "relative_fpr_reduction": 0.01909042363830546,
+        "wilson_lower_change": 6.238681610892804e-05
+      },
+      "holdout_2025_2026": {
+        "candidate_retention": 0.7164179104477612,
+        "precision_lift": 0.05959784411276953,
+        "relative_fpr_reduction": 0.08618105515587528,
+        "wilson_lower_change": 0.044967941713142695
+      }
+    },
+    "failure_reasons": [
+      "calibration_2021_2024:confirmed_n_below_300",
+      "calibration_2021_2024:fpr_reduction_below_0.20",
+      "holdout_2025_2026:confirmed_n_below_300",
+      "holdout_2025_2026:fpr_reduction_below_0.20"
+    ],
+    "passed": false
+  },
+  "diagnostics": {
+    "confirmation_patterns": {
+      "bullish_engulfing": 287,
+      "hammer": 130,
+      "morning_star": 28,
+      "piercing": 106
+    },
+    "confirmation_states": {
+      "confirmed_hold": 188,
+      "confirmed_strong": 168,
+      "failed": 29,
+      "unconfirmed": 166
+    },
+    "matched_patterns": {
+      "bullish_engulfing": 287,
+      "hammer": 130,
+      "morning_star": 28,
+      "piercing": 107
+    },
+    "support_reason_codes": {
+      "prior_20_bar_swing_low": 8,
+      "sma20_t_minus_1": 550,
+      "sma60_t_minus_1": 106
+    }
+  },
+  "label_note": "T-day and legacy use T+1..T+5 relative to T close. Confirmation observes T+1; confirmed evaluation therefore uses T+2..T+6 relative to T+1 close. The confirmed acceptance comparison uses the same T+2..T+6 horizon for legacy and confirmed candidates.",
+  "legacy_comparison_note": "Confirmed-versus-legacy acceptance uses an equal post-confirmation horizon.",
+  "periods": {
+    "calibration_2021_2024": [
+      2021,
+      2024
+    ],
+    "holdout_2025_2026": [
+      2025,
+      2026
+    ]
+  },
+  "sample": {
+    "codes": 400,
+    "method": "sha256_stable_code_sample",
+    "requested": 400
+  },
+  "study": "ncn_v2_support_reclaim_stage1",
+  "summaries": {
+    "legacy_setup_post_confirmation_horizon": {
+      "calibration_2021_2024": {
+        "false_positives": 212,
+        "fpr": 0.6443768996960486,
+        "hits": 117,
+        "n": 329,
+        "precision": 0.3556231003039514,
+        "wilson_lower_95": 0.3058341759472386,
+        "wilson_upper_95": 0.40874477091517275
+      },
+      "holdout_2025_2026": {
+        "false_positives": 139,
+        "fpr": 0.6915422885572139,
+        "hits": 62,
+        "n": 201,
+        "precision": 0.30845771144278605,
+        "wilson_lower_95": 0.24869889540459403,
+        "wilson_upper_95": 0.3754008968251093
+      }
+    },
+    "legacy_setup_t_horizon": {
+      "calibration_2021_2024": {
+        "false_positives": 218,
+        "fpr": 0.662613981762918,
+        "hits": 111,
+        "n": 329,
+        "precision": 0.3373860182370821,
+        "wilson_lower_95": 0.28843203193988826,
+        "wilson_upper_95": 0.39009372926303826
+      },
+      "holdout_2025_2026": {
+        "false_positives": 139,
+        "fpr": 0.6915422885572139,
+        "hits": 62,
+        "n": 201,
+        "precision": 0.30845771144278605,
+        "wilson_lower_95": 0.24869889540459403,
+        "wilson_upper_95": 0.3754008968251093
+      }
+    },
+    "support_reclaim_confirmed_post_confirmation_horizon": {
+      "calibration_2021_2024": {
+        "false_positives": 134,
+        "fpr": 0.6320754716981132,
+        "hits": 78,
+        "n": 212,
+        "precision": 0.36792452830188677,
+        "wilson_lower_95": 0.30589656276334753,
+        "wilson_upper_95": 0.4346539149944156
+      },
+      "holdout_2025_2026": {
+        "false_positives": 91,
+        "fpr": 0.6319444444444444,
+        "hits": 53,
+        "n": 144,
+        "precision": 0.3680555555555556,
+        "wilson_lower_95": 0.2936668371177367,
+        "wilson_upper_95": 0.44930131257761297
+      }
+    },
+    "support_reclaim_t_post_confirmation_horizon": {
+      "calibration_2021_2024": {
+        "false_positives": 220,
+        "fpr": 0.6567164179104478,
+        "hits": 115,
+        "n": 335,
+        "precision": 0.34328358208955223,
+        "wilson_lower_95": 0.2944730814111079,
+        "wilson_upper_95": 0.3956476121519021
+      },
+      "holdout_2025_2026": {
+        "false_positives": 144,
+        "fpr": 0.6666666666666666,
+        "hits": 72,
+        "n": 216,
+        "precision": 0.3333333333333333,
+        "wilson_lower_95": 0.27386238601141516,
+        "wilson_upper_95": 0.3986290805717975
+      }
+    },
+    "support_reclaim_t_t_horizon": {
+      "calibration_2021_2024": {
+        "false_positives": 225,
+        "fpr": 0.6716417910447762,
+        "hits": 110,
+        "n": 335,
+        "precision": 0.3283582089552239,
+        "wilson_lower_95": 0.280262826388305,
+        "wilson_upper_95": 0.380345552275944
+      },
+      "holdout_2025_2026": {
+        "false_positives": 141,
+        "fpr": 0.6527777777777778,
+        "hits": 75,
+        "n": 216,
+        "precision": 0.3472222222222222,
+        "wilson_lower_95": 0.2869009989663721,
+        "wilson_upper_95": 0.4128828454015729
+      }
+    }
+  },
+  "support_definition": {
+    "changed_polarity_support": "omitted_due_to_ambiguous_breakout_window",
+    "included": [
+      "prior_20_bar_swing_low",
+      "sma20_t_minus_1",
+      "sma60_t_minus_1"
+    ]
+  },
+  "workers": 6
+}

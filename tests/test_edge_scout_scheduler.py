@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import os
+import plistlib
+import shutil
 import subprocess
 
 
@@ -11,8 +13,13 @@ PLIST = ROOT / "config/launchd/com.vartw.stock-ncn.edge-scout.plist"
 
 
 def test_launchd_plist_is_valid_and_runs_weekdays_after_close() -> None:
-    completed = subprocess.run(["plutil", "-lint", str(PLIST)], capture_output=True, text=True)
-    assert completed.returncode == 0, completed.stderr
+    plutil = shutil.which("plutil")
+    if plutil is not None:
+        completed = subprocess.run([plutil, "-lint", str(PLIST)], capture_output=True, text=True)
+        assert completed.returncode == 0, completed.stderr
+    else:
+        with PLIST.open("rb") as file:
+            plistlib.load(file)
     content = PLIST.read_text(encoding="utf-8")
     assert content.count("<key>Weekday</key>") == 5
     assert "<integer>18</integer>" in content

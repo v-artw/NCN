@@ -1,0 +1,4245 @@
+{
+  "all_origin_sensitivity": {
+    "cpgw_main_long_cross": {
+      "audit_2025_2026": {
+        "codes": 312,
+        "false_positives": 1363,
+        "fpr": 0.6939918533604889,
+        "hits": 601,
+        "n": 1964,
+        "precision": 0.3060081466395112,
+        "precision_lift": -0.007385714604121185,
+        "same_date_baseline": {
+          "admitted_hits": 23871,
+          "admitted_n": 75585,
+          "precision": 0.3133938612436324,
+          "weighted_hits": 615.505543482494,
+          "weighted_n": 1964
+        },
+        "signal_dates": 362,
+        "wilson_lower_95": 0.2860220723632413,
+        "wilson_upper_95": 0.326751638691551
+      },
+      "calibration_2021_2022": {
+        "codes": 137,
+        "false_positives": 220,
+        "fpr": 0.7457627118644068,
+        "hits": 75,
+        "n": 295,
+        "precision": 0.2542372881355932,
+        "precision_lift": -0.028239935221087864,
+        "same_date_baseline": {
+          "admitted_hits": 3987,
+          "admitted_n": 14540,
+          "precision": 0.2824772233566811,
+          "weighted_hits": 83.33078089022092,
+          "weighted_n": 295
+        },
+        "signal_dates": 92,
+        "wilson_lower_95": 0.20792644533936483,
+        "wilson_upper_95": 0.30686667583252014
+      },
+      "selection_2023_2024": {
+        "codes": 162,
+        "false_positives": 255,
+        "fpr": 0.770392749244713,
+        "hits": 76,
+        "n": 331,
+        "precision": 0.229607250755287,
+        "precision_lift": -0.06460443280796876,
+        "same_date_baseline": {
+          "admitted_hits": 5143,
+          "admitted_n": 16575,
+          "precision": 0.2942116835632558,
+          "weighted_hits": 97.38406725943766,
+          "weighted_n": 331
+        },
+        "signal_dates": 93,
+        "wilson_lower_95": 0.18755373974140888,
+        "wilson_upper_95": 0.2778651329434666
+      },
+      "year_2021": {
+        "codes": 48,
+        "false_positives": 44,
+        "fpr": 0.7213114754098361,
+        "hits": 17,
+        "n": 61,
+        "precision": 0.2786885245901639,
+        "precision_lift": 0.01971785587895264,
+        "same_date_baseline": {
+          "admitted_hits": 828,
+          "admitted_n": 3119,
+          "precision": 0.25897066871121127,
+          "weighted_hits": 15.797210791383886,
+          "weighted_n": 61
+        },
+        "signal_dates": 20,
+        "wilson_lower_95": 0.18188396512091543,
+        "wilson_upper_95": 0.40171668631273205
+      },
+      "year_2022": {
+        "codes": 124,
+        "false_positives": 176,
+        "fpr": 0.7521367521367521,
+        "hits": 58,
+        "n": 234,
+        "precision": 0.24786324786324787,
+        "precision_lift": -0.040741752559132594,
+        "same_date_baseline": {
+          "admitted_hits": 3159,
+          "admitted_n": 11421,
+          "precision": 0.28860500042238046,
+          "weighted_hits": 67.53357009883703,
+          "weighted_n": 234
+        },
+        "signal_dates": 72,
+        "wilson_lower_95": 0.19691082667277082,
+        "wilson_upper_95": 0.3069606575419334
+      },
+      "year_2023": {
+        "codes": 54,
+        "false_positives": 57,
+        "fpr": 0.7808219178082192,
+        "hits": 16,
+        "n": 73,
+        "precision": 0.2191780821917808,
+        "precision_lift": -0.012146657889334472,
+        "same_date_baseline": {
+          "admitted_hits": 719,
+          "admitted_n": 3052,
+          "precision": 0.23132474008111528,
+          "weighted_hits": 16.886706025921416,
+          "weighted_n": 73
+        },
+        "signal_dates": 20,
+        "wilson_lower_95": 0.13966002654277956,
+        "wilson_upper_95": 0.3267748212480004
+      },
+      "year_2024": {
+        "codes": 142,
+        "false_positives": 198,
+        "fpr": 0.7674418604651163,
+        "hits": 60,
+        "n": 258,
+        "precision": 0.23255813953488372,
+        "precision_lift": -0.07944713656401645,
+        "same_date_baseline": {
+          "admitted_hits": 4424,
+          "admitted_n": 13523,
+          "precision": 0.31200527609890016,
+          "weighted_hits": 80.49736123351624,
+          "weighted_n": 258
+        },
+        "signal_dates": 73,
+        "wilson_lower_95": 0.1851605284197743,
+        "wilson_upper_95": 0.28780327870636613
+      },
+      "year_2025": {
+        "codes": 275,
+        "false_positives": 805,
+        "fpr": 0.696969696969697,
+        "hits": 350,
+        "n": 1155,
+        "precision": 0.30303030303030304,
+        "precision_lift": -0.018721398484627227,
+        "same_date_baseline": {
+          "admitted_hits": 15501,
+          "admitted_n": 48449,
+          "precision": 0.32175170151493027,
+          "weighted_hits": 371.6232152497445,
+          "weighted_n": 1155
+        },
+        "signal_dates": 232,
+        "wilson_lower_95": 0.27721495490161724,
+        "wilson_upper_95": 0.33015157388022837
+      },
+      "year_2026": {
+        "codes": 260,
+        "false_positives": 558,
+        "fpr": 0.6897404202719407,
+        "hits": 251,
+        "n": 809,
+        "precision": 0.31025957972805934,
+        "precision_lift": 0.008798110960754557,
+        "same_date_baseline": {
+          "admitted_hits": 8370,
+          "admitted_n": 27136,
+          "precision": 0.3014614687673048,
+          "weighted_hits": 243.88232823274956,
+          "weighted_n": 809
+        },
+        "signal_dates": 130,
+        "wilson_lower_95": 0.2793413770928654,
+        "wilson_upper_95": 0.34297126044930765
+      }
+    },
+    "dxbd_cross_zero": {
+      "audit_2025_2026": {
+        "codes": 335,
+        "false_positives": 3127,
+        "fpr": 0.6806704397039617,
+        "hits": 1467,
+        "n": 4594,
+        "precision": 0.3193295602960383,
+        "precision_lift": 0.007986233977438362,
+        "same_date_baseline": {
+          "admitted_hits": 24914,
+          "admitted_n": 79089,
+          "precision": 0.31134332631859996,
+          "weighted_hits": 1430.3112411076481,
+          "weighted_n": 4594
+        },
+        "signal_dates": 378,
+        "wilson_lower_95": 0.30600348062880317,
+        "wilson_upper_95": 0.33295754838968233
+      },
+      "calibration_2021_2022": {
+        "codes": 235,
+        "false_positives": 686,
+        "fpr": 0.7221052631578947,
+        "hits": 264,
+        "n": 950,
+        "precision": 0.27789473684210525,
+        "precision_lift": 0.0020671264704942294,
+        "same_date_baseline": {
+          "admitted_hits": 5009,
+          "admitted_n": 17826,
+          "precision": 0.275827610371611,
+          "weighted_hits": 262.0362298530305,
+          "weighted_n": 950
+        },
+        "signal_dates": 113,
+        "wilson_lower_95": 0.2503464076570764,
+        "wilson_upper_95": 0.3072321252985003
+      },
+      "selection_2023_2024": {
+        "codes": 259,
+        "false_positives": 867,
+        "fpr": 0.6870047543581617,
+        "hits": 395,
+        "n": 1262,
+        "precision": 0.31299524564183834,
+        "precision_lift": -0.0083624331479481,
+        "same_date_baseline": {
+          "admitted_hits": 7184,
+          "admitted_n": 23043,
+          "precision": 0.32135767878978644,
+          "weighted_hits": 405.5533906327105,
+          "weighted_n": 1262
+        },
+        "signal_dates": 131,
+        "wilson_lower_95": 0.28801092528678585,
+        "wilson_upper_95": 0.3391146171191517
+      },
+      "year_2021": {
+        "codes": 133,
+        "false_positives": 162,
+        "fpr": 0.7297297297297297,
+        "hits": 60,
+        "n": 222,
+        "precision": 0.2702702702702703,
+        "precision_lift": 0.006478554674465842,
+        "same_date_baseline": {
+          "admitted_hits": 1142,
+          "admitted_n": 4071,
+          "precision": 0.26379171559580444,
+          "weighted_hits": 58.561760862268585,
+          "weighted_n": 222
+        },
+        "signal_dates": 26,
+        "wilson_lower_95": 0.21612557513973576,
+        "wilson_upper_95": 0.33223044075813246
+      },
+      "year_2022": {
+        "codes": 219,
+        "false_positives": 524,
+        "fpr": 0.7197802197802198,
+        "hits": 204,
+        "n": 728,
+        "precision": 0.2802197802197802,
+        "precision_lift": 0.0007218832544479414,
+        "same_date_baseline": {
+          "admitted_hits": 3867,
+          "admitted_n": 13755,
+          "precision": 0.2794978969653323,
+          "weighted_hits": 203.4744689907619,
+          "weighted_n": 728
+        },
+        "signal_dates": 87,
+        "wilson_lower_95": 0.24881455898363136,
+        "wilson_upper_95": 0.31393235236986367
+      },
+      "year_2023": {
+        "codes": 121,
+        "false_positives": 145,
+        "fpr": 0.8100558659217877,
+        "hits": 34,
+        "n": 179,
+        "precision": 0.18994413407821228,
+        "precision_lift": -0.03441282745466093,
+        "same_date_baseline": {
+          "admitted_hits": 885,
+          "admitted_n": 3656,
+          "precision": 0.2243569615328732,
+          "weighted_hits": 40.1598961143843,
+          "weighted_n": 179
+        },
+        "signal_dates": 24,
+        "wilson_lower_95": 0.1392289348331716,
+        "wilson_upper_95": 0.25368821312440476
+      },
+      "year_2024": {
+        "codes": 251,
+        "false_positives": 722,
+        "fpr": 0.6666666666666666,
+        "hits": 361,
+        "n": 1083,
+        "precision": 0.3333333333333333,
+        "precision_lift": -0.0040567816420370995,
+        "same_date_baseline": {
+          "admitted_hits": 6299,
+          "admitted_n": 19387,
+          "precision": 0.3373901149753704,
+          "weighted_hits": 365.3934945183262,
+          "weighted_n": 1083
+        },
+        "signal_dates": 107,
+        "wilson_lower_95": 0.30588989072076306,
+        "wilson_upper_95": 0.3619549911829107
+      },
+      "year_2025": {
+        "codes": 319,
+        "false_positives": 2071,
+        "fpr": 0.685307743216413,
+        "hits": 951,
+        "n": 3022,
+        "precision": 0.31469225678358703,
+        "precision_lift": 0.0013667343208633165,
+        "same_date_baseline": {
+          "admitted_hits": 15968,
+          "admitted_n": 50333,
+          "precision": 0.3133255224627237,
+          "weighted_hits": 946.8697288823511,
+          "weighted_n": 3022
+        },
+        "signal_dates": 241,
+        "wilson_lower_95": 0.2983788673954789,
+        "wilson_upper_95": 0.33147617855272943
+      },
+      "year_2026": {
+        "codes": 300,
+        "false_positives": 1056,
+        "fpr": 0.6717557251908397,
+        "hits": 516,
+        "n": 1572,
+        "precision": 0.3282442748091603,
+        "precision_lift": 0.02071150621800455,
+        "same_date_baseline": {
+          "admitted_hits": 8946,
+          "admitted_n": 28756,
+          "precision": 0.30753276859115575,
+          "weighted_hits": 483.44151222529683,
+          "weighted_n": 1572
+        },
+        "signal_dates": 137,
+        "wilson_lower_95": 0.30547436420048535,
+        "wilson_upper_95": 0.35185160054114856
+      }
+    },
+    "gding_bbuy": {
+      "audit_2025_2026": {
+        "codes": 332,
+        "false_positives": 2553,
+        "fpr": 0.6864748588330196,
+        "hits": 1166,
+        "n": 3719,
+        "precision": 0.3135251411669804,
+        "precision_lift": 0.0017655768015483742,
+        "same_date_baseline": {
+          "admitted_hits": 24621,
+          "admitted_n": 78224,
+          "precision": 0.311759564365432,
+          "weighted_hits": 1159.4338198750415,
+          "weighted_n": 3719
+        },
+        "signal_dates": 374,
+        "wilson_lower_95": 0.298813542122646,
+        "wilson_upper_95": 0.3286215870002261
+      },
+      "calibration_2021_2022": {
+        "codes": 224,
+        "false_positives": 559,
+        "fpr": 0.7288135593220338,
+        "hits": 208,
+        "n": 767,
+        "precision": 0.2711864406779661,
+        "precision_lift": -0.0091657982201927,
+        "same_date_baseline": {
+          "admitted_hits": 5155,
+          "admitted_n": 18127,
+          "precision": 0.2803522388981588,
+          "weighted_hits": 215.0301672348878,
+          "weighted_n": 767
+        },
+        "signal_dates": 115,
+        "wilson_lower_95": 0.24092152091656532,
+        "wilson_upper_95": 0.3037320110152868
+      },
+      "selection_2023_2024": {
+        "codes": 248,
+        "false_positives": 686,
+        "fpr": 0.6686159844054581,
+        "hits": 340,
+        "n": 1026,
+        "precision": 0.3313840155945419,
+        "precision_lift": 0.0032658273686733685,
+        "same_date_baseline": {
+          "admitted_hits": 7023,
+          "admitted_n": 21912,
+          "precision": 0.3281181882258685,
+          "weighted_hits": 336.6492611197411,
+          "weighted_n": 1026
+        },
+        "signal_dates": 125,
+        "wilson_lower_95": 0.303256970889233,
+        "wilson_upper_95": 0.36076903077937317
+      },
+      "year_2021": {
+        "codes": 125,
+        "false_positives": 136,
+        "fpr": 0.7157894736842105,
+        "hits": 54,
+        "n": 190,
+        "precision": 0.28421052631578947,
+        "precision_lift": 0.014962560409026437,
+        "same_date_baseline": {
+          "admitted_hits": 1142,
+          "admitted_n": 4071,
+          "precision": 0.26924796590676303,
+          "weighted_hits": 51.15711352228497,
+          "weighted_n": 190
+        },
+        "signal_dates": 26,
+        "wilson_lower_95": 0.22484739434515574,
+        "wilson_upper_95": 0.35212679488976584
+      },
+      "year_2022": {
+        "codes": 203,
+        "false_positives": 423,
+        "fpr": 0.733102253032929,
+        "hits": 154,
+        "n": 577,
+        "precision": 0.2668977469670711,
+        "precision_lift": -0.017111011633627105,
+        "same_date_baseline": {
+          "admitted_hits": 4013,
+          "admitted_n": 14056,
+          "precision": 0.2840087586006982,
+          "weighted_hits": 163.87305371260285,
+          "weighted_n": 577
+        },
+        "signal_dates": 89,
+        "wilson_lower_95": 0.23243299157214486,
+        "wilson_upper_95": 0.3044459096635793
+      },
+      "year_2023": {
+        "codes": 106,
+        "false_positives": 110,
+        "fpr": 0.7482993197278912,
+        "hits": 37,
+        "n": 147,
+        "precision": 0.25170068027210885,
+        "precision_lift": 0.02918596736538634,
+        "same_date_baseline": {
+          "admitted_hits": 844,
+          "admitted_n": 3500,
+          "precision": 0.2225147129067225,
+          "weighted_hits": 32.70966279728821,
+          "weighted_n": 147
+        },
+        "signal_dates": 23,
+        "wilson_lower_95": 0.18847735749857328,
+        "wilson_upper_95": 0.32757126569290707
+      },
+      "year_2024": {
+        "codes": 243,
+        "false_positives": 576,
+        "fpr": 0.6552901023890785,
+        "hits": 303,
+        "n": 879,
+        "precision": 0.3447098976109215,
+        "precision_lift": -0.001068940071049962,
+        "same_date_baseline": {
+          "admitted_hits": 6179,
+          "admitted_n": 18412,
+          "precision": 0.3457788376819715,
+          "weighted_hits": 303.9395983224529,
+          "weighted_n": 879
+        },
+        "signal_dates": 102,
+        "wilson_lower_95": 0.31402684381792384,
+        "wilson_upper_95": 0.376744411184106
+      },
+      "year_2025": {
+        "codes": 313,
+        "false_positives": 1695,
+        "fpr": 0.6887444128403089,
+        "hits": 766,
+        "n": 2461,
+        "precision": 0.3112555871596912,
+        "precision_lift": 0.0008165389568195458,
+        "same_date_baseline": {
+          "admitted_hits": 15755,
+          "admitted_n": 49695,
+          "precision": 0.31043904820287166,
+          "weighted_hits": 763.9904976272671,
+          "weighted_n": 2461
+        },
+        "signal_dates": 238,
+        "wilson_lower_95": 0.2932685260903975,
+        "wilson_upper_95": 0.3298309866734247
+      },
+      "year_2026": {
+        "codes": 290,
+        "false_positives": 858,
+        "fpr": 0.6820349761526232,
+        "hits": 400,
+        "n": 1258,
+        "precision": 0.3179650238473768,
+        "precision_lift": 0.0036221603753780474,
+        "same_date_baseline": {
+          "admitted_hits": 8866,
+          "admitted_n": 28529,
+          "precision": 0.31434286347199875,
+          "weighted_hits": 395.4433222477744,
+          "weighted_n": 1258
+        },
+        "signal_dates": 136,
+        "wilson_lower_95": 0.2928183591583275,
+        "wilson_upper_95": 0.34422007736175564
+      }
+    },
+    "kdj_trend_pro_buy": {
+      "audit_2025_2026": {
+        "codes": 334,
+        "false_positives": 2385,
+        "fpr": 0.6678801456174741,
+        "hits": 1186,
+        "n": 3571,
+        "precision": 0.3321198543825259,
+        "precision_lift": 0.02132282337410113,
+        "same_date_baseline": {
+          "admitted_hits": 25037,
+          "admitted_n": 78947,
+          "precision": 0.31079703100842476,
+          "weighted_hits": 1109.8561977310849,
+          "weighted_n": 3571
+        },
+        "signal_dates": 377,
+        "wilson_lower_95": 0.31686002346668257,
+        "wilson_upper_95": 0.3477405003719121
+      },
+      "calibration_2021_2022": {
+        "codes": 232,
+        "false_positives": 624,
+        "fpr": 0.7188940092165899,
+        "hits": 244,
+        "n": 868,
+        "precision": 0.28110599078341014,
+        "precision_lift": 0.004378745586765931,
+        "same_date_baseline": {
+          "admitted_hits": 4997,
+          "admitted_n": 17820,
+          "precision": 0.2767272451966442,
+          "weighted_hits": 240.19924883068717,
+          "weighted_n": 868
+        },
+        "signal_dates": 113,
+        "wilson_lower_95": 0.2522145126719636,
+        "wilson_upper_95": 0.3119264964287722
+      },
+      "selection_2023_2024": {
+        "codes": 266,
+        "false_positives": 896,
+        "fpr": 0.656891495601173,
+        "hits": 468,
+        "n": 1364,
+        "precision": 0.34310850439882695,
+        "precision_lift": 0.018065330987664552,
+        "same_date_baseline": {
+          "admitted_hits": 7283,
+          "admitted_n": 23036,
+          "precision": 0.3250431734111624,
+          "weighted_hits": 443.3588885328255,
+          "weighted_n": 1364
+        },
+        "signal_dates": 131,
+        "wilson_lower_95": 0.31838585188262697,
+        "wilson_upper_95": 0.3687124203149724
+      },
+      "year_2021": {
+        "codes": 130,
+        "false_positives": 158,
+        "fpr": 0.7117117117117117,
+        "hits": 64,
+        "n": 222,
+        "precision": 0.2882882882882883,
+        "precision_lift": 0.02091957021116908,
+        "same_date_baseline": {
+          "admitted_hits": 1142,
+          "admitted_n": 4071,
+          "precision": 0.2673687180771192,
+          "weighted_hits": 59.35585541312046,
+          "weighted_n": 222
+        },
+        "signal_dates": 26,
+        "wilson_lower_95": 0.23270270898785364,
+        "wilson_upper_95": 0.3510763644866523
+      },
+      "year_2022": {
+        "codes": 210,
+        "false_positives": 466,
+        "fpr": 0.7213622291021672,
+        "hits": 180,
+        "n": 646,
+        "precision": 0.2786377708978328,
+        "precision_lift": -0.0013055625658927594,
+        "same_date_baseline": {
+          "admitted_hits": 3855,
+          "admitted_n": 13749,
+          "precision": 0.2799433334637256,
+          "weighted_hits": 180.84339341756672,
+          "weighted_n": 646
+        },
+        "signal_dates": 87,
+        "wilson_lower_95": 0.24545093115857344,
+        "wilson_upper_95": 0.3144418180898588
+      },
+      "year_2023": {
+        "codes": 109,
+        "false_positives": 121,
+        "fpr": 0.7857142857142857,
+        "hits": 33,
+        "n": 154,
+        "precision": 0.21428571428571427,
+        "precision_lift": -0.011523577585382222,
+        "same_date_baseline": {
+          "admitted_hits": 885,
+          "admitted_n": 3656,
+          "precision": 0.2258092918710965,
+          "weighted_hits": 34.77463094814886,
+          "weighted_n": 154
+        },
+        "signal_dates": 24,
+        "wilson_lower_95": 0.15684903683536647,
+        "wilson_upper_95": 0.28563000544499556
+      },
+      "year_2024": {
+        "codes": 258,
+        "false_positives": 775,
+        "fpr": 0.640495867768595,
+        "hits": 435,
+        "n": 1210,
+        "precision": 0.359504132231405,
+        "precision_lift": 0.02183119207877965,
+        "same_date_baseline": {
+          "admitted_hits": 6398,
+          "admitted_n": 19380,
+          "precision": 0.33767294015262533,
+          "weighted_hits": 408.58425758467666,
+          "weighted_n": 1210
+        },
+        "signal_dates": 107,
+        "wilson_lower_95": 0.33295000140950337,
+        "wilson_upper_95": 0.3869475535927309
+      },
+      "year_2025": {
+        "codes": 319,
+        "false_positives": 1662,
+        "fpr": 0.6645341863254698,
+        "hits": 839,
+        "n": 2501,
+        "precision": 0.3354658136745302,
+        "precision_lift": 0.02420652002977336,
+        "same_date_baseline": {
+          "admitted_hits": 15945,
+          "admitted_n": 50174,
+          "precision": 0.31125929364475685,
+          "weighted_hits": 778.4594934055368,
+          "weighted_n": 2501
+        },
+        "signal_dates": 240,
+        "wilson_lower_95": 0.3172259295642892,
+        "wilson_upper_95": 0.3542103800211154
+      },
+      "year_2026": {
+        "codes": 275,
+        "false_positives": 723,
+        "fpr": 0.6757009345794392,
+        "hits": 347,
+        "n": 1070,
+        "precision": 0.32429906542056075,
+        "precision_lift": 0.01458251932191773,
+        "same_date_baseline": {
+          "admitted_hits": 9092,
+          "admitted_n": 28773,
+          "precision": 0.309716546098643,
+          "weighted_hits": 331.39670432554806,
+          "weighted_n": 1070
+        },
+        "signal_dates": 137,
+        "wilson_lower_95": 0.2969219857745002,
+        "wilson_upper_95": 0.3529332628953223
+      }
+    },
+    "mhpg_buy": {
+      "audit_2025_2026": {
+        "codes": 308,
+        "false_positives": 856,
+        "fpr": 0.6892109500805152,
+        "hits": 386,
+        "n": 1242,
+        "precision": 0.3107890499194847,
+        "precision_lift": 0.011042808740608645,
+        "same_date_baseline": {
+          "admitted_hits": 20006,
+          "admitted_n": 65746,
+          "precision": 0.29974624117887605,
+          "weighted_hits": 372.28483154416404,
+          "weighted_n": 1242
+        },
+        "signal_dates": 311,
+        "wilson_lower_95": 0.2856658393825414,
+        "wilson_upper_95": 0.3370791387912488
+      },
+      "calibration_2021_2022": {
+        "codes": 148,
+        "false_positives": 184,
+        "fpr": 0.7104247104247104,
+        "hits": 75,
+        "n": 259,
+        "precision": 0.28957528957528955,
+        "precision_lift": 0.010703340165015118,
+        "same_date_baseline": {
+          "admitted_hits": 3956,
+          "admitted_n": 14242,
+          "precision": 0.27887194941027443,
+          "weighted_hits": 72.22783489726108,
+          "weighted_n": 259
+        },
+        "signal_dates": 90,
+        "wilson_lower_95": 0.23773074467330915,
+        "wilson_upper_95": 0.3475708209844862
+      },
+      "selection_2023_2024": {
+        "codes": 205,
+        "false_positives": 326,
+        "fpr": 0.6791666666666667,
+        "hits": 154,
+        "n": 480,
+        "precision": 0.32083333333333336,
+        "precision_lift": -0.008986627312121964,
+        "same_date_baseline": {
+          "admitted_hits": 5430,
+          "admitted_n": 17146,
+          "precision": 0.3298199606454553,
+          "weighted_hits": 158.31358110981856,
+          "weighted_n": 480
+        },
+        "signal_dates": 95,
+        "wilson_lower_95": 0.28063739672561444,
+        "wilson_upper_95": 0.3638743608413249
+      },
+      "year_2021": {
+        "codes": 39,
+        "false_positives": 33,
+        "fpr": 0.7333333333333333,
+        "hits": 12,
+        "n": 45,
+        "precision": 0.26666666666666666,
+        "precision_lift": -0.00388332734050878,
+        "same_date_baseline": {
+          "admitted_hits": 833,
+          "admitted_n": 2982,
+          "precision": 0.27054999400717544,
+          "weighted_hits": 12.174749730322896,
+          "weighted_n": 45
+        },
+        "signal_dates": 19,
+        "wilson_lower_95": 0.15964748860054626,
+        "wilson_upper_95": 0.4103911669717529
+      },
+      "year_2022": {
+        "codes": 127,
+        "false_positives": 151,
+        "fpr": 0.705607476635514,
+        "hits": 63,
+        "n": 214,
+        "precision": 0.29439252336448596,
+        "precision_lift": 0.01377063006103657,
+        "same_date_baseline": {
+          "admitted_hits": 3123,
+          "admitted_n": 11260,
+          "precision": 0.2806218933034494,
+          "weighted_hits": 60.05308516693817,
+          "weighted_n": 214
+        },
+        "signal_dates": 71,
+        "wilson_lower_95": 0.23738544628785815,
+        "wilson_upper_95": 0.35865130702280423
+      },
+      "year_2023": {
+        "codes": 25,
+        "false_positives": 26,
+        "fpr": 0.8666666666666667,
+        "hits": 4,
+        "n": 30,
+        "precision": 0.13333333333333333,
+        "precision_lift": -0.06711248436452955,
+        "same_date_baseline": {
+          "admitted_hits": 517,
+          "admitted_n": 2434,
+          "precision": 0.20044581769786288,
+          "weighted_hits": 6.013374530935886,
+          "weighted_n": 30
+        },
+        "signal_dates": 16,
+        "wilson_lower_95": 0.05309569424218104,
+        "wilson_upper_95": 0.2968168394441695
+      },
+      "year_2024": {
+        "codes": 200,
+        "false_positives": 300,
+        "fpr": 0.6666666666666666,
+        "hits": 150,
+        "n": 450,
+        "precision": 0.3333333333333333,
+        "precision_lift": -0.005111570175294844,
+        "same_date_baseline": {
+          "admitted_hits": 4913,
+          "admitted_n": 14712,
+          "precision": 0.33844490350862816,
+          "weighted_hits": 152.30020657888267,
+          "weighted_n": 450
+        },
+        "signal_dates": 79,
+        "wilson_lower_95": 0.29135034272202565,
+        "wilson_upper_95": 0.3781378663800047
+      },
+      "year_2025": {
+        "codes": 288,
+        "false_positives": 649,
+        "fpr": 0.6918976545842217,
+        "hits": 289,
+        "n": 938,
+        "precision": 0.30810234541577824,
+        "precision_lift": 0.00411314816532482,
+        "same_date_baseline": {
+          "admitted_hits": 13870,
+          "admitted_n": 45055,
+          "precision": 0.3039891972504534,
+          "weighted_hits": 285.1418670209253,
+          "weighted_n": 938
+        },
+        "signal_dates": 215,
+        "wilson_lower_95": 0.2793873364796928,
+        "wilson_upper_95": 0.33838278537519234
+      },
+      "year_2026": {
+        "codes": 161,
+        "false_positives": 207,
+        "fpr": 0.680921052631579,
+        "hits": 97,
+        "n": 304,
+        "precision": 0.3190789473684211,
+        "precision_lift": 0.032424458805135836,
+        "same_date_baseline": {
+          "admitted_hits": 6136,
+          "admitted_n": 20691,
+          "precision": 0.28665448856328524,
+          "weighted_hits": 87.14296452323872,
+          "weighted_n": 304
+        },
+        "signal_dates": 96,
+        "wilson_lower_95": 0.26921748790836314,
+        "wilson_upper_95": 0.3734558869701458
+      }
+    },
+    "mkf_green_exit_proxy": {
+      "audit_2025_2026": {
+        "codes": 46,
+        "false_positives": 29,
+        "fpr": 0.5686274509803921,
+        "hits": 22,
+        "n": 51,
+        "precision": 0.43137254901960786,
+        "precision_lift": 0.11301135419084063,
+        "same_date_baseline": {
+          "admitted_hits": 2904,
+          "admitted_n": 9124,
+          "precision": 0.31836119482876724,
+          "weighted_hits": 16.23642093626713,
+          "weighted_n": 51
+        },
+        "signal_dates": 43,
+        "wilson_lower_95": 0.30501028092334304,
+        "wilson_upper_95": 0.5673493876494193
+      },
+      "calibration_2021_2022": {
+        "codes": 10,
+        "false_positives": 4,
+        "fpr": 0.4,
+        "hits": 6,
+        "n": 10,
+        "precision": 0.6,
+        "precision_lift": 0.28955283656933617,
+        "same_date_baseline": {
+          "admitted_hits": 429,
+          "admitted_n": 1410,
+          "precision": 0.3104471634306638,
+          "weighted_hits": 3.104471634306638,
+          "weighted_n": 10
+        },
+        "signal_dates": 9,
+        "wilson_lower_95": 0.3126695474501863,
+        "wilson_upper_95": 0.8318224187964901
+      },
+      "selection_2023_2024": {
+        "codes": 5,
+        "false_positives": 4,
+        "fpr": 0.8,
+        "hits": 1,
+        "n": 5,
+        "precision": 0.2,
+        "precision_lift": -0.08157540400452429,
+        "same_date_baseline": {
+          "admitted_hits": 266,
+          "admitted_n": 889,
+          "precision": 0.2815754040045243,
+          "weighted_hits": 1.4078770200226214,
+          "weighted_n": 5
+        },
+        "signal_dates": 5,
+        "wilson_lower_95": 0.036223160969787456,
+        "wilson_upper_95": 0.6244717358814612
+      },
+      "year_2021": {
+        "codes": 1,
+        "false_positives": 0,
+        "fpr": 0.0,
+        "hits": 1,
+        "n": 1,
+        "precision": 1.0,
+        "precision_lift": 0.6644736842105263,
+        "same_date_baseline": {
+          "admitted_hits": 51,
+          "admitted_n": 152,
+          "precision": 0.3355263157894737,
+          "weighted_hits": 0.3355263157894737,
+          "weighted_n": 1
+        },
+        "signal_dates": 1,
+        "wilson_lower_95": 0.20654329147389294,
+        "wilson_upper_95": 1.0
+      },
+      "year_2022": {
+        "codes": 9,
+        "false_positives": 4,
+        "fpr": 0.4444444444444444,
+        "hits": 5,
+        "n": 9,
+        "precision": 0.5555555555555556,
+        "precision_lift": 0.24789496460920402,
+        "same_date_baseline": {
+          "admitted_hits": 378,
+          "admitted_n": 1258,
+          "precision": 0.30766059094635156,
+          "weighted_hits": 2.768945318517164,
+          "weighted_n": 9
+        },
+        "signal_dates": 8,
+        "wilson_lower_95": 0.26664734574402965,
+        "wilson_upper_95": 0.8112245705280859
+      },
+      "year_2023": {
+        "codes": 1,
+        "false_positives": 1,
+        "fpr": 1.0,
+        "hits": 0,
+        "n": 1,
+        "precision": 0.0,
+        "precision_lift": -0.21710526315789475,
+        "same_date_baseline": {
+          "admitted_hits": 33,
+          "admitted_n": 152,
+          "precision": 0.21710526315789475,
+          "weighted_hits": 0.21710526315789475,
+          "weighted_n": 1
+        },
+        "signal_dates": 1,
+        "wilson_lower_95": 0.0,
+        "wilson_upper_95": 0.7934567085261071
+      },
+      "year_2024": {
+        "codes": 4,
+        "false_positives": 3,
+        "fpr": 0.75,
+        "hits": 1,
+        "n": 4,
+        "precision": 0.25,
+        "precision_lift": -0.04769293921618167,
+        "same_date_baseline": {
+          "admitted_hits": 233,
+          "admitted_n": 737,
+          "precision": 0.2976929392161817,
+          "weighted_hits": 1.1907717568647267,
+          "weighted_n": 4
+        },
+        "signal_dates": 4,
+        "wilson_lower_95": 0.045586062644636216,
+        "wilson_upper_95": 0.6993639475573634
+      },
+      "year_2025": {
+        "codes": 30,
+        "false_positives": 19,
+        "fpr": 0.59375,
+        "hits": 13,
+        "n": 32,
+        "precision": 0.40625,
+        "precision_lift": 0.10331715831893318,
+        "same_date_baseline": {
+          "admitted_hits": 1535,
+          "admitted_n": 5100,
+          "precision": 0.3029328416810668,
+          "weighted_hits": 9.693850933794138,
+          "weighted_n": 32
+        },
+        "signal_dates": 24,
+        "wilson_lower_95": 0.25519402480313796,
+        "wilson_upper_95": 0.5774027342701177
+      },
+      "year_2026": {
+        "codes": 17,
+        "false_positives": 10,
+        "fpr": 0.5263157894736842,
+        "hits": 9,
+        "n": 19,
+        "precision": 0.47368421052631576,
+        "precision_lift": 0.12933842092247405,
+        "same_date_baseline": {
+          "admitted_hits": 1369,
+          "admitted_n": 4024,
+          "precision": 0.3443457896038417,
+          "weighted_hits": 6.542570002472993,
+          "weighted_n": 19
+        },
+        "signal_dates": 19,
+        "wilson_lower_95": 0.2732950548744854,
+        "wilson_upper_95": 0.6829251748817489
+      }
+    },
+    "ribbon1_strict_buy": {
+      "audit_2025_2026": {
+        "codes": 238,
+        "false_positives": 533,
+        "fpr": 0.7087765957446809,
+        "hits": 219,
+        "n": 752,
+        "precision": 0.2912234042553192,
+        "precision_lift": -0.02810742903267599,
+        "same_date_baseline": {
+          "admitted_hits": 17960,
+          "admitted_n": 57558,
+          "precision": 0.31933083328799516,
+          "weighted_hits": 240.13678663257238,
+          "weighted_n": 752
+        },
+        "signal_dates": 277,
+        "wilson_lower_95": 0.25987732690790527,
+        "wilson_upper_95": 0.3246917150712607
+      },
+      "calibration_2021_2022": {
+        "codes": 63,
+        "false_positives": 66,
+        "fpr": 0.75,
+        "hits": 22,
+        "n": 88,
+        "precision": 0.25,
+        "precision_lift": -0.02983722792718141,
+        "same_date_baseline": {
+          "admitted_hits": 2667,
+          "admitted_n": 9456,
+          "precision": 0.2798372279271814,
+          "weighted_hits": 24.625676057591964,
+          "weighted_n": 88
+        },
+        "signal_dates": 60,
+        "wilson_lower_95": 0.1712820103346811,
+        "wilson_upper_95": 0.3496322594515596
+      },
+      "selection_2023_2024": {
+        "codes": 47,
+        "false_positives": 43,
+        "fpr": 0.6935483870967742,
+        "hits": 19,
+        "n": 62,
+        "precision": 0.3064516129032258,
+        "precision_lift": 0.005781834343579262,
+        "same_date_baseline": {
+          "admitted_hits": 1931,
+          "admitted_n": 6740,
+          "precision": 0.30066977855964655,
+          "weighted_hits": 18.641526270698087,
+          "weighted_n": 62
+        },
+        "signal_dates": 40,
+        "wilson_lower_95": 0.20581430019850633,
+        "wilson_upper_95": 0.4296745093079456
+      },
+      "year_2021": {
+        "codes": 30,
+        "false_positives": 28,
+        "fpr": 0.8235294117647058,
+        "hits": 6,
+        "n": 34,
+        "precision": 0.17647058823529413,
+        "precision_lift": -0.11575598883758095,
+        "same_date_baseline": {
+          "admitted_hits": 777,
+          "admitted_n": 2664,
+          "precision": 0.2922265770728751,
+          "weighted_hits": 9.935703620477753,
+          "weighted_n": 34
+        },
+        "signal_dates": 17,
+        "wilson_lower_95": 0.08348855603569687,
+        "wilson_upper_95": 0.33514067740052156
+      },
+      "year_2022": {
+        "codes": 40,
+        "false_positives": 38,
+        "fpr": 0.7037037037037037,
+        "hits": 16,
+        "n": 54,
+        "precision": 0.2962962962962963,
+        "precision_lift": 0.024259769683070143,
+        "same_date_baseline": {
+          "admitted_hits": 1890,
+          "admitted_n": 6792,
+          "precision": 0.27203652661322614,
+          "weighted_hits": 14.68997243711421,
+          "weighted_n": 54
+        },
+        "signal_dates": 43,
+        "wilson_lower_95": 0.19137265695067046,
+        "wilson_upper_95": 0.42827825173788586
+      },
+      "year_2023": {
+        "codes": 25,
+        "false_positives": 23,
+        "fpr": 0.71875,
+        "hits": 9,
+        "n": 32,
+        "precision": 0.28125,
+        "precision_lift": 0.04962825741106078,
+        "same_date_baseline": {
+          "admitted_hits": 732,
+          "admitted_n": 2900,
+          "precision": 0.23162174258893922,
+          "weighted_hits": 7.411895762846055,
+          "weighted_n": 32
+        },
+        "signal_dates": 19,
+        "wilson_lower_95": 0.15564406845647866,
+        "wilson_upper_95": 0.45374836938111784
+      },
+      "year_2024": {
+        "codes": 25,
+        "false_positives": 20,
+        "fpr": 0.6666666666666666,
+        "hits": 10,
+        "n": 30,
+        "precision": 0.3333333333333333,
+        "precision_lift": -0.040987683595067714,
+        "same_date_baseline": {
+          "admitted_hits": 1199,
+          "admitted_n": 3840,
+          "precision": 0.37432101692840103,
+          "weighted_hits": 11.22963050785203,
+          "weighted_n": 30
+        },
+        "signal_dates": 21,
+        "wilson_lower_95": 0.19230295526846194,
+        "wilson_upper_95": 0.5122027418616973
+      },
+      "year_2025": {
+        "codes": 186,
+        "false_positives": 282,
+        "fpr": 0.7401574803149606,
+        "hits": 99,
+        "n": 381,
+        "precision": 0.25984251968503935,
+        "precision_lift": -0.05871077751511872,
+        "same_date_baseline": {
+          "admitted_hits": 10415,
+          "admitted_n": 33488,
+          "precision": 0.31855329720015807,
+          "weighted_hits": 121.36880623326022,
+          "weighted_n": 381
+        },
+        "signal_dates": 161,
+        "wilson_lower_95": 0.2183583562672422,
+        "wilson_upper_95": 0.30612132576297485
+      },
+      "year_2026": {
+        "codes": 180,
+        "false_positives": 251,
+        "fpr": 0.6765498652291105,
+        "hits": 120,
+        "n": 371,
+        "precision": 0.32345013477088946,
+        "precision_lift": 0.0033208075490238076,
+        "same_date_baseline": {
+          "admitted_hits": 7545,
+          "admitted_n": 24070,
+          "precision": 0.32012932722186566,
+          "weighted_hits": 118.76798039931215,
+          "weighted_n": 371
+        },
+        "signal_dates": 116,
+        "wilson_lower_95": 0.27786779832193187,
+        "wilson_upper_95": 0.3726512475897279
+      }
+    },
+    "shengbei_long_flip": {
+      "audit_2025_2026": {
+        "codes": 302,
+        "false_positives": 910,
+        "fpr": 0.6994619523443505,
+        "hits": 391,
+        "n": 1301,
+        "precision": 0.3005380476556495,
+        "precision_lift": -0.014403400870164784,
+        "same_date_baseline": {
+          "admitted_hits": 22470,
+          "admitted_n": 71921,
+          "precision": 0.3149414485258143,
+          "weighted_hits": 409.7388245320844,
+          "weighted_n": 1301
+        },
+        "signal_dates": 343,
+        "wilson_lower_95": 0.2762407290378638,
+        "wilson_upper_95": 0.32600984298559094
+      },
+      "calibration_2021_2022": {
+        "codes": 128,
+        "false_positives": 132,
+        "fpr": 0.6875,
+        "hits": 60,
+        "n": 192,
+        "precision": 0.3125,
+        "precision_lift": 0.017272602647651514,
+        "same_date_baseline": {
+          "admitted_hits": 3797,
+          "admitted_n": 13308,
+          "precision": 0.2952273973523485,
+          "weighted_hits": 56.68366029165091,
+          "weighted_n": 192
+        },
+        "signal_dates": 84,
+        "wilson_lower_95": 0.2511558926254186,
+        "wilson_upper_95": 0.3812000521789538
+      },
+      "selection_2023_2024": {
+        "codes": 187,
+        "false_positives": 217,
+        "fpr": 0.6497005988023952,
+        "hits": 117,
+        "n": 334,
+        "precision": 0.3502994011976048,
+        "precision_lift": 0.003978437034862059,
+        "same_date_baseline": {
+          "admitted_hits": 6126,
+          "admitted_n": 19137,
+          "precision": 0.3463209641627427,
+          "weighted_hits": 115.67120203035607,
+          "weighted_n": 334
+        },
+        "signal_dates": 108,
+        "wilson_lower_95": 0.3011015242825157,
+        "wilson_upper_95": 0.4029017719367777
+      },
+      "year_2021": {
+        "codes": 46,
+        "false_positives": 34,
+        "fpr": 0.6666666666666666,
+        "hits": 17,
+        "n": 51,
+        "precision": 0.3333333333333333,
+        "precision_lift": 0.0578221356227937,
+        "same_date_baseline": {
+          "admitted_hits": 833,
+          "admitted_n": 2977,
+          "precision": 0.2755111977105396,
+          "weighted_hits": 14.05107108323752,
+          "weighted_n": 51
+        },
+        "signal_dates": 19,
+        "wilson_lower_95": 0.21969755762722826,
+        "wilson_upper_95": 0.4703187803351943
+      },
+      "year_2022": {
+        "codes": 106,
+        "false_positives": 98,
+        "fpr": 0.6950354609929078,
+        "hits": 43,
+        "n": 141,
+        "precision": 0.3049645390070922,
+        "precision_lift": 0.0026057502949404787,
+        "same_date_baseline": {
+          "admitted_hits": 2964,
+          "admitted_n": 10331,
+          "precision": 0.3023587887121517,
+          "weighted_hits": 42.63258920841339,
+          "weighted_n": 141
+        },
+        "signal_dates": 65,
+        "wilson_lower_95": 0.2349805473237027,
+        "wilson_upper_95": 0.3852942908443374
+      },
+      "year_2023": {
+        "codes": 32,
+        "false_positives": 28,
+        "fpr": 0.8,
+        "hits": 7,
+        "n": 35,
+        "precision": 0.2,
+        "precision_lift": -0.034224669071210856,
+        "same_date_baseline": {
+          "admitted_hits": 661,
+          "admitted_n": 2891,
+          "precision": 0.23422466907121087,
+          "weighted_hits": 8.19786341749238,
+          "weighted_n": 35
+        },
+        "signal_dates": 19,
+        "wilson_lower_95": 0.10042319445900805,
+        "wilson_upper_95": 0.35891936609462516
+      },
+      "year_2024": {
+        "codes": 174,
+        "false_positives": 189,
+        "fpr": 0.6321070234113713,
+        "hits": 110,
+        "n": 299,
+        "precision": 0.36789297658862874,
+        "precision_lift": 0.008450372532228412,
+        "same_date_baseline": {
+          "admitted_hits": 5465,
+          "admitted_n": 16246,
+          "precision": 0.3594426040564003,
+          "weighted_hits": 107.4733386128637,
+          "weighted_n": 299
+        },
+        "signal_dates": 89,
+        "wilson_lower_95": 0.31522985977539075,
+        "wilson_upper_95": 0.4239076959633189
+      },
+      "year_2025": {
+        "codes": 272,
+        "false_positives": 581,
+        "fpr": 0.6958083832335329,
+        "hits": 254,
+        "n": 835,
+        "precision": 0.30419161676646705,
+        "precision_lift": -0.009531028796057939,
+        "same_date_baseline": {
+          "admitted_hits": 14455,
+          "admitted_n": 46276,
+          "precision": 0.313722645562525,
+          "weighted_hits": 261.9584090447084,
+          "weighted_n": 835
+        },
+        "signal_dates": 221,
+        "wilson_lower_95": 0.2739414663301353,
+        "wilson_upper_95": 0.3362352344915693
+      },
+      "year_2026": {
+        "codes": 226,
+        "false_positives": 329,
+        "fpr": 0.7060085836909872,
+        "hits": 137,
+        "n": 466,
+        "precision": 0.2939914163090129,
+        "precision_lift": -0.02313393881411152,
+        "same_date_baseline": {
+          "admitted_hits": 8015,
+          "admitted_n": 25645,
+          "precision": 0.3171253551231244,
+          "weighted_hits": 147.78041548737596,
+          "weighted_n": 466
+        },
+        "signal_dates": 122,
+        "wilson_lower_95": 0.2544456251459484,
+        "wilson_upper_95": 0.33690601336371095
+      }
+    },
+    "smc_strong_buy": {
+      "audit_2025_2026": {
+        "codes": 242,
+        "false_positives": 620,
+        "fpr": 0.7053469852104665,
+        "hits": 259,
+        "n": 879,
+        "precision": 0.29465301478953354,
+        "precision_lift": -0.006500087923147935,
+        "same_date_baseline": {
+          "admitted_hits": 19064,
+          "admitted_n": 62392,
+          "precision": 0.3011531027126815,
+          "weighted_hits": 264.713577284447,
+          "weighted_n": 879
+        },
+        "signal_dates": 296,
+        "wilson_lower_95": 0.2654606521846846,
+        "wilson_upper_95": 0.3256324725615892
+      },
+      "calibration_2021_2022": {
+        "codes": 94,
+        "false_positives": 117,
+        "fpr": 0.785234899328859,
+        "hits": 32,
+        "n": 149,
+        "precision": 0.21476510067114093,
+        "precision_lift": -0.03358039488964659,
+        "same_date_baseline": {
+          "admitted_hits": 2961,
+          "admitted_n": 11162,
+          "precision": 0.24834549556078753,
+          "weighted_hits": 37.00347883855734,
+          "weighted_n": 149
+        },
+        "signal_dates": 71,
+        "wilson_lower_95": 0.15643541386906065,
+        "wilson_upper_95": 0.28743327109628913
+      },
+      "selection_2023_2024": {
+        "codes": 124,
+        "false_positives": 182,
+        "fpr": 0.7647058823529411,
+        "hits": 56,
+        "n": 238,
+        "precision": 0.23529411764705882,
+        "precision_lift": -0.024109806420367474,
+        "same_date_baseline": {
+          "admitted_hits": 4585,
+          "admitted_n": 15908,
+          "precision": 0.2594039240674263,
+          "weighted_hits": 61.73813392804746,
+          "weighted_n": 238
+        },
+        "signal_dates": 92,
+        "wilson_lower_95": 0.18587204392488904,
+        "wilson_upper_95": 0.2931257794437952
+      },
+      "year_2021": {
+        "codes": 29,
+        "false_positives": 30,
+        "fpr": 0.8333333333333334,
+        "hits": 6,
+        "n": 36,
+        "precision": 0.16666666666666666,
+        "precision_lift": -0.09682872591802552,
+        "same_date_baseline": {
+          "admitted_hits": 737,
+          "admitted_n": 2677,
+          "precision": 0.2634953925846922,
+          "weighted_hits": 9.485834133048918,
+          "weighted_n": 36
+        },
+        "signal_dates": 17,
+        "wilson_lower_95": 0.07870340628564097,
+        "wilson_upper_95": 0.3189111473467432
+      },
+      "year_2022": {
+        "codes": 75,
+        "false_positives": 87,
+        "fpr": 0.7699115044247787,
+        "hits": 26,
+        "n": 113,
+        "precision": 0.23008849557522124,
+        "precision_lift": -0.013430484119543479,
+        "same_date_baseline": {
+          "admitted_hits": 2224,
+          "admitted_n": 8485,
+          "precision": 0.24351897969476471,
+          "weighted_hits": 27.517644705508413,
+          "weighted_n": 113
+        },
+        "signal_dates": 54,
+        "wilson_lower_95": 0.16213092290126854,
+        "wilson_upper_95": 0.3157947474079364
+      },
+      "year_2023": {
+        "codes": 27,
+        "false_positives": 33,
+        "fpr": 0.8048780487804879,
+        "hits": 8,
+        "n": 41,
+        "precision": 0.1951219512195122,
+        "precision_lift": -0.030338305521896314,
+        "same_date_baseline": {
+          "admitted_hits": 636,
+          "admitted_n": 2745,
+          "precision": 0.22546025674140852,
+          "weighted_hits": 9.24387052639775,
+          "weighted_n": 41
+        },
+        "signal_dates": 18,
+        "wilson_lower_95": 0.1023431574920593,
+        "wilson_upper_95": 0.34013882352556724
+      },
+      "year_2024": {
+        "codes": 114,
+        "false_positives": 149,
+        "fpr": 0.7563451776649747,
+        "hits": 48,
+        "n": 197,
+        "precision": 0.2436548223350254,
+        "precision_lift": -0.02281351980532842,
+        "same_date_baseline": {
+          "admitted_hits": 3949,
+          "admitted_n": 13163,
+          "precision": 0.2664683421403538,
+          "weighted_hits": 52.494263401649704,
+          "weighted_n": 197
+        },
+        "signal_dates": 74,
+        "wilson_lower_95": 0.18898461399229727,
+        "wilson_upper_95": 0.3081315213103492
+      },
+      "year_2025": {
+        "codes": 192,
+        "false_positives": 383,
+        "fpr": 0.7199248120300752,
+        "hits": 149,
+        "n": 532,
+        "precision": 0.2800751879699248,
+        "precision_lift": -0.012994090953257653,
+        "same_date_baseline": {
+          "admitted_hits": 11924,
+          "admitted_n": 38976,
+          "precision": 0.29306927892318246,
+          "weighted_hits": 155.91285638713308,
+          "weighted_n": 532
+        },
+        "signal_dates": 185,
+        "wilson_lower_95": 0.24359863167908458,
+        "wilson_upper_95": 0.31970515063270305
+      },
+      "year_2026": {
+        "codes": 167,
+        "false_positives": 237,
+        "fpr": 0.6829971181556196,
+        "hits": 110,
+        "n": 347,
+        "precision": 0.3170028818443804,
+        "precision_lift": 0.0034561357426111106,
+        "same_date_baseline": {
+          "admitted_hits": 7140,
+          "admitted_n": 23416,
+          "precision": 0.3135467461017693,
+          "weighted_hits": 108.80072089731395,
+          "weighted_n": 347
+        },
+        "signal_dates": 111,
+        "wilson_lower_95": 0.2702752255616964,
+        "wilson_upper_95": 0.3677380545054337
+      }
+    }
+  },
+  "baseline": "indicator-specific same-date mature admitted precision, weighted by signal count; dates require at least 150 rows",
+  "candidates": [
+    "dxbd_cross_zero",
+    "ribbon1_strict_buy",
+    "mhpg_buy",
+    "kdj_trend_pro_buy",
+    "smc_strong_buy",
+    "mkf_green_exit_proxy",
+    "shengbei_long_flip",
+    "gding_bbuy",
+    "cpgw_main_long_cross"
+  ],
+  "caveats": [
+    "Adjusted local research data, current-file survivorship, and retrospective formula inspection remain limitations.",
+    "The MkF proxy uses its separately frozen project-local mapping.",
+    "Shengbei initializes the first valid trailing-wave state short and carries direction through neutral rows.",
+    "Classification evidence is not profitability, execution, or personalized investment advice."
+  ],
+  "classification_only": true,
+  "decision": {
+    "accepted_winner": null,
+    "candidates": {
+      "cpgw_main_long_cross": {
+        "audit_accepted": false,
+        "audit_failure_codes": [
+          "year_2025_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline",
+          "all_origin_lift_not_positive"
+        ],
+        "selection_eligible": false,
+        "selection_failure_codes": [
+          "signal_dates_below_120",
+          "year_2023_lift_not_positive",
+          "year_2024_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline",
+          "all_origin_lift_not_positive"
+        ]
+      },
+      "dxbd_cross_zero": {
+        "audit_accepted": false,
+        "audit_failure_codes": [
+          "year_2025_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline"
+        ],
+        "selection_eligible": false,
+        "selection_failure_codes": [
+          "year_2023_lift_not_positive",
+          "year_2024_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline",
+          "all_origin_lift_not_positive"
+        ]
+      },
+      "gding_bbuy": {
+        "audit_accepted": false,
+        "audit_failure_codes": [
+          "year_2025_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline"
+        ],
+        "selection_eligible": false,
+        "selection_failure_codes": [
+          "year_2024_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline"
+        ]
+      },
+      "kdj_trend_pro_buy": {
+        "audit_accepted": false,
+        "audit_failure_codes": [
+          "aggregate_lift_below_0.03"
+        ],
+        "selection_eligible": false,
+        "selection_failure_codes": [
+          "year_2023_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline"
+        ]
+      },
+      "mhpg_buy": {
+        "audit_accepted": false,
+        "audit_failure_codes": [
+          "year_2025_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline"
+        ],
+        "selection_eligible": false,
+        "selection_failure_codes": [
+          "signal_dates_below_120",
+          "year_2023_n_below_50",
+          "year_2023_lift_not_positive",
+          "year_2024_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline",
+          "all_origin_lift_not_positive"
+        ]
+      },
+      "mkf_green_exit_proxy": {
+        "audit_accepted": false,
+        "audit_failure_codes": [
+          "n_below_300",
+          "year_2025_n_below_50",
+          "year_2026_n_below_25",
+          "wilson_lower_not_above_baseline"
+        ],
+        "selection_eligible": false,
+        "selection_failure_codes": [
+          "n_below_300",
+          "signal_dates_below_120",
+          "codes_below_50",
+          "year_2023_n_below_50",
+          "year_2023_lift_not_positive",
+          "year_2024_n_below_50",
+          "year_2024_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline",
+          "all_origin_lift_not_positive"
+        ]
+      },
+      "ribbon1_strict_buy": {
+        "audit_accepted": false,
+        "audit_failure_codes": [
+          "year_2025_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline",
+          "all_origin_lift_not_positive"
+        ],
+        "selection_eligible": false,
+        "selection_failure_codes": [
+          "n_below_300",
+          "signal_dates_below_120",
+          "codes_below_50",
+          "year_2023_n_below_50",
+          "year_2024_n_below_50",
+          "year_2024_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline"
+        ]
+      },
+      "shengbei_long_flip": {
+        "audit_accepted": false,
+        "audit_failure_codes": [
+          "year_2025_lift_not_positive",
+          "year_2026_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline",
+          "all_origin_lift_not_positive"
+        ],
+        "selection_eligible": false,
+        "selection_failure_codes": [
+          "signal_dates_below_120",
+          "year_2023_n_below_50",
+          "year_2023_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline"
+        ]
+      },
+      "smc_strong_buy": {
+        "audit_accepted": false,
+        "audit_failure_codes": [
+          "year_2025_lift_not_positive",
+          "year_2026_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline",
+          "all_origin_lift_not_positive"
+        ],
+        "selection_eligible": false,
+        "selection_failure_codes": [
+          "n_below_300",
+          "signal_dates_below_120",
+          "year_2023_n_below_50",
+          "year_2023_lift_not_positive",
+          "year_2024_lift_not_positive",
+          "aggregate_lift_below_0.03",
+          "wilson_lower_not_above_baseline",
+          "all_origin_lift_not_positive"
+        ]
+      }
+    },
+    "ranking": [
+      "kdj_trend_pro_buy",
+      "shengbei_long_flip",
+      "gding_bbuy",
+      "ribbon1_strict_buy",
+      "dxbd_cross_zero",
+      "smc_strong_buy",
+      "mhpg_buy",
+      "cpgw_main_long_cross",
+      "mkf_green_exit_proxy"
+    ],
+    "top_ranked": "kdj_trend_pro_buy",
+    "top_ranked_audit_failure_does_not_promote_next": true
+  },
+  "periods": {
+    "audit_2025_2026": [
+      2025,
+      2026
+    ],
+    "calibration_2021_2022": [
+      2021,
+      2022
+    ],
+    "selection_2023_2024": [
+      2023,
+      2024
+    ]
+  },
+  "primary_metrics": {
+    "cpgw_main_long_cross": {
+      "audit_2025_2026": {
+        "codes": 312,
+        "false_positives": 1280,
+        "fpr": 0.6956521739130435,
+        "hits": 560,
+        "n": 1840,
+        "precision": 0.30434782608695654,
+        "precision_lift": -0.008023183627942021,
+        "same_date_baseline": {
+          "admitted_hits": 23692,
+          "admitted_n": 74826,
+          "precision": 0.31237100971489856,
+          "weighted_hits": 574.7626578754133,
+          "weighted_n": 1840
+        },
+        "signal_dates": 358,
+        "wilson_lower_95": 0.28374879209512105,
+        "wilson_upper_95": 0.3257621333553082
+      },
+      "calibration_2021_2022": {
+        "codes": 137,
+        "false_positives": 216,
+        "fpr": 0.7578947368421053,
+        "hits": 69,
+        "n": 285,
+        "precision": 0.24210526315789474,
+        "precision_lift": -0.03809009978204822,
+        "same_date_baseline": {
+          "admitted_hits": 3976,
+          "admitted_n": 14378,
+          "precision": 0.28019536293994296,
+          "weighted_hits": 79.85567843788374,
+          "weighted_n": 285
+        },
+        "signal_dates": 91,
+        "wilson_lower_95": 0.19601567442251525,
+        "wilson_upper_95": 0.29505486389329527
+      },
+      "selection_2023_2024": {
+        "codes": 162,
+        "false_positives": 249,
+        "fpr": 0.7830188679245284,
+        "hits": 69,
+        "n": 318,
+        "precision": 0.2169811320754717,
+        "precision_lift": -0.07808215110842304,
+        "same_date_baseline": {
+          "admitted_hits": 4960,
+          "admitted_n": 16096,
+          "precision": 0.29506328318389474,
+          "weighted_hits": 93.83012405247852,
+          "weighted_n": 318
+        },
+        "signal_dates": 90,
+        "wilson_lower_95": 0.175199675898021,
+        "wilson_upper_95": 0.2655189881901516
+      },
+      "year_2021": {
+        "codes": 48,
+        "false_positives": 44,
+        "fpr": 0.7213114754098361,
+        "hits": 17,
+        "n": 61,
+        "precision": 0.2786885245901639,
+        "precision_lift": 0.01971785587895264,
+        "same_date_baseline": {
+          "admitted_hits": 828,
+          "admitted_n": 3119,
+          "precision": 0.25897066871121127,
+          "weighted_hits": 15.797210791383886,
+          "weighted_n": 61
+        },
+        "signal_dates": 20,
+        "wilson_lower_95": 0.18188396512091543,
+        "wilson_upper_95": 0.40171668631273205
+      },
+      "year_2022": {
+        "codes": 123,
+        "false_positives": 172,
+        "fpr": 0.7678571428571429,
+        "hits": 52,
+        "n": 224,
+        "precision": 0.23214285714285715,
+        "precision_lift": -0.05383244485044569,
+        "same_date_baseline": {
+          "admitted_hits": 3148,
+          "admitted_n": 11259,
+          "precision": 0.28597530199330284,
+          "weighted_hits": 64.05846764649984,
+          "weighted_n": 224
+        },
+        "signal_dates": 71,
+        "wilson_lower_95": 0.18165111625448568,
+        "wilson_upper_95": 0.29166718909449363
+      },
+      "year_2023": {
+        "codes": 54,
+        "false_positives": 56,
+        "fpr": 0.8,
+        "hits": 14,
+        "n": 70,
+        "precision": 0.2,
+        "precision_lift": -0.03198456200950328,
+        "same_date_baseline": {
+          "admitted_hits": 719,
+          "admitted_n": 3052,
+          "precision": 0.2319845620095033,
+          "weighted_hits": 16.23891934066523,
+          "weighted_n": 70
+        },
+        "signal_dates": 20,
+        "wilson_lower_95": 0.12304627802949916,
+        "wilson_upper_95": 0.3081686468908709
+      },
+      "year_2024": {
+        "codes": 142,
+        "false_positives": 193,
+        "fpr": 0.7782258064516129,
+        "hits": 55,
+        "n": 248,
+        "precision": 0.2217741935483871,
+        "precision_lift": -0.09109356738634397,
+        "same_date_baseline": {
+          "admitted_hits": 4241,
+          "admitted_n": 13044,
+          "precision": 0.31286776093473107,
+          "weighted_hits": 77.5912047118133,
+          "weighted_n": 248
+        },
+        "signal_dates": 70,
+        "wilson_lower_95": 0.17453319615466112,
+        "wilson_upper_95": 0.2775033220377265
+      },
+      "year_2025": {
+        "codes": 275,
+        "false_positives": 763,
+        "fpr": 0.6993583868011,
+        "hits": 328,
+        "n": 1091,
+        "precision": 0.3006416131989001,
+        "precision_lift": -0.01937942279435534,
+        "same_date_baseline": {
+          "admitted_hits": 15390,
+          "admitted_n": 47871,
+          "precision": 0.32002103599325543,
+          "weighted_hits": 349.1429502686417,
+          "weighted_n": 1091
+        },
+        "signal_dates": 229,
+        "wilson_lower_95": 0.2741705496749687,
+        "wilson_upper_95": 0.3285117013465489
+      },
+      "year_2026": {
+        "codes": 260,
+        "false_positives": 517,
+        "fpr": 0.6902536715620827,
+        "hits": 232,
+        "n": 749,
+        "precision": 0.3097463284379172,
+        "precision_lift": 0.008518414410184694,
+        "same_date_baseline": {
+          "admitted_hits": 8302,
+          "admitted_n": 26955,
+          "precision": 0.3012279140277325,
+          "weighted_hits": 225.61970760677167,
+          "weighted_n": 749
+        },
+        "signal_dates": 129,
+        "wilson_lower_95": 0.27767265186554474,
+        "wilson_upper_95": 0.3437616578219114
+      }
+    },
+    "dxbd_cross_zero": {
+      "audit_2025_2026": {
+        "codes": 335,
+        "false_positives": 2901,
+        "fpr": 0.682909604519774,
+        "hits": 1347,
+        "n": 4248,
+        "precision": 0.317090395480226,
+        "precision_lift": 0.006005160080247651,
+        "same_date_baseline": {
+          "admitted_hits": 24629,
+          "admitted_n": 78646,
+          "precision": 0.31108523539997834,
+          "weighted_hits": 1321.490079979108,
+          "weighted_n": 4248
+        },
+        "signal_dates": 376,
+        "wilson_lower_95": 0.30326716176921853,
+        "wilson_upper_95": 0.3312441521047509
+      },
+      "calibration_2021_2022": {
+        "codes": 235,
+        "false_positives": 636,
+        "fpr": 0.726027397260274,
+        "hits": 240,
+        "n": 876,
+        "precision": 0.273972602739726,
+        "precision_lift": -0.0007254859873475072,
+        "same_date_baseline": {
+          "admitted_hits": 5009,
+          "admitted_n": 17826,
+          "precision": 0.2746980887270735,
+          "weighted_hits": 240.6355257249164,
+          "weighted_n": 876
+        },
+        "signal_dates": 113,
+        "wilson_lower_95": 0.24547271774212126,
+        "wilson_upper_95": 0.30444626767525373
+      },
+      "selection_2023_2024": {
+        "codes": 259,
+        "false_positives": 820,
+        "fpr": 0.6879194630872483,
+        "hits": 372,
+        "n": 1192,
+        "precision": 0.31208053691275167,
+        "precision_lift": -0.010132129517911703,
+        "same_date_baseline": {
+          "admitted_hits": 7133,
+          "admitted_n": 22823,
+          "precision": 0.3222126664306634,
+          "weighted_hits": 384.07749838535074,
+          "weighted_n": 1192
+        },
+        "signal_dates": 130,
+        "wilson_lower_95": 0.2864156719096902,
+        "wilson_upper_95": 0.33895277153633135
+      },
+      "year_2021": {
+        "codes": 133,
+        "false_positives": 152,
+        "fpr": 0.7342995169082126,
+        "hits": 55,
+        "n": 207,
+        "precision": 0.26570048309178745,
+        "precision_lift": 0.0038235591435024086,
+        "same_date_baseline": {
+          "admitted_hits": 1142,
+          "admitted_n": 4071,
+          "precision": 0.26187692394828505,
+          "weighted_hits": 54.208523257295,
+          "weighted_n": 207
+        },
+        "signal_dates": 26,
+        "wilson_lower_95": 0.21019428439166865,
+        "wilson_upper_95": 0.3297447029808423
+      },
+      "year_2022": {
+        "codes": 218,
+        "false_positives": 484,
+        "fpr": 0.7234678624813154,
+        "hits": 185,
+        "n": 669,
+        "precision": 0.2765321375186846,
+        "precision_lift": -0.002133038068193427,
+        "same_date_baseline": {
+          "admitted_hits": 3867,
+          "admitted_n": 13755,
+          "precision": 0.27866517558687803,
+          "weighted_hits": 186.4270024676214,
+          "weighted_n": 669
+        },
+        "signal_dates": 87,
+        "wilson_lower_95": 0.2439866503378492,
+        "wilson_upper_95": 0.31162941145143375
+      },
+      "year_2023": {
+        "codes": 121,
+        "false_positives": 138,
+        "fpr": 0.8117647058823529,
+        "hits": 32,
+        "n": 170,
+        "precision": 0.18823529411764706,
+        "precision_lift": -0.03477753338137482,
+        "same_date_baseline": {
+          "admitted_hits": 885,
+          "admitted_n": 3656,
+          "precision": 0.22301282749902188,
+          "weighted_hits": 37.91218067483372,
+          "weighted_n": 170
+        },
+        "signal_dates": 24,
+        "wilson_lower_95": 0.13660858215166535,
+        "wilson_upper_95": 0.25364093234889146
+      },
+      "year_2024": {
+        "codes": 251,
+        "false_positives": 682,
+        "fpr": 0.6673189823874756,
+        "hits": 340,
+        "n": 1022,
+        "precision": 0.33268101761252444,
+        "precision_lift": -0.006032600499527363,
+        "same_date_baseline": {
+          "admitted_hits": 6248,
+          "admitted_n": 19167,
+          "precision": 0.3387136181120518,
+          "weighted_hits": 346.16531771051694,
+          "weighted_n": 1022
+        },
+        "signal_dates": 106,
+        "wilson_lower_95": 0.3044673371891844,
+        "wilson_upper_95": 0.36214785954294254
+      },
+      "year_2025": {
+        "codes": 319,
+        "false_positives": 1922,
+        "fpr": 0.6869192280200143,
+        "hits": 876,
+        "n": 2798,
+        "precision": 0.3130807719799857,
+        "precision_lift": -3.21625037180695e-05,
+        "same_date_baseline": {
+          "admitted_hits": 15846,
+          "admitted_n": 50099,
+          "precision": 0.31311293448370375,
+          "weighted_hits": 876.0899906854031,
+          "weighted_n": 2798
+        },
+        "signal_dates": 240,
+        "wilson_lower_95": 0.2961633641889088,
+        "wilson_upper_95": 0.3305107490086396
+      },
+      "year_2026": {
+        "codes": 300,
+        "false_positives": 979,
+        "fpr": 0.6751724137931034,
+        "hits": 471,
+        "n": 1450,
+        "precision": 0.32482758620689656,
+        "precision_lift": 0.017655110831927667,
+        "same_date_baseline": {
+          "admitted_hits": 8783,
+          "admitted_n": 28547,
+          "precision": 0.3071724753749689,
+          "weighted_hits": 445.40008929370487,
+          "weighted_n": 1450
+        },
+        "signal_dates": 136,
+        "wilson_lower_95": 0.30121294710146274,
+        "wilson_upper_95": 0.3493679690038406
+      }
+    },
+    "gding_bbuy": {
+      "audit_2025_2026": {
+        "codes": 332,
+        "false_positives": 2419,
+        "fpr": 0.6879977246871445,
+        "hits": 1097,
+        "n": 3516,
+        "precision": 0.3120022753128555,
+        "precision_lift": 0.000769750222087362,
+        "same_date_baseline": {
+          "admitted_hits": 24383,
+          "admitted_n": 77818,
+          "precision": 0.31123252509076815,
+          "weighted_hits": 1094.2935582191408,
+          "weighted_n": 3516
+        },
+        "signal_dates": 372,
+        "wilson_lower_95": 0.29689990051948123,
+        "wilson_upper_95": 0.3275150163335952
+      },
+      "calibration_2021_2022": {
+        "codes": 224,
+        "false_positives": 533,
+        "fpr": 0.7311385459533608,
+        "hits": 196,
+        "n": 729,
+        "precision": 0.26886145404663925,
+        "precision_lift": -0.011800884778710996,
+        "same_date_baseline": {
+          "admitted_hits": 5090,
+          "admitted_n": 17974,
+          "precision": 0.28066233882535024,
+          "weighted_hits": 204.60284500368033,
+          "weighted_n": 729
+        },
+        "signal_dates": 114,
+        "wilson_lower_95": 0.2379494916507011,
+        "wilson_upper_95": 0.3021967009235196
+      },
+      "selection_2023_2024": {
+        "codes": 248,
+        "false_positives": 660,
+        "fpr": 0.668693009118541,
+        "hits": 327,
+        "n": 987,
+        "precision": 0.331306990881459,
+        "precision_lift": 0.0026993131112833524,
+        "same_date_baseline": {
+          "admitted_hits": 7023,
+          "admitted_n": 21912,
+          "precision": 0.32860767777017563,
+          "weighted_hits": 324.33577795916335,
+          "weighted_n": 987
+        },
+        "signal_dates": 125,
+        "wilson_lower_95": 0.3026459735587443,
+        "wilson_upper_95": 0.3612760902706307
+      },
+      "year_2021": {
+        "codes": 125,
+        "false_positives": 128,
+        "fpr": 0.7111111111111111,
+        "hits": 52,
+        "n": 180,
+        "precision": 0.28888888888888886,
+        "precision_lift": 0.017074112787664797,
+        "same_date_baseline": {
+          "admitted_hits": 1142,
+          "admitted_n": 4071,
+          "precision": 0.27181477610122406,
+          "weighted_hits": 48.926659698220334,
+          "weighted_n": 180
+        },
+        "signal_dates": 26,
+        "wilson_lower_95": 0.22763281469389116,
+        "wilson_upper_95": 0.3589678241169112
+      },
+      "year_2022": {
+        "codes": 203,
+        "false_positives": 405,
+        "fpr": 0.7377049180327869,
+        "hits": 144,
+        "n": 549,
+        "precision": 0.26229508196721313,
+        "precision_lift": -0.02126809709555555,
+        "same_date_baseline": {
+          "admitted_hits": 3948,
+          "admitted_n": 13903,
+          "precision": 0.2835631790627687,
+          "weighted_hits": 155.67618530546,
+          "weighted_n": 549
+        },
+        "signal_dates": 88,
+        "wilson_lower_95": 0.22724125389968067,
+        "wilson_upper_95": 0.30065245019205195
+      },
+      "year_2023": {
+        "codes": 106,
+        "false_positives": 108,
+        "fpr": 0.7552447552447552,
+        "hits": 35,
+        "n": 143,
+        "precision": 0.24475524475524477,
+        "precision_lift": 0.023608115612304803,
+        "same_date_baseline": {
+          "admitted_hits": 844,
+          "admitted_n": 3500,
+          "precision": 0.22114712914293996,
+          "weighted_hits": 31.624039467440415,
+          "weighted_n": 143
+        },
+        "signal_dates": 23,
+        "wilson_lower_95": 0.18157189677413066,
+        "wilson_upper_95": 0.3212937761686867
+      },
+      "year_2024": {
+        "codes": 243,
+        "false_positives": 552,
+        "fpr": 0.6540284360189573,
+        "hits": 292,
+        "n": 844,
+        "precision": 0.3459715639810427,
+        "precision_lift": -0.0008432920518045561,
+        "same_date_baseline": {
+          "admitted_hits": 6179,
+          "admitted_n": 18412,
+          "precision": 0.34681485603284723,
+          "weighted_hits": 292.71173849172305,
+          "weighted_n": 844
+        },
+        "signal_dates": 102,
+        "wilson_lower_95": 0.31464216946895385,
+        "wilson_upper_95": 0.3786967749753858
+      },
+      "year_2025": {
+        "codes": 313,
+        "false_positives": 1612,
+        "fpr": 0.6921425504508373,
+        "hits": 717,
+        "n": 2329,
+        "precision": 0.3078574495491627,
+        "precision_lift": -0.0014026774685202414,
+        "same_date_baseline": {
+          "admitted_hits": 15680,
+          "admitted_n": 49498,
+          "precision": 0.30926012701768296,
+          "weighted_hits": 720.2668358241837,
+          "weighted_n": 2329
+        },
+        "signal_dates": 237,
+        "wilson_lower_95": 0.2894391054651843,
+        "wilson_upper_95": 0.3269086139856348
+      },
+      "year_2026": {
+        "codes": 290,
+        "false_positives": 807,
+        "fpr": 0.6798652064026959,
+        "hits": 380,
+        "n": 1187,
+        "precision": 0.3201347935973041,
+        "precision_lift": 0.0050322473504994525,
+        "same_date_baseline": {
+          "admitted_hits": 8703,
+          "admitted_n": 28320,
+          "precision": 0.31510254624680467,
+          "weighted_hits": 374.0267223949571,
+          "weighted_n": 1187
+        },
+        "signal_dates": 135,
+        "wilson_lower_95": 0.2942110551304672,
+        "wilson_upper_95": 0.3472190057609225
+      }
+    },
+    "kdj_trend_pro_buy": {
+      "audit_2025_2026": {
+        "codes": 334,
+        "false_positives": 2167,
+        "fpr": 0.6694470188446092,
+        "hits": 1070,
+        "n": 3237,
+        "precision": 0.3305529811553908,
+        "precision_lift": 0.019405915827822584,
+        "same_date_baseline": {
+          "admitted_hits": 24646,
+          "admitted_n": 78184,
+          "precision": 0.3111470653275682,
+          "weighted_hits": 1007.1830504653382,
+          "weighted_n": 3237
+        },
+        "signal_dates": 373,
+        "wilson_lower_95": 0.3145566661853274,
+        "wilson_upper_95": 0.34695101132658807
+      },
+      "calibration_2021_2022": {
+        "codes": 232,
+        "false_positives": 560,
+        "fpr": 0.7216494845360825,
+        "hits": 216,
+        "n": 776,
+        "precision": 0.27835051546391754,
+        "precision_lift": 0.005665271957630558,
+        "same_date_baseline": {
+          "admitted_hits": 4997,
+          "admitted_n": 17820,
+          "precision": 0.272685243506287,
+          "weighted_hits": 211.6037489608787,
+          "weighted_n": 776
+        },
+        "signal_dates": 113,
+        "wilson_lower_95": 0.24796682647488794,
+        "wilson_upper_95": 0.31091795217759743
+      },
+      "selection_2023_2024": {
+        "codes": 266,
+        "false_positives": 833,
+        "fpr": 0.6595407759303247,
+        "hits": 430,
+        "n": 1263,
+        "precision": 0.3404592240696754,
+        "precision_lift": 0.01717175560642309,
+        "same_date_baseline": {
+          "admitted_hits": 7283,
+          "admitted_n": 23036,
+          "precision": 0.3232874684632523,
+          "weighted_hits": 408.3120726690876,
+          "weighted_n": 1263
+        },
+        "signal_dates": 131,
+        "wilson_lower_95": 0.31484407617166754,
+        "wilson_upper_95": 0.3670419623038608
+      },
+      "year_2021": {
+        "codes": 130,
+        "false_positives": 146,
+        "fpr": 0.7263681592039801,
+        "hits": 55,
+        "n": 201,
+        "precision": 0.2736318407960199,
+        "precision_lift": 0.011530713399559023,
+        "same_date_baseline": {
+          "admitted_hits": 1142,
+          "admitted_n": 4071,
+          "precision": 0.26210112739646085,
+          "weighted_hits": 52.68232660668863,
+          "weighted_n": 201
+        },
+        "signal_dates": 26,
+        "wilson_lower_95": 0.2166764914296653,
+        "wilson_upper_95": 0.3390778084781659
+      },
+      "year_2022": {
+        "codes": 210,
+        "false_positives": 414,
+        "fpr": 0.72,
+        "hits": 161,
+        "n": 575,
+        "precision": 0.28,
+        "precision_lift": 0.003614917644886806,
+        "same_date_baseline": {
+          "admitted_hits": 3855,
+          "admitted_n": 13749,
+          "precision": 0.2763850823551132,
+          "weighted_hits": 158.9214223541901,
+          "weighted_n": 575
+        },
+        "signal_dates": 87,
+        "wilson_lower_95": 0.24485281837775896,
+        "wilson_upper_95": 0.318067331107005
+      },
+      "year_2023": {
+        "codes": 109,
+        "false_positives": 116,
+        "fpr": 0.7891156462585034,
+        "hits": 31,
+        "n": 147,
+        "precision": 0.2108843537414966,
+        "precision_lift": -0.009518191407661108,
+        "same_date_baseline": {
+          "admitted_hits": 885,
+          "admitted_n": 3656,
+          "precision": 0.22040254514915772,
+          "weighted_hits": 32.399174136926185,
+          "weighted_n": 147
+        },
+        "signal_dates": 24,
+        "wilson_lower_95": 0.1527313597425877,
+        "wilson_upper_95": 0.28376361246667026
+      },
+      "year_2024": {
+        "codes": 258,
+        "false_positives": 717,
+        "fpr": 0.6424731182795699,
+        "hits": 399,
+        "n": 1116,
+        "precision": 0.3575268817204301,
+        "precision_lift": 0.020687366906665394,
+        "same_date_baseline": {
+          "admitted_hits": 6398,
+          "admitted_n": 19380,
+          "precision": 0.33683951481376473,
+          "weighted_hits": 375.9128985321614,
+          "weighted_n": 1116
+        },
+        "signal_dates": 107,
+        "wilson_lower_95": 0.32994026791445774,
+        "wilson_upper_95": 0.38609099936477187
+      },
+      "year_2025": {
+        "codes": 319,
+        "false_positives": 1510,
+        "fpr": 0.6660785178650198,
+        "hits": 757,
+        "n": 2267,
+        "precision": 0.33392148213498013,
+        "precision_lift": 0.0238380683908625,
+        "same_date_baseline": {
+          "admitted_hits": 15591,
+          "admitted_n": 49595,
+          "precision": 0.31008341374411763,
+          "weighted_hits": 702.9590989579146,
+          "weighted_n": 2267
+        },
+        "signal_dates": 237,
+        "wilson_lower_95": 0.31480282418432376,
+        "wilson_upper_95": 0.3536020526683813
+      },
+      "year_2026": {
+        "codes": 275,
+        "false_positives": 657,
+        "fpr": 0.677319587628866,
+        "hits": 313,
+        "n": 970,
+        "precision": 0.32268041237113404,
+        "precision_lift": 0.009047472672759349,
+        "same_date_baseline": {
+          "admitted_hits": 9055,
+          "admitted_n": 28589,
+          "precision": 0.3136329396983747,
+          "weighted_hits": 304.22395150742346,
+          "weighted_n": 970
+        },
+        "signal_dates": 136,
+        "wilson_lower_95": 0.2940089350408368,
+        "wilson_upper_95": 0.35275086655318005
+      }
+    },
+    "mhpg_buy": {
+      "audit_2025_2026": {
+        "codes": 308,
+        "false_positives": 788,
+        "fpr": 0.6924428822495606,
+        "hits": 350,
+        "n": 1138,
+        "precision": 0.30755711775043937,
+        "precision_lift": 0.005946902236474816,
+        "same_date_baseline": {
+          "admitted_hits": 19552,
+          "admitted_n": 64491,
+          "precision": 0.30161021551396455,
+          "weighted_hits": 343.23242525489167,
+          "weighted_n": 1138
+        },
+        "signal_dates": 305,
+        "wilson_lower_95": 0.28142922921285835,
+        "wilson_upper_95": 0.3349799119499789
+      },
+      "calibration_2021_2022": {
+        "codes": 148,
+        "false_positives": 174,
+        "fpr": 0.710204081632653,
+        "hits": 71,
+        "n": 245,
+        "precision": 0.2897959183673469,
+        "precision_lift": 0.01108536650245312,
+        "same_date_baseline": {
+          "admitted_hits": 3868,
+          "admitted_n": 13930,
+          "precision": 0.2787105518648938,
+          "weighted_hits": 68.28408520689898,
+          "weighted_n": 245
+        },
+        "signal_dates": 88,
+        "wilson_lower_95": 0.23657974435422158,
+        "wilson_upper_95": 0.34950232552476973
+      },
+      "selection_2023_2024": {
+        "codes": 205,
+        "false_positives": 308,
+        "fpr": 0.6890380313199105,
+        "hits": 139,
+        "n": 447,
+        "precision": 0.31096196868008946,
+        "precision_lift": -0.01438232309496501,
+        "same_date_baseline": {
+          "admitted_hits": 5277,
+          "admitted_n": 16616,
+          "precision": 0.3253442917750545,
+          "weighted_hits": 145.42889842344934,
+          "weighted_n": 447
+        },
+        "signal_dates": 92,
+        "wilson_lower_95": 0.26981373780666196,
+        "wilson_upper_95": 0.3553317678432159
+      },
+      "year_2021": {
+        "codes": 39,
+        "false_positives": 31,
+        "fpr": 0.7209302325581395,
+        "hits": 12,
+        "n": 43,
+        "precision": 0.27906976744186046,
+        "precision_lift": 0.015018022349654159,
+        "same_date_baseline": {
+          "admitted_hits": 775,
+          "admitted_n": 2820,
+          "precision": 0.2640517450922063,
+          "weighted_hits": 11.35422503896487,
+          "weighted_n": 43
+        },
+        "signal_dates": 18,
+        "wilson_lower_95": 0.16746451821827155,
+        "wilson_upper_95": 0.4269131290012939
+      },
+      "year_2022": {
+        "codes": 127,
+        "false_positives": 143,
+        "fpr": 0.7079207920792079,
+        "hits": 59,
+        "n": 202,
+        "precision": 0.29207920792079206,
+        "precision_lift": 0.010248216990425218,
+        "same_date_baseline": {
+          "admitted_hits": 3093,
+          "admitted_n": 11110,
+          "precision": 0.28183099093036684,
+          "weighted_hits": 56.9298601679341,
+          "weighted_n": 202
+        },
+        "signal_dates": 70,
+        "wilson_lower_95": 0.23371843188362992,
+        "wilson_upper_95": 0.35820079144149003
+      },
+      "year_2023": {
+        "codes": 25,
+        "false_positives": 26,
+        "fpr": 0.8666666666666667,
+        "hits": 4,
+        "n": 30,
+        "precision": 0.13333333333333333,
+        "precision_lift": -0.06711248436452955,
+        "same_date_baseline": {
+          "admitted_hits": 517,
+          "admitted_n": 2434,
+          "precision": 0.20044581769786288,
+          "weighted_hits": 6.013374530935886,
+          "weighted_n": 30
+        },
+        "signal_dates": 16,
+        "wilson_lower_95": 0.05309569424218104,
+        "wilson_upper_95": 0.2968168394441695
+      },
+      "year_2024": {
+        "codes": 200,
+        "false_positives": 282,
+        "fpr": 0.6762589928057554,
+        "hits": 135,
+        "n": 417,
+        "precision": 0.3237410071942446,
+        "precision_lift": -0.01058878631298188,
+        "same_date_baseline": {
+          "admitted_hits": 4760,
+          "admitted_n": 14182,
+          "precision": 0.33432979350722647,
+          "weighted_hits": 139.41552389251345,
+          "weighted_n": 417
+        },
+        "signal_dates": 76,
+        "wilson_lower_95": 0.28061643012273974,
+        "wilson_upper_95": 0.3700835006825799
+      },
+      "year_2025": {
+        "codes": 288,
+        "false_positives": 594,
+        "fpr": 0.6947368421052632,
+        "hits": 261,
+        "n": 855,
+        "precision": 0.30526315789473685,
+        "precision_lift": -0.0009059697753013296,
+        "same_date_baseline": {
+          "admitted_hits": 13416,
+          "admitted_n": 43800,
+          "precision": 0.3061691276700382,
+          "weighted_hits": 261.77460415788266,
+          "weighted_n": 855
+        },
+        "signal_dates": 209,
+        "wilson_lower_95": 0.2753221721442883,
+        "wilson_upper_95": 0.3369462601254109
+      },
+      "year_2026": {
+        "codes": 161,
+        "false_positives": 194,
+        "fpr": 0.6855123674911661,
+        "hits": 89,
+        "n": 283,
+        "precision": 0.31448763250883394,
+        "precision_lift": 0.02665080884449106,
+        "same_date_baseline": {
+          "admitted_hits": 6136,
+          "admitted_n": 20691,
+          "precision": 0.2878368236643429,
+          "weighted_hits": 81.45782109700903,
+          "weighted_n": 283
+        },
+        "signal_dates": 96,
+        "wilson_lower_95": 0.26318133159460483,
+        "wilson_upper_95": 0.3707629777384905
+      }
+    },
+    "mkf_green_exit_proxy": {
+      "audit_2025_2026": {
+        "codes": 46,
+        "false_positives": 29,
+        "fpr": 0.58,
+        "hits": 21,
+        "n": 50,
+        "precision": 0.42,
+        "precision_lift": 0.09963372119235281,
+        "same_date_baseline": {
+          "admitted_hits": 2851,
+          "admitted_n": 8881,
+          "precision": 0.3203662788076472,
+          "weighted_hits": 16.01831394038236,
+          "weighted_n": 50
+        },
+        "signal_dates": 42,
+        "wilson_lower_95": 0.2937479723456693,
+        "wilson_upper_95": 0.5576680331222217
+      },
+      "calibration_2021_2022": {
+        "codes": 10,
+        "false_positives": 4,
+        "fpr": 0.4,
+        "hits": 6,
+        "n": 10,
+        "precision": 0.6,
+        "precision_lift": 0.28955283656933617,
+        "same_date_baseline": {
+          "admitted_hits": 429,
+          "admitted_n": 1410,
+          "precision": 0.3104471634306638,
+          "weighted_hits": 3.104471634306638,
+          "weighted_n": 10
+        },
+        "signal_dates": 9,
+        "wilson_lower_95": 0.3126695474501863,
+        "wilson_upper_95": 0.8318224187964901
+      },
+      "selection_2023_2024": {
+        "codes": 5,
+        "false_positives": 4,
+        "fpr": 0.8,
+        "hits": 1,
+        "n": 5,
+        "precision": 0.2,
+        "precision_lift": -0.08157540400452429,
+        "same_date_baseline": {
+          "admitted_hits": 266,
+          "admitted_n": 889,
+          "precision": 0.2815754040045243,
+          "weighted_hits": 1.4078770200226214,
+          "weighted_n": 5
+        },
+        "signal_dates": 5,
+        "wilson_lower_95": 0.036223160969787456,
+        "wilson_upper_95": 0.6244717358814612
+      },
+      "year_2021": {
+        "codes": 1,
+        "false_positives": 0,
+        "fpr": 0.0,
+        "hits": 1,
+        "n": 1,
+        "precision": 1.0,
+        "precision_lift": 0.6644736842105263,
+        "same_date_baseline": {
+          "admitted_hits": 51,
+          "admitted_n": 152,
+          "precision": 0.3355263157894737,
+          "weighted_hits": 0.3355263157894737,
+          "weighted_n": 1
+        },
+        "signal_dates": 1,
+        "wilson_lower_95": 0.20654329147389294,
+        "wilson_upper_95": 1.0
+      },
+      "year_2022": {
+        "codes": 9,
+        "false_positives": 4,
+        "fpr": 0.4444444444444444,
+        "hits": 5,
+        "n": 9,
+        "precision": 0.5555555555555556,
+        "precision_lift": 0.24789496460920402,
+        "same_date_baseline": {
+          "admitted_hits": 378,
+          "admitted_n": 1258,
+          "precision": 0.30766059094635156,
+          "weighted_hits": 2.768945318517164,
+          "weighted_n": 9
+        },
+        "signal_dates": 8,
+        "wilson_lower_95": 0.26664734574402965,
+        "wilson_upper_95": 0.8112245705280859
+      },
+      "year_2023": {
+        "codes": 1,
+        "false_positives": 1,
+        "fpr": 1.0,
+        "hits": 0,
+        "n": 1,
+        "precision": 0.0,
+        "precision_lift": -0.21710526315789475,
+        "same_date_baseline": {
+          "admitted_hits": 33,
+          "admitted_n": 152,
+          "precision": 0.21710526315789475,
+          "weighted_hits": 0.21710526315789475,
+          "weighted_n": 1
+        },
+        "signal_dates": 1,
+        "wilson_lower_95": 0.0,
+        "wilson_upper_95": 0.7934567085261071
+      },
+      "year_2024": {
+        "codes": 4,
+        "false_positives": 3,
+        "fpr": 0.75,
+        "hits": 1,
+        "n": 4,
+        "precision": 0.25,
+        "precision_lift": -0.04769293921618167,
+        "same_date_baseline": {
+          "admitted_hits": 233,
+          "admitted_n": 737,
+          "precision": 0.2976929392161817,
+          "weighted_hits": 1.1907717568647267,
+          "weighted_n": 4
+        },
+        "signal_dates": 4,
+        "wilson_lower_95": 0.045586062644636216,
+        "wilson_upper_95": 0.6993639475573634
+      },
+      "year_2025": {
+        "codes": 30,
+        "false_positives": 19,
+        "fpr": 0.59375,
+        "hits": 13,
+        "n": 32,
+        "precision": 0.40625,
+        "precision_lift": 0.10331715831893318,
+        "same_date_baseline": {
+          "admitted_hits": 1535,
+          "admitted_n": 5100,
+          "precision": 0.3029328416810668,
+          "weighted_hits": 9.693850933794138,
+          "weighted_n": 32
+        },
+        "signal_dates": 24,
+        "wilson_lower_95": 0.25519402480313796,
+        "wilson_upper_95": 0.5774027342701177
+      },
+      "year_2026": {
+        "codes": 17,
+        "false_positives": 10,
+        "fpr": 0.5555555555555556,
+        "hits": 8,
+        "n": 18,
+        "precision": 0.4444444444444444,
+        "precision_lift": 0.09308538852287668,
+        "same_date_baseline": {
+          "admitted_hits": 1316,
+          "admitted_n": 3781,
+          "precision": 0.35135905592156774,
+          "weighted_hits": 6.3244630065882195,
+          "weighted_n": 18
+        },
+        "signal_dates": 18,
+        "wilson_lower_95": 0.24559231101389123,
+        "wilson_upper_95": 0.6628393057174836
+      }
+    },
+    "ribbon1_strict_buy": {
+      "audit_2025_2026": {
+        "codes": 238,
+        "false_positives": 527,
+        "fpr": 0.7064343163538874,
+        "hits": 219,
+        "n": 746,
+        "precision": 0.2935656836461126,
+        "precision_lift": -0.02593057904863788,
+        "same_date_baseline": {
+          "admitted_hits": 17817,
+          "admitted_n": 57135,
+          "precision": 0.31949626269475045,
+          "weighted_hits": 238.34421197028382,
+          "weighted_n": 746
+        },
+        "signal_dates": 275,
+        "wilson_lower_95": 0.2620104730775222,
+        "wilson_upper_95": 0.32723610913397416
+      },
+      "calibration_2021_2022": {
+        "codes": 63,
+        "false_positives": 65,
+        "fpr": 0.7647058823529411,
+        "hits": 20,
+        "n": 85,
+        "precision": 0.23529411764705882,
+        "precision_lift": -0.04807860454078683,
+        "same_date_baseline": {
+          "admitted_hits": 2583,
+          "admitted_n": 8990,
+          "precision": 0.28337272218784565,
+          "weighted_hits": 24.08668138596688,
+          "weighted_n": 85
+        },
+        "signal_dates": 57,
+        "wilson_lower_95": 0.1577942000874349,
+        "wilson_upper_95": 0.3356863315553992
+      },
+      "selection_2023_2024": {
+        "codes": 47,
+        "false_positives": 43,
+        "fpr": 0.7049180327868853,
+        "hits": 18,
+        "n": 61,
+        "precision": 0.29508196721311475,
+        "precision_lift": -0.001117917005979574,
+        "same_date_baseline": {
+          "admitted_hits": 1845,
+          "admitted_n": 6590,
+          "precision": 0.2961998842190943,
+          "weighted_hits": 18.068192937364753,
+          "weighted_n": 61
+        },
+        "signal_dates": 39,
+        "wilson_lower_95": 0.19554865403985322,
+        "wilson_upper_95": 0.41889639358389447
+      },
+      "year_2021": {
+        "codes": 30,
+        "false_positives": 28,
+        "fpr": 0.8484848484848485,
+        "hits": 5,
+        "n": 33,
+        "precision": 0.15151515151515152,
+        "precision_lift": -0.1427057129132767,
+        "same_date_baseline": {
+          "admitted_hits": 741,
+          "admitted_n": 2505,
+          "precision": 0.2942208644284282,
+          "weighted_hits": 9.709288526138131,
+          "weighted_n": 33
+        },
+        "signal_dates": 16,
+        "wilson_lower_95": 0.06650359257960956,
+        "wilson_upper_95": 0.30920213138460484
+      },
+      "year_2022": {
+        "codes": 40,
+        "false_positives": 37,
+        "fpr": 0.7115384615384616,
+        "hits": 15,
+        "n": 52,
+        "precision": 0.28846153846153844,
+        "precision_lift": 0.011973214234062446,
+        "same_date_baseline": {
+          "admitted_hits": 1842,
+          "admitted_n": 6485,
+          "precision": 0.276488324227476,
+          "weighted_hits": 14.37739285982875,
+          "weighted_n": 52
+        },
+        "signal_dates": 41,
+        "wilson_lower_95": 0.18329802341828694,
+        "wilson_upper_95": 0.42273045714100926
+      },
+      "year_2023": {
+        "codes": 25,
+        "false_positives": 23,
+        "fpr": 0.71875,
+        "hits": 9,
+        "n": 32,
+        "precision": 0.28125,
+        "precision_lift": 0.04962825741106078,
+        "same_date_baseline": {
+          "admitted_hits": 732,
+          "admitted_n": 2900,
+          "precision": 0.23162174258893922,
+          "weighted_hits": 7.411895762846055,
+          "weighted_n": 32
+        },
+        "signal_dates": 19,
+        "wilson_lower_95": 0.15564406845647866,
+        "wilson_upper_95": 0.45374836938111784
+      },
+      "year_2024": {
+        "codes": 25,
+        "false_positives": 20,
+        "fpr": 0.6896551724137931,
+        "hits": 9,
+        "n": 29,
+        "precision": 0.3103448275862069,
+        "precision_lift": -0.05711369567305852,
+        "same_date_baseline": {
+          "admitted_hits": 1113,
+          "admitted_n": 3690,
+          "precision": 0.3674585232592654,
+          "weighted_hits": 10.656297174518697,
+          "weighted_n": 29
+        },
+        "signal_dates": 20,
+        "wilson_lower_95": 0.17275424489768068,
+        "wilson_upper_95": 0.49230470472718546
+      },
+      "year_2025": {
+        "codes": 186,
+        "false_positives": 280,
+        "fpr": 0.7387862796833773,
+        "hits": 99,
+        "n": 379,
+        "precision": 0.2612137203166227,
+        "precision_lift": -0.057412870803997595,
+        "same_date_baseline": {
+          "admitted_hits": 10315,
+          "admitted_n": 33260,
+          "precision": 0.3186265911206203,
+          "weighted_hits": 120.75947803471509,
+          "weighted_n": 379
+        },
+        "signal_dates": 160,
+        "wilson_lower_95": 0.21953942972479348,
+        "wilson_upper_95": 0.30768018277290793
+      },
+      "year_2026": {
+        "codes": 180,
+        "false_positives": 247,
+        "fpr": 0.6730245231607629,
+        "hits": 120,
+        "n": 367,
+        "precision": 0.32697547683923706,
+        "precision_lift": 0.006581106442592022,
+        "same_date_baseline": {
+          "admitted_hits": 7502,
+          "admitted_n": 23875,
+          "precision": 0.32039437039664503,
+          "weighted_hits": 117.58473393556874,
+          "weighted_n": 367
+        },
+        "signal_dates": 115,
+        "wilson_lower_95": 0.2809884626519619,
+        "wilson_upper_95": 0.37654726149549084
+      }
+    },
+    "shengbei_long_flip": {
+      "audit_2025_2026": {
+        "codes": 302,
+        "false_positives": 892,
+        "fpr": 0.7007069913589945,
+        "hits": 381,
+        "n": 1273,
+        "precision": 0.2992930086410055,
+        "precision_lift": -0.016269883070417157,
+        "same_date_baseline": {
+          "admitted_hits": 22216,
+          "admitted_n": 71213,
+          "precision": 0.31556289171142266,
+          "weighted_hits": 401.71156114864107,
+          "weighted_n": 1273
+        },
+        "signal_dates": 340,
+        "wilson_lower_95": 0.2747705134034508,
+        "wilson_upper_95": 0.3250232276526051
+      },
+      "calibration_2021_2022": {
+        "codes": 128,
+        "false_positives": 128,
+        "fpr": 0.6844919786096256,
+        "hits": 59,
+        "n": 187,
+        "precision": 0.3155080213903743,
+        "precision_lift": 0.022368952159210143,
+        "same_date_baseline": {
+          "admitted_hits": 3797,
+          "admitted_n": 13308,
+          "precision": 0.2931390692311642,
+          "weighted_hits": 54.8170059462277,
+          "weighted_n": 187
+        },
+        "signal_dates": 84,
+        "wilson_lower_95": 0.25318337154906945,
+        "wilson_upper_95": 0.3852602382299304
+      },
+      "selection_2023_2024": {
+        "codes": 187,
+        "false_positives": 208,
+        "fpr": 0.6520376175548589,
+        "hits": 111,
+        "n": 319,
+        "precision": 0.34796238244514105,
+        "precision_lift": 0.00875994335132757,
+        "same_date_baseline": {
+          "admitted_hits": 6098,
+          "admitted_n": 18985,
+          "precision": 0.3392024390938135,
+          "weighted_hits": 108.20557807092649,
+          "weighted_n": 319
+        },
+        "signal_dates": 107,
+        "wilson_lower_95": 0.2977806817057931,
+        "wilson_upper_95": 0.40176237594229186
+      },
+      "year_2021": {
+        "codes": 46,
+        "false_positives": 33,
+        "fpr": 0.66,
+        "hits": 17,
+        "n": 50,
+        "precision": 0.34,
+        "precision_lift": 0.06385357833524957,
+        "same_date_baseline": {
+          "admitted_hits": 833,
+          "admitted_n": 2977,
+          "precision": 0.27614642166475045,
+          "weighted_hits": 13.807321083237522,
+          "weighted_n": 50
+        },
+        "signal_dates": 19,
+        "wilson_lower_95": 0.2243676963506106,
+        "wilson_upper_95": 0.47846431458517147
+      },
+      "year_2022": {
+        "codes": 106,
+        "false_positives": 95,
+        "fpr": 0.6934306569343066,
+        "hits": 42,
+        "n": 137,
+        "precision": 0.30656934306569344,
+        "precision_lift": 0.007228577642407419,
+        "same_date_baseline": {
+          "admitted_hits": 2964,
+          "admitted_n": 10331,
+          "precision": 0.299340765423286,
+          "weighted_hits": 41.009684862990184,
+          "weighted_n": 137
+        },
+        "signal_dates": 65,
+        "wilson_lower_95": 0.2355151585395569,
+        "wilson_upper_95": 0.3881755691999747
+      },
+      "year_2023": {
+        "codes": 32,
+        "false_positives": 27,
+        "fpr": 0.7941176470588235,
+        "hits": 7,
+        "n": 34,
+        "precision": 0.20588235294117646,
+        "precision_lift": -0.029813320328723275,
+        "same_date_baseline": {
+          "admitted_hits": 633,
+          "admitted_n": 2739,
+          "precision": 0.23569567326989974,
+          "weighted_hits": 8.01365289117659,
+          "weighted_n": 34
+        },
+        "signal_dates": 18,
+        "wilson_lower_95": 0.10349396022351322,
+        "wilson_upper_95": 0.3679871610821398
+      },
+      "year_2024": {
+        "codes": 174,
+        "false_positives": 181,
+        "fpr": 0.6350877192982456,
+        "hits": 104,
+        "n": 285,
+        "precision": 0.3649122807017544,
+        "precision_lift": 0.01336166603596528,
+        "same_date_baseline": {
+          "admitted_hits": 5465,
+          "admitted_n": 16246,
+          "precision": 0.35155061466578913,
+          "weighted_hits": 100.1919251797499,
+          "weighted_n": 285
+        },
+        "signal_dates": 89,
+        "wilson_lower_95": 0.31116144100959814,
+        "wilson_upper_95": 0.4222564600129693
+      },
+      "year_2025": {
+        "codes": 272,
+        "false_positives": 568,
+        "fpr": 0.6952264381884945,
+        "hits": 249,
+        "n": 817,
+        "precision": 0.3047735618115055,
+        "precision_lift": -0.010180521106801121,
+        "same_date_baseline": {
+          "admitted_hits": 14336,
+          "admitted_n": 45810,
+          "precision": 0.3149540829183066,
+          "weighted_hits": 257.3174857442565,
+          "weighted_n": 817
+        },
+        "signal_dates": 219,
+        "wilson_lower_95": 0.27418358407459664,
+        "wilson_upper_95": 0.3371908881743732
+      },
+      "year_2026": {
+        "codes": 226,
+        "false_positives": 324,
+        "fpr": 0.7105263157894737,
+        "hits": 132,
+        "n": 456,
+        "precision": 0.2894736842105263,
+        "precision_lift": -0.02717998992189591,
+        "same_date_baseline": {
+          "admitted_hits": 7880,
+          "admitted_n": 25403,
+          "precision": 0.31665367413242224,
+          "weighted_hits": 144.39407540438455,
+          "weighted_n": 456
+        },
+        "signal_dates": 121,
+        "wilson_lower_95": 0.24974306115416137,
+        "wilson_upper_95": 0.3327218572003329
+      }
+    },
+    "smc_strong_buy": {
+      "audit_2025_2026": {
+        "codes": 242,
+        "false_positives": 536,
+        "fpr": 0.7108753315649867,
+        "hits": 218,
+        "n": 754,
+        "precision": 0.2891246684350133,
+        "precision_lift": -0.01593181710034014,
+        "same_date_baseline": {
+          "admitted_hits": 18001,
+          "admitted_n": 59075,
+          "precision": 0.3050564855353534,
+          "weighted_hits": 230.01259009365646,
+          "weighted_n": 754
+        },
+        "signal_dates": 280,
+        "wilson_lower_95": 0.25789796302194684,
+        "wilson_upper_95": 0.3224892841283811
+      },
+      "calibration_2021_2022": {
+        "codes": 94,
+        "false_positives": 102,
+        "fpr": 0.7846153846153846,
+        "hits": 28,
+        "n": 130,
+        "precision": 0.2153846153846154,
+        "precision_lift": -0.0289960386591126,
+        "same_date_baseline": {
+          "admitted_hits": 2831,
+          "admitted_n": 10536,
+          "precision": 0.244380654043728,
+          "weighted_hits": 31.769485025684638,
+          "weighted_n": 130
+        },
+        "signal_dates": 67,
+        "wilson_lower_95": 0.15343032935030532,
+        "wilson_upper_95": 0.2936772963804092
+      },
+      "selection_2023_2024": {
+        "codes": 124,
+        "false_positives": 156,
+        "fpr": 0.7536231884057971,
+        "hits": 51,
+        "n": 207,
+        "precision": 0.2463768115942029,
+        "precision_lift": -0.01347897765965081,
+        "same_date_baseline": {
+          "admitted_hits": 4232,
+          "admitted_n": 15021,
+          "precision": 0.2598557892538537,
+          "weighted_hits": 53.790148375547716,
+          "weighted_n": 207
+        },
+        "signal_dates": 87,
+        "wilson_lower_95": 0.19265052989448375,
+        "wilson_upper_95": 0.3093452811788528
+      },
+      "year_2021": {
+        "codes": 29,
+        "false_positives": 25,
+        "fpr": 0.8064516129032258,
+        "hits": 6,
+        "n": 31,
+        "precision": 0.1935483870967742,
+        "precision_lift": -0.06352098370077619,
+        "same_date_baseline": {
+          "admitted_hits": 737,
+          "admitted_n": 2677,
+          "precision": 0.2570693707975504,
+          "weighted_hits": 7.969150494724063,
+          "weighted_n": 31
+        },
+        "signal_dates": 17,
+        "wilson_lower_95": 0.09186883586347631,
+        "wilson_upper_95": 0.3628060355545985
+      },
+      "year_2022": {
+        "codes": 75,
+        "false_positives": 77,
+        "fpr": 0.7777777777777778,
+        "hits": 22,
+        "n": 99,
+        "precision": 0.2222222222222222,
+        "precision_lift": -0.018185197282430066,
+        "same_date_baseline": {
+          "admitted_hits": 2094,
+          "admitted_n": 7859,
+          "precision": 0.24040741950465228,
+          "weighted_hits": 23.800334530960576,
+          "weighted_n": 99
+        },
+        "signal_dates": 50,
+        "wilson_lower_95": 0.1515799287727833,
+        "wilson_upper_95": 0.3136170343238624
+      },
+      "year_2023": {
+        "codes": 27,
+        "false_positives": 29,
+        "fpr": 0.7837837837837838,
+        "hits": 8,
+        "n": 37,
+        "precision": 0.21621621621621623,
+        "precision_lift": -0.015502676572569735,
+        "same_date_baseline": {
+          "admitted_hits": 636,
+          "admitted_n": 2745,
+          "precision": 0.23171889278878596,
+          "weighted_hits": 8.573599033185081,
+          "weighted_n": 37
+        },
+        "signal_dates": 18,
+        "wilson_lower_95": 0.11386376851955585,
+        "wilson_upper_95": 0.37195461273876906
+      },
+      "year_2024": {
+        "codes": 114,
+        "false_positives": 127,
+        "fpr": 0.7470588235294118,
+        "hits": 43,
+        "n": 170,
+        "precision": 0.2529411764705882,
+        "precision_lift": -0.013038525543309643,
+        "same_date_baseline": {
+          "admitted_hits": 3596,
+          "admitted_n": 12276,
+          "precision": 0.26597970201389787,
+          "weighted_hits": 45.21654934236263,
+          "weighted_n": 170
+        },
+        "signal_dates": 69,
+        "wilson_lower_95": 0.1935506131701719,
+        "wilson_upper_95": 0.32325088888687303
+      },
+      "year_2025": {
+        "codes": 192,
+        "false_positives": 334,
+        "fpr": 0.7182795698924731,
+        "hits": 131,
+        "n": 465,
+        "precision": 0.2817204301075269,
+        "precision_lift": -0.014262512569529429,
+        "same_date_baseline": {
+          "admitted_hits": 11081,
+          "admitted_n": 36480,
+          "precision": 0.2959829426770563,
+          "weighted_hits": 137.6320683448312,
+          "weighted_n": 465
+        },
+        "signal_dates": 173,
+        "wilson_lower_95": 0.24275053980535624,
+        "wilson_upper_95": 0.3242674039948526
+      },
+      "year_2026": {
+        "codes": 167,
+        "false_positives": 202,
+        "fpr": 0.698961937716263,
+        "hits": 87,
+        "n": 289,
+        "precision": 0.30103806228373703,
+        "precision_lift": -0.018617722314274165,
+        "same_date_baseline": {
+          "admitted_hits": 6920,
+          "admitted_n": 22595,
+          "precision": 0.3196557845980112,
+          "weighted_hits": 92.38052174882523,
+          "weighted_n": 289
+        },
+        "signal_dates": 107,
+        "wilson_lower_95": 0.25104488552078436,
+        "wilson_upper_95": 0.35625134561577554
+      }
+    }
+  },
+  "primary_observations": "per-stock origins at least five tradable indices apart",
+  "sample": {
+    "code_list": [
+      "sh.600000",
+      "sh.600021",
+      "sh.600025",
+      "sh.600031",
+      "sh.600052",
+      "sh.600055",
+      "sh.600085",
+      "sh.600096",
+      "sh.600100",
+      "sh.600105",
+      "sh.600132",
+      "sh.600148",
+      "sh.600161",
+      "sh.600162",
+      "sh.600166",
+      "sh.600169",
+      "sh.600176",
+      "sh.600192",
+      "sh.600196",
+      "sh.600216",
+      "sh.600223",
+      "sh.600229",
+      "sh.600248",
+      "sh.600255",
+      "sh.600276",
+      "sh.600282",
+      "sh.600284",
+      "sh.600295",
+      "sh.600301",
+      "sh.600307",
+      "sh.600323",
+      "sh.600339",
+      "sh.600340",
+      "sh.600348",
+      "sh.600354",
+      "sh.600356",
+      "sh.600360",
+      "sh.600368",
+      "sh.600375",
+      "sh.600397",
+      "sh.600408",
+      "sh.600425",
+      "sh.600435",
+      "sh.600479",
+      "sh.600490",
+      "sh.600518",
+      "sh.600523",
+      "sh.600530",
+      "sh.600560",
+      "sh.600566",
+      "sh.600628",
+      "sh.600637",
+      "sh.600667",
+      "sh.600674",
+      "sh.600678",
+      "sh.600688",
+      "sh.600694",
+      "sh.600697",
+      "sh.600699",
+      "sh.600712",
+      "sh.600715",
+      "sh.600726",
+      "sh.600732",
+      "sh.600733",
+      "sh.600737",
+      "sh.600749",
+      "sh.600751",
+      "sh.600816",
+      "sh.600818",
+      "sh.600844",
+      "sh.600854",
+      "sh.600863",
+      "sh.600865",
+      "sh.600867",
+      "sh.600875",
+      "sh.600876",
+      "sh.600885",
+      "sh.600894",
+      "sh.600909",
+      "sh.600917",
+      "sh.600919",
+      "sh.600935",
+      "sh.600955",
+      "sh.600965",
+      "sh.600968",
+      "sh.600975",
+      "sh.600977",
+      "sh.600979",
+      "sh.600988",
+      "sh.600998",
+      "sh.601000",
+      "sh.601001",
+      "sh.601003",
+      "sh.601011",
+      "sh.601016",
+      "sh.601018",
+      "sh.601077",
+      "sh.601098",
+      "sh.601118",
+      "sh.601136",
+      "sh.601155",
+      "sh.601211",
+      "sh.601212",
+      "sh.601225",
+      "sh.601226",
+      "sh.601298",
+      "sh.601328",
+      "sh.601330",
+      "sh.601333",
+      "sh.601336",
+      "sh.601388",
+      "sh.601567",
+      "sh.601606",
+      "sh.601607",
+      "sh.601618",
+      "sh.601677",
+      "sh.601698",
+      "sh.601788",
+      "sh.601818",
+      "sh.601857",
+      "sh.601858",
+      "sh.601860",
+      "sh.601886",
+      "sh.601900",
+      "sh.601956",
+      "sh.601958",
+      "sh.601996",
+      "sh.603008",
+      "sh.603020",
+      "sh.603029",
+      "sh.603050",
+      "sh.603052",
+      "sh.603068",
+      "sh.603070",
+      "sh.603073",
+      "sh.603087",
+      "sh.603100",
+      "sh.603102",
+      "sh.603108",
+      "sh.603116",
+      "sh.603120",
+      "sh.603150",
+      "sh.603151",
+      "sh.603173",
+      "sh.603175",
+      "sh.603176",
+      "sh.603178",
+      "sh.603207",
+      "sh.603217",
+      "sh.603218",
+      "sh.603219",
+      "sh.603228",
+      "sh.603257",
+      "sh.603291",
+      "sh.603323",
+      "sh.603335",
+      "sh.603368",
+      "sh.603370",
+      "sh.603375",
+      "sh.603486",
+      "sh.603517",
+      "sh.603530",
+      "sh.603536",
+      "sh.603551",
+      "sh.603577",
+      "sh.603588",
+      "sh.603598",
+      "sh.603613",
+      "sh.603639",
+      "sh.603656",
+      "sh.603657",
+      "sh.603659",
+      "sh.603678",
+      "sh.603697",
+      "sh.603709",
+      "sh.603725",
+      "sh.603730",
+      "sh.603733",
+      "sh.603739",
+      "sh.603803",
+      "sh.603823",
+      "sh.603848",
+      "sh.603858",
+      "sh.603877",
+      "sh.603879",
+      "sh.603880",
+      "sh.603917",
+      "sh.603920",
+      "sh.603931",
+      "sh.603968",
+      "sh.603979",
+      "sh.603997",
+      "sh.605011",
+      "sh.605018",
+      "sh.605066",
+      "sh.605086",
+      "sh.605090",
+      "sh.605108",
+      "sh.605168",
+      "sh.605186",
+      "sh.605255",
+      "sh.605287",
+      "sh.605299",
+      "sh.605319",
+      "sh.605336",
+      "sh.605499",
+      "sh.605566",
+      "sh.605598",
+      "sz.000016",
+      "sz.000020",
+      "sz.000032",
+      "sz.000045",
+      "sz.000061",
+      "sz.000089",
+      "sz.000156",
+      "sz.000166",
+      "sz.000401",
+      "sz.000429",
+      "sz.000505",
+      "sz.000514",
+      "sz.000519",
+      "sz.000531",
+      "sz.000532",
+      "sz.000534",
+      "sz.000536",
+      "sz.000539",
+      "sz.000557",
+      "sz.000564",
+      "sz.000566",
+      "sz.000586",
+      "sz.000590",
+      "sz.000596",
+      "sz.000599",
+      "sz.000615",
+      "sz.000619",
+      "sz.000623",
+      "sz.000628",
+      "sz.000629",
+      "sz.000670",
+      "sz.000677",
+      "sz.000703",
+      "sz.000710",
+      "sz.000725",
+      "sz.000731",
+      "sz.000735",
+      "sz.000751",
+      "sz.000793",
+      "sz.000802",
+      "sz.000810",
+      "sz.000811",
+      "sz.000838",
+      "sz.000862",
+      "sz.000868",
+      "sz.000869",
+      "sz.000876",
+      "sz.000878",
+      "sz.000880",
+      "sz.000888",
+      "sz.000892",
+      "sz.000905",
+      "sz.000911",
+      "sz.000925",
+      "sz.000927",
+      "sz.000936",
+      "sz.000985",
+      "sz.000988",
+      "sz.000989",
+      "sz.001205",
+      "sz.001237",
+      "sz.001239",
+      "sz.001277",
+      "sz.001288",
+      "sz.001296",
+      "sz.001316",
+      "sz.001332",
+      "sz.001333",
+      "sz.001339",
+      "sz.001387",
+      "sz.001389",
+      "sz.001393",
+      "sz.001896",
+      "sz.002001",
+      "sz.002006",
+      "sz.002009",
+      "sz.002016",
+      "sz.002025",
+      "sz.002027",
+      "sz.002039",
+      "sz.002044",
+      "sz.002045",
+      "sz.002053",
+      "sz.002063",
+      "sz.002091",
+      "sz.002096",
+      "sz.002097",
+      "sz.002124",
+      "sz.002140",
+      "sz.002145",
+      "sz.002148",
+      "sz.002171",
+      "sz.002175",
+      "sz.002176",
+      "sz.002180",
+      "sz.002183",
+      "sz.002189",
+      "sz.002191",
+      "sz.002195",
+      "sz.002206",
+      "sz.002216",
+      "sz.002225",
+      "sz.002250",
+      "sz.002253",
+      "sz.002256",
+      "sz.002259",
+      "sz.002264",
+      "sz.002266",
+      "sz.002267",
+      "sz.002281",
+      "sz.002286",
+      "sz.002291",
+      "sz.002293",
+      "sz.002302",
+      "sz.002327",
+      "sz.002330",
+      "sz.002345",
+      "sz.002349",
+      "sz.002373",
+      "sz.002387",
+      "sz.002389",
+      "sz.002393",
+      "sz.002427",
+      "sz.002431",
+      "sz.002436",
+      "sz.002441",
+      "sz.002449",
+      "sz.002451",
+      "sz.002459",
+      "sz.002469",
+      "sz.002489",
+      "sz.002490",
+      "sz.002491",
+      "sz.002493",
+      "sz.002496",
+      "sz.002507",
+      "sz.002516",
+      "sz.002519",
+      "sz.002521",
+      "sz.002523",
+      "sz.002526",
+      "sz.002537",
+      "sz.002543",
+      "sz.002544",
+      "sz.002551",
+      "sz.002552",
+      "sz.002563",
+      "sz.002584",
+      "sz.002586",
+      "sz.002588",
+      "sz.002590",
+      "sz.002593",
+      "sz.002617",
+      "sz.002637",
+      "sz.002641",
+      "sz.002645",
+      "sz.002649",
+      "sz.002651",
+      "sz.002659",
+      "sz.002662",
+      "sz.002675",
+      "sz.002685",
+      "sz.002686",
+      "sz.002705",
+      "sz.002706",
+      "sz.002730",
+      "sz.002761",
+      "sz.002792",
+      "sz.002810",
+      "sz.002819",
+      "sz.002823",
+      "sz.002830",
+      "sz.002851",
+      "sz.002852",
+      "sz.002858",
+      "sz.002860",
+      "sz.002861",
+      "sz.002879",
+      "sz.002880",
+      "sz.002896",
+      "sz.002899",
+      "sz.002919",
+      "sz.002926",
+      "sz.002931",
+      "sz.002940",
+      "sz.002961",
+      "sz.002981",
+      "sz.002984",
+      "sz.002989",
+      "sz.002993",
+      "sz.003015",
+      "sz.003018"
+    ],
+    "codes": 400,
+    "method": "precision70_sha256_code_stem"
+  },
+  "study": "futu_indicator_family_ranking",
+  "trigger_coverage": {
+    "cpgw_main_long_cross": {
+      "audit_2025_2026": {
+        "admitted_triggers": 1990,
+        "mature_baseline_usable": 1964,
+        "raw_triggers": 4653,
+        "usable_fraction_of_raw": 0.42209327315710293
+      },
+      "calibration_2021_2022": {
+        "admitted_triggers": 1474,
+        "mature_baseline_usable": 295,
+        "raw_triggers": 5059,
+        "usable_fraction_of_raw": 0.058311919351650525
+      },
+      "selection_2023_2024": {
+        "admitted_triggers": 1607,
+        "mature_baseline_usable": 331,
+        "raw_triggers": 5785,
+        "usable_fraction_of_raw": 0.05721694036300778
+      },
+      "year_2021": {
+        "admitted_triggers": 675,
+        "mature_baseline_usable": 61,
+        "raw_triggers": 2482,
+        "usable_fraction_of_raw": 0.024576954069298954
+      },
+      "year_2022": {
+        "admitted_triggers": 799,
+        "mature_baseline_usable": 234,
+        "raw_triggers": 2577,
+        "usable_fraction_of_raw": 0.09080325960419092
+      },
+      "year_2023": {
+        "admitted_triggers": 814,
+        "mature_baseline_usable": 73,
+        "raw_triggers": 2871,
+        "usable_fraction_of_raw": 0.025426680599094392
+      },
+      "year_2024": {
+        "admitted_triggers": 793,
+        "mature_baseline_usable": 258,
+        "raw_triggers": 2914,
+        "usable_fraction_of_raw": 0.08853809196980096
+      },
+      "year_2025": {
+        "admitted_triggers": 1155,
+        "mature_baseline_usable": 1155,
+        "raw_triggers": 2569,
+        "usable_fraction_of_raw": 0.44959128065395093
+      },
+      "year_2026": {
+        "admitted_triggers": 835,
+        "mature_baseline_usable": 809,
+        "raw_triggers": 2084,
+        "usable_fraction_of_raw": 0.3881957773512476
+      }
+    },
+    "dxbd_cross_zero": {
+      "audit_2025_2026": {
+        "admitted_triggers": 4640,
+        "mature_baseline_usable": 4594,
+        "raw_triggers": 10063,
+        "usable_fraction_of_raw": 0.4565238994335685
+      },
+      "calibration_2021_2022": {
+        "admitted_triggers": 3532,
+        "mature_baseline_usable": 950,
+        "raw_triggers": 11397,
+        "usable_fraction_of_raw": 0.08335526893042029
+      },
+      "selection_2023_2024": {
+        "admitted_triggers": 3707,
+        "mature_baseline_usable": 1262,
+        "raw_triggers": 11603,
+        "usable_fraction_of_raw": 0.10876497457554081
+      },
+      "year_2021": {
+        "admitted_triggers": 1673,
+        "mature_baseline_usable": 222,
+        "raw_triggers": 5631,
+        "usable_fraction_of_raw": 0.03942461374533831
+      },
+      "year_2022": {
+        "admitted_triggers": 1859,
+        "mature_baseline_usable": 728,
+        "raw_triggers": 5766,
+        "usable_fraction_of_raw": 0.12625737079431149
+      },
+      "year_2023": {
+        "admitted_triggers": 1741,
+        "mature_baseline_usable": 179,
+        "raw_triggers": 5843,
+        "usable_fraction_of_raw": 0.030634947800787266
+      },
+      "year_2024": {
+        "admitted_triggers": 1966,
+        "mature_baseline_usable": 1083,
+        "raw_triggers": 5760,
+        "usable_fraction_of_raw": 0.18802083333333333
+      },
+      "year_2025": {
+        "admitted_triggers": 3022,
+        "mature_baseline_usable": 3022,
+        "raw_triggers": 6406,
+        "usable_fraction_of_raw": 0.4717452388385888
+      },
+      "year_2026": {
+        "admitted_triggers": 1618,
+        "mature_baseline_usable": 1572,
+        "raw_triggers": 3657,
+        "usable_fraction_of_raw": 0.4298605414273995
+      }
+    },
+    "gding_bbuy": {
+      "audit_2025_2026": {
+        "admitted_triggers": 3776,
+        "mature_baseline_usable": 3719,
+        "raw_triggers": 8181,
+        "usable_fraction_of_raw": 0.45458990343478795
+      },
+      "calibration_2021_2022": {
+        "admitted_triggers": 2890,
+        "mature_baseline_usable": 767,
+        "raw_triggers": 9305,
+        "usable_fraction_of_raw": 0.08242880171950565
+      },
+      "selection_2023_2024": {
+        "admitted_triggers": 3024,
+        "mature_baseline_usable": 1026,
+        "raw_triggers": 9452,
+        "usable_fraction_of_raw": 0.10854845535336437
+      },
+      "year_2021": {
+        "admitted_triggers": 1366,
+        "mature_baseline_usable": 190,
+        "raw_triggers": 4675,
+        "usable_fraction_of_raw": 0.040641711229946524
+      },
+      "year_2022": {
+        "admitted_triggers": 1524,
+        "mature_baseline_usable": 577,
+        "raw_triggers": 4630,
+        "usable_fraction_of_raw": 0.12462203023758099
+      },
+      "year_2023": {
+        "admitted_triggers": 1424,
+        "mature_baseline_usable": 147,
+        "raw_triggers": 4795,
+        "usable_fraction_of_raw": 0.030656934306569343
+      },
+      "year_2024": {
+        "admitted_triggers": 1600,
+        "mature_baseline_usable": 879,
+        "raw_triggers": 4657,
+        "usable_fraction_of_raw": 0.18874812110800945
+      },
+      "year_2025": {
+        "admitted_triggers": 2461,
+        "mature_baseline_usable": 2461,
+        "raw_triggers": 5249,
+        "usable_fraction_of_raw": 0.4688512097542389
+      },
+      "year_2026": {
+        "admitted_triggers": 1315,
+        "mature_baseline_usable": 1258,
+        "raw_triggers": 2932,
+        "usable_fraction_of_raw": 0.42905866302864937
+      }
+    },
+    "kdj_trend_pro_buy": {
+      "audit_2025_2026": {
+        "admitted_triggers": 3596,
+        "mature_baseline_usable": 3571,
+        "raw_triggers": 6839,
+        "usable_fraction_of_raw": 0.5221523614563532
+      },
+      "calibration_2021_2022": {
+        "admitted_triggers": 2613,
+        "mature_baseline_usable": 868,
+        "raw_triggers": 7307,
+        "usable_fraction_of_raw": 0.1187902011769536
+      },
+      "selection_2023_2024": {
+        "admitted_triggers": 2875,
+        "mature_baseline_usable": 1364,
+        "raw_triggers": 7393,
+        "usable_fraction_of_raw": 0.18449885026376303
+      },
+      "year_2021": {
+        "admitted_triggers": 1330,
+        "mature_baseline_usable": 222,
+        "raw_triggers": 3860,
+        "usable_fraction_of_raw": 0.057512953367875645
+      },
+      "year_2022": {
+        "admitted_triggers": 1283,
+        "mature_baseline_usable": 646,
+        "raw_triggers": 3447,
+        "usable_fraction_of_raw": 0.18740934145633883
+      },
+      "year_2023": {
+        "admitted_triggers": 1233,
+        "mature_baseline_usable": 154,
+        "raw_triggers": 3819,
+        "usable_fraction_of_raw": 0.04032469232783451
+      },
+      "year_2024": {
+        "admitted_triggers": 1642,
+        "mature_baseline_usable": 1210,
+        "raw_triggers": 3574,
+        "usable_fraction_of_raw": 0.33855623950755453
+      },
+      "year_2025": {
+        "admitted_triggers": 2501,
+        "mature_baseline_usable": 2501,
+        "raw_triggers": 4837,
+        "usable_fraction_of_raw": 0.5170560264626834
+      },
+      "year_2026": {
+        "admitted_triggers": 1095,
+        "mature_baseline_usable": 1070,
+        "raw_triggers": 2002,
+        "usable_fraction_of_raw": 0.5344655344655345
+      }
+    },
+    "mhpg_buy": {
+      "audit_2025_2026": {
+        "admitted_triggers": 1245,
+        "mature_baseline_usable": 1242,
+        "raw_triggers": 2247,
+        "usable_fraction_of_raw": 0.5527369826435247
+      },
+      "calibration_2021_2022": {
+        "admitted_triggers": 696,
+        "mature_baseline_usable": 259,
+        "raw_triggers": 1875,
+        "usable_fraction_of_raw": 0.13813333333333333
+      },
+      "selection_2023_2024": {
+        "admitted_triggers": 950,
+        "mature_baseline_usable": 480,
+        "raw_triggers": 2262,
+        "usable_fraction_of_raw": 0.21220159151193635
+      },
+      "year_2021": {
+        "admitted_triggers": 349,
+        "mature_baseline_usable": 45,
+        "raw_triggers": 971,
+        "usable_fraction_of_raw": 0.046343975283213185
+      },
+      "year_2022": {
+        "admitted_triggers": 347,
+        "mature_baseline_usable": 214,
+        "raw_triggers": 904,
+        "usable_fraction_of_raw": 0.23672566371681417
+      },
+      "year_2023": {
+        "admitted_triggers": 376,
+        "mature_baseline_usable": 30,
+        "raw_triggers": 1100,
+        "usable_fraction_of_raw": 0.02727272727272727
+      },
+      "year_2024": {
+        "admitted_triggers": 574,
+        "mature_baseline_usable": 450,
+        "raw_triggers": 1162,
+        "usable_fraction_of_raw": 0.387263339070568
+      },
+      "year_2025": {
+        "admitted_triggers": 938,
+        "mature_baseline_usable": 938,
+        "raw_triggers": 1722,
+        "usable_fraction_of_raw": 0.5447154471544715
+      },
+      "year_2026": {
+        "admitted_triggers": 307,
+        "mature_baseline_usable": 304,
+        "raw_triggers": 525,
+        "usable_fraction_of_raw": 0.579047619047619
+      }
+    },
+    "mkf_green_exit_proxy": {
+      "audit_2025_2026": {
+        "admitted_triggers": 51,
+        "mature_baseline_usable": 51,
+        "raw_triggers": 124,
+        "usable_fraction_of_raw": 0.4112903225806452
+      },
+      "calibration_2021_2022": {
+        "admitted_triggers": 30,
+        "mature_baseline_usable": 10,
+        "raw_triggers": 111,
+        "usable_fraction_of_raw": 0.09009009009009009
+      },
+      "selection_2023_2024": {
+        "admitted_triggers": 41,
+        "mature_baseline_usable": 5,
+        "raw_triggers": 158,
+        "usable_fraction_of_raw": 0.03164556962025317
+      },
+      "year_2021": {
+        "admitted_triggers": 13,
+        "mature_baseline_usable": 1,
+        "raw_triggers": 47,
+        "usable_fraction_of_raw": 0.02127659574468085
+      },
+      "year_2022": {
+        "admitted_triggers": 17,
+        "mature_baseline_usable": 9,
+        "raw_triggers": 64,
+        "usable_fraction_of_raw": 0.140625
+      },
+      "year_2023": {
+        "admitted_triggers": 24,
+        "mature_baseline_usable": 1,
+        "raw_triggers": 99,
+        "usable_fraction_of_raw": 0.010101010101010102
+      },
+      "year_2024": {
+        "admitted_triggers": 17,
+        "mature_baseline_usable": 4,
+        "raw_triggers": 59,
+        "usable_fraction_of_raw": 0.06779661016949153
+      },
+      "year_2025": {
+        "admitted_triggers": 32,
+        "mature_baseline_usable": 32,
+        "raw_triggers": 75,
+        "usable_fraction_of_raw": 0.4266666666666667
+      },
+      "year_2026": {
+        "admitted_triggers": 19,
+        "mature_baseline_usable": 19,
+        "raw_triggers": 49,
+        "usable_fraction_of_raw": 0.3877551020408163
+      }
+    },
+    "ribbon1_strict_buy": {
+      "audit_2025_2026": {
+        "admitted_triggers": 773,
+        "mature_baseline_usable": 752,
+        "raw_triggers": 1957,
+        "usable_fraction_of_raw": 0.3842616249361267
+      },
+      "calibration_2021_2022": {
+        "admitted_triggers": 638,
+        "mature_baseline_usable": 88,
+        "raw_triggers": 2369,
+        "usable_fraction_of_raw": 0.037146475306036306
+      },
+      "selection_2023_2024": {
+        "admitted_triggers": 603,
+        "mature_baseline_usable": 62,
+        "raw_triggers": 2412,
+        "usable_fraction_of_raw": 0.02570480928689884
+      },
+      "year_2021": {
+        "admitted_triggers": 293,
+        "mature_baseline_usable": 34,
+        "raw_triggers": 1212,
+        "usable_fraction_of_raw": 0.028052805280528052
+      },
+      "year_2022": {
+        "admitted_triggers": 345,
+        "mature_baseline_usable": 54,
+        "raw_triggers": 1157,
+        "usable_fraction_of_raw": 0.046672428694900604
+      },
+      "year_2023": {
+        "admitted_triggers": 319,
+        "mature_baseline_usable": 32,
+        "raw_triggers": 1190,
+        "usable_fraction_of_raw": 0.02689075630252101
+      },
+      "year_2024": {
+        "admitted_triggers": 284,
+        "mature_baseline_usable": 30,
+        "raw_triggers": 1222,
+        "usable_fraction_of_raw": 0.024549918166939442
+      },
+      "year_2025": {
+        "admitted_triggers": 381,
+        "mature_baseline_usable": 381,
+        "raw_triggers": 941,
+        "usable_fraction_of_raw": 0.40488841657810837
+      },
+      "year_2026": {
+        "admitted_triggers": 392,
+        "mature_baseline_usable": 371,
+        "raw_triggers": 1016,
+        "usable_fraction_of_raw": 0.36515748031496065
+      }
+    },
+    "shengbei_long_flip": {
+      "audit_2025_2026": {
+        "admitted_triggers": 1322,
+        "mature_baseline_usable": 1301,
+        "raw_triggers": 3198,
+        "usable_fraction_of_raw": 0.4068167604752971
+      },
+      "calibration_2021_2022": {
+        "admitted_triggers": 886,
+        "mature_baseline_usable": 192,
+        "raw_triggers": 3395,
+        "usable_fraction_of_raw": 0.05655375552282769
+      },
+      "selection_2023_2024": {
+        "admitted_triggers": 1082,
+        "mature_baseline_usable": 334,
+        "raw_triggers": 3779,
+        "usable_fraction_of_raw": 0.08838317015083355
+      },
+      "year_2021": {
+        "admitted_triggers": 429,
+        "mature_baseline_usable": 51,
+        "raw_triggers": 1678,
+        "usable_fraction_of_raw": 0.030393325387365912
+      },
+      "year_2022": {
+        "admitted_triggers": 457,
+        "mature_baseline_usable": 141,
+        "raw_triggers": 1717,
+        "usable_fraction_of_raw": 0.08211997670355271
+      },
+      "year_2023": {
+        "admitted_triggers": 451,
+        "mature_baseline_usable": 35,
+        "raw_triggers": 1702,
+        "usable_fraction_of_raw": 0.020564042303172738
+      },
+      "year_2024": {
+        "admitted_triggers": 631,
+        "mature_baseline_usable": 299,
+        "raw_triggers": 2077,
+        "usable_fraction_of_raw": 0.1439576311988445
+      },
+      "year_2025": {
+        "admitted_triggers": 835,
+        "mature_baseline_usable": 835,
+        "raw_triggers": 1929,
+        "usable_fraction_of_raw": 0.43286677034733023
+      },
+      "year_2026": {
+        "admitted_triggers": 487,
+        "mature_baseline_usable": 466,
+        "raw_triggers": 1269,
+        "usable_fraction_of_raw": 0.3672182821118991
+      }
+    },
+    "smc_strong_buy": {
+      "audit_2025_2026": {
+        "admitted_triggers": 892,
+        "mature_baseline_usable": 879,
+        "raw_triggers": 2609,
+        "usable_fraction_of_raw": 0.3369106937523956
+      },
+      "calibration_2021_2022": {
+        "admitted_triggers": 637,
+        "mature_baseline_usable": 149,
+        "raw_triggers": 2805,
+        "usable_fraction_of_raw": 0.05311942959001782
+      },
+      "selection_2023_2024": {
+        "admitted_triggers": 674,
+        "mature_baseline_usable": 238,
+        "raw_triggers": 2692,
+        "usable_fraction_of_raw": 0.08841010401188708
+      },
+      "year_2021": {
+        "admitted_triggers": 338,
+        "mature_baseline_usable": 36,
+        "raw_triggers": 1585,
+        "usable_fraction_of_raw": 0.022712933753943218
+      },
+      "year_2022": {
+        "admitted_triggers": 299,
+        "mature_baseline_usable": 113,
+        "raw_triggers": 1220,
+        "usable_fraction_of_raw": 0.09262295081967213
+      },
+      "year_2023": {
+        "admitted_triggers": 274,
+        "mature_baseline_usable": 41,
+        "raw_triggers": 1178,
+        "usable_fraction_of_raw": 0.03480475382003396
+      },
+      "year_2024": {
+        "admitted_triggers": 400,
+        "mature_baseline_usable": 197,
+        "raw_triggers": 1514,
+        "usable_fraction_of_raw": 0.13011889035667107
+      },
+      "year_2025": {
+        "admitted_triggers": 532,
+        "mature_baseline_usable": 532,
+        "raw_triggers": 1615,
+        "usable_fraction_of_raw": 0.32941176470588235
+      },
+      "year_2026": {
+        "admitted_triggers": 360,
+        "mature_baseline_usable": 347,
+        "raw_triggers": 994,
+        "usable_fraction_of_raw": 0.34909456740442657
+      }
+    }
+  },
+  "workers": 8
+}
