@@ -14,12 +14,14 @@
 - `git diff --check`: passed before staging.
 - Secret-like string scan excluded `.git`, `.venv`, `output`, `.runtime`, and `PFrontStockData`; hits were code fields, documentation, or test fake values, with no real credential identified.
 - GitHub remote inspection found `origin` at `https://github.com/v-artw/NCN.git`; `gh repo view` returned `v-artw/NCN` with default branch `main`.
-- Push and GitHub milestone creation are pending in this entry until the commit is created.
+- Checkpoint commit pushed: `81e256c` on branch `chore/ncn-structured-research-checkpoint`.
+- GitHub milestone created: `Structured MKF Research Checkpoint` (#1), `https://github.com/v-artw/NCN/milestone/1`.
+- Final `git status --short --branch` after push showed the branch tracking `origin/chore/ncn-structured-research-checkpoint` with no pending file changes before this handoff update.
 
 ### Risks / Review Notes
 - User explicitly chose to include **all current working tree changes** and to create a **GitHub Milestone**.
 - Do not delete, reset, clean, force-push, or alter production/live-trading boundaries as part of this upload.
-- If push reports the repository is missing despite `gh repo view` success, create `v-artw/NCN` only after confirming the exact visibility/default settings implied by the current GitHub account.
+- User initially thought the repository might not exist, then corrected that NCN already exists; no repository creation was needed.
 
 ## Current Task: MKF lag range YAML configuration and verification
 
