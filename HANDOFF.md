@@ -1,5 +1,25 @@
 # Reviewer Handoff
 
+## Current Task: Current-main GitHub milestone
+
+### Changed Files
+- `HANDOFF.md`: added this milestone handoff entry.
+
+### Behavior / Logic Changes
+- No code behavior changed.
+- Created GitHub milestone for the current `main` state after MKF checkpoint merge.
+
+### Validation
+- `git status --short --branch`: `main` tracking `origin/main`, clean before this handoff update.
+- Current local `HEAD`: `378078f`.
+- `git ls-remote origin refs/heads/main`: remote `main` points to `378078fd9dfc92af3f53bff9775b0c704ee50104`.
+- Existing milestone #1: `Structured MKF Research Checkpoint`.
+- New milestone #2 created: `Main MKF Merge Checkpoint`, `https://github.com/v-artw/NCN/milestone/2`.
+
+### Risks / Review Notes
+- GitHub milestones are issue/PR grouping objects and do not pin code by themselves; the milestone description records commit `378078f` as the current-main checkpoint reference.
+- If a code-pinning checkpoint is needed later, create a Git tag or GitHub Release separately.
+
 ## Current Task: Merge MKF checkpoint into main
 
 ### Changed Files
