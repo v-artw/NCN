@@ -91,7 +91,7 @@ def _selection_run(root: Path, run_id: str = "select-1", *, eligible: bool = Tru
     return run
 
 
-def _news_run(root: Path, selection: Path, run_id: str = "news-review-1") -> Path:
+def _news_run(root: Path, selection: Path, run_id: str = "news-review-1", *, include_committee_csv: bool = False) -> Path:
     run = root / run_id
     run.mkdir(parents=True)
     candidates_sha = json.loads((selection / "manifest.json").read_text(encoding="utf-8"))["files"]["candidates.json"]["sha256"]
@@ -149,16 +149,29 @@ def _news_run(root: Path, selection: Path, run_id: str = "news-review-1") -> Pat
     }
     _write_json(run / "reviews.json", reviews)
     _write_json(run / "news.json", news)
+    if include_committee_csv:
+        committee_name = "ai_committee_reviews_20260728_100000.csv"
+        latest_name = "ai_committee_reviews_latest.csv"
+        (run / committee_name).write_text("code,review_state\nsh.600001,priority_review\n", encoding="utf-8")
+        (run / latest_name).write_text((run / committee_name).read_text(encoding="utf-8"), encoding="utf-8")
+        summary["timestamped_ai_committee_csv"] = committee_name
+        summary["latest_ai_committee_csv"] = latest_name
     _write_json(run / "summary.json", summary)
+    files = {
+        "reviews.json": {"sha256": _sha256(run / "reviews.json")},
+        "news.json": {"sha256": _sha256(run / "news.json")},
+        "summary.json": {"sha256": _sha256(run / "summary.json")},
+    }
+    if include_committee_csv:
+        files[committee_name] = {"sha256": _sha256(run / committee_name)}
+        files[latest_name] = {"sha256": _sha256(run / latest_name)}
     manifest = {
         "schema_version": "ncn_smc_news_ai_review_v1",
         "run_id": run_id,
         "source_candidates_sha256": candidates_sha,
-        "files": {
-            "reviews.json": {"sha256": _sha256(run / "reviews.json")},
-            "news.json": {"sha256": _sha256(run / "news.json")},
-            "summary.json": {"sha256": _sha256(run / "summary.json")},
-        },
+        "timestamped_ai_committee_csv": committee_name if include_committee_csv else None,
+        "latest_ai_committee_csv": latest_name if include_committee_csv else None,
+        "files": files,
     }
     _write_json(run / "manifest.json", manifest)
     return run
@@ -195,6 +208,26 @@ def test_archive_binds_sources_and_detects_tampering(tmp_path: Path) -> None:
 
     (selection / "candidates.json").write_text("[]", encoding="utf-8")
     assert load_valid_smc_news_snapshot(archive)[1] == "source_hash_mismatch:selection:candidates.json"
+
+
+def test_archive_binds_ai_committee_csv_and_detects_tampering(tmp_path: Path) -> None:
+    selection = _selection_run(tmp_path / "selections")
+    news = _news_run(tmp_path / "news", selection, include_committee_csv=True)
+    archive = publish_smc_news_snapshot(
+        selection_run=selection,
+        news_run=news,
+        output_root=tmp_path / "smc_news_prospective",
+        run_id="smc-news-committee",
+    )
+
+    snapshot = json.loads((archive / "snapshot.json").read_text(encoding="utf-8"))
+    artifacts = snapshot["source_artifacts"]["news_review"]
+    assert "ai_committee_reviews_20260728_100000.csv" in artifacts
+    assert "ai_committee_reviews_latest.csv" in artifacts
+    assert load_valid_smc_news_snapshot(archive)[1] is None
+
+    (news / "ai_committee_reviews_latest.csv").write_text("tampered", encoding="utf-8")
+    assert load_valid_smc_news_snapshot(archive)[1] == "source_hash_mismatch:news_review:ai_committee_reviews_latest.csv"
 
 
 def test_ineligible_selection_is_rejected(tmp_path: Path) -> None:

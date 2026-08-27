@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import http.client
 import json
 from pathlib import Path
@@ -41,8 +42,8 @@ class FakeClient:
 
 
 def _mkf_run(root: Path) -> Path:
-    rows = [MkfCandidateRow("sh.600001", "2026-04-09", 10.0, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, "")]
-    return _atomic_publish(root, "mkf-select-test", rows, {"schema_version": "ncn_mkf_candidate_selector_v1", "candidate_count": 1, "published_at_utc": "2026-04-09T00:00:00+00:00"})
+    rows = [MkfCandidateRow("sh.600001", "2026-04-09", "2026-04-08", 1, 10.0, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, "")]
+    return _atomic_publish(root, "mkf-select-test", rows, {"schema_version": "ncn_mkf_candidate_selector_v5", "candidate_count": 1, "published_at_utc": "2026-04-09T00:00:00+00:00"})
 
 
 def _news_config(path: Path) -> Path:
@@ -191,6 +192,10 @@ def test_mkf_ai_review_publishes_research_labels_and_source_hash(tmp_path: Path,
     assert news_contexts[0]["news_context"]["fatal_risks"] == ["收到立案告知书"]
     assert contexts[0]["technical_context"]["method_reference"] == "Japanese Candlestick Charting Techniques style OHLC shape review"
     assert contexts[0]["technical_context"]["mkf_selection_snapshot"]["mkf_momentum"] == 30.0
+    with result.reviews_csv_path.open(encoding="utf-8", newline="") as file:
+        header = next(csv.reader(file))
+    assert header[header.index("confidence") + 1] == "local_score"
+    assert header[:5] == ["code", "signal_date", "review_state", "confidence", "local_score"]
     assert client.context is not None
     assert client.context["excluded_contexts"]["pmkf_kalman_used"] is False
     assert client.context["excluded_contexts"]["futu_fields_used"] is False
@@ -275,11 +280,11 @@ def test_mkf_ai_review_progress_includes_candidate_and_result_details(tmp_path: 
 
 def test_mkf_ai_review_orders_ai_unavailable_after_risk_attention(tmp_path: Path) -> None:
     rows = [
-        MkfCandidateRow("sh.600001", "2026-04-09", 10.0, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, ""),
-        MkfCandidateRow("sh.600002", "2026-04-09", 11.0, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, ""),
+        MkfCandidateRow("sh.600001", "2026-04-09", "2026-04-08", 1, 10.0, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, ""),
+        MkfCandidateRow("sh.600002", "2026-04-09", "2026-04-07", 2, 11.0, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, ""),
     ]
     selection_root = tmp_path / "selections"
-    _atomic_publish(selection_root, "mkf-select-test", rows, {"schema_version": "ncn_mkf_candidate_selector_v1", "candidate_count": 2, "published_at_utc": "2026-04-09T00:00:00+00:00"})
+    _atomic_publish(selection_root, "mkf-select-test", rows, {"schema_version": "ncn_mkf_candidate_selector_v5", "candidate_count": 2, "published_at_utc": "2026-04-09T00:00:00+00:00"})
 
     class MixedClient:
         def analyze(self, candidate: dict[str, object], context: dict[str, object], news_context: dict[str, object]) -> tuple[dict[str, object], str]:

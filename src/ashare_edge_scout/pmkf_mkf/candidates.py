@@ -17,21 +17,66 @@ from typing import Any
 
 import pandas as pd
 
-from ..config import compute_config_sha256, load_config, validate_config
+from ..config import (
+    DEFAULT_MKF_POST_CROSS_LAG_RANGE,
+    compute_config_sha256,
+    load_config,
+    parse_mkf_post_cross_lag_range,
+    validate_config,
+)
 from ..data.daily_bars import DataValidationError
 from ..data.data_sources import get_parquet_codes, get_parquet_latest_date_coverage, load_stock_records
-from .research import mkf_red_blue_cross20_lines, mkf_red_blue_cross20_under80_mask
+from .research import (
+    mkf_red_blue_cross20_green_exit_under80_mask,
+    mkf_red_blue_cross20_lines,
+    mkf_red_blue_cross20_post_lag_mask,
+)
 from ..research_precision70 import production_gate_mask
 from ..stock_selector import _safe_float
 
-SCHEMA_VERSION = "ncn_mkf_candidate_selector_v1"
-SELECTION_RULE = "mkf_red_blue_cross20_under80_v1_and_existing_hard_gates"
+SCHEMA_VERSION = "ncn_mkf_candidate_selector_v5"
+DEFAULT_MKF_POST_CROSS_LAGS = parse_mkf_post_cross_lag_range(DEFAULT_MKF_POST_CROSS_LAG_RANGE)
+SELECTION_RULE = "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5_and_existing_hard_gates"
+
+
+def _mkf_lag_range_value(config: Mapping[str, Any]) -> str:
+    mkf_config = config.get("mkf", {})
+    selector = mkf_config.get("candidate_selector", {}) if isinstance(mkf_config, Mapping) else {}
+    if selector is None:
+        selector = {}
+    if not isinstance(selector, Mapping):
+        raise ValueError("mkf.candidate_selector must be a mapping")
+    value = selector.get("post_cross_lag_range", DEFAULT_MKF_POST_CROSS_LAG_RANGE)
+    if not isinstance(value, str):
+        raise ValueError("mkf.candidate_selector.post_cross_lag_range must be a string like 'lag0-lag2'")
+    return value.strip()
+
+
+def mkf_allowed_lags(config: Mapping[str, Any]) -> frozenset[int]:
+    """Return configured MKF post-cross lags, preserving legacy defaults."""
+
+    return parse_mkf_post_cross_lag_range(_mkf_lag_range_value(config))
+
+
+def mkf_selector_id(allowed_lags: frozenset[int]) -> str:
+    """Build the selector identifier from the configured inclusive lag range."""
+
+    suffix = "_".join(f"lag{lag}" for lag in sorted(allowed_lags))
+    return f"mkf_red_blue_cross20_post_{suffix}_v5"
+
+
+def mkf_selection_rule(allowed_lags: frozenset[int]) -> str:
+    """Build an auditable selection rule from the configured lag range."""
+
+    return f"{mkf_selector_id(allowed_lags)}_and_existing_hard_gates"
 
 
 @dataclass(frozen=True)
 class MkfCandidateRow:
     code: str
     signal_date: str
+    cross_date: str
+    post_cross_lag: int
     research_close: float
     amount_cny: float
     turn_pct: float
@@ -56,6 +101,10 @@ class MkfSelectionResult:
     manifest_path: Path
     signal_date: date
     candidate_count: int
+    selector_id: str
+    selection_rule: str
+    post_cross_lag_range: str
+    allowed_post_cross_lags: tuple[int, ...]
 
 
 def _sha256(path: Path) -> str:
@@ -89,6 +138,24 @@ def _cross_components(lines: pd.DataFrame, frame: pd.DataFrame, row_index: int) 
     return red, blue
 
 
+def _latest_cross_context(
+    frame: pd.DataFrame,
+    row_index: int,
+    allowed_lags: frozenset[int],
+) -> tuple[int, int] | None:
+    base = mkf_red_blue_cross20_green_exit_under80_mask(frame)
+    trading = frame.get("tradestatus", pd.Series(index=frame.index, dtype=object)).astype("string").eq("1").fillna(False)
+    tradable_indexes = list(frame.index[trading])
+    if row_index not in tradable_indexes:
+        return None
+    position = tradable_indexes.index(row_index)
+    for lag in sorted(allowed_lags):
+        cross_position = position - lag
+        if cross_position >= 0 and bool(base.loc[tradable_indexes[cross_position]]):
+            return tradable_indexes[cross_position], lag
+    return None
+
+
 def _config_with_min_adv20(config: Mapping[str, Any], min_adv20_cny: float | None) -> Mapping[str, Any]:
     if min_adv20_cny is None:
         return config
@@ -107,6 +174,8 @@ def evaluate_mkf_candidate_stock(
     *,
     source_path: Path | None = None,
     min_adv20_cny: float | None = None,
+    allowed_lags: frozenset[int] | None = None,
+    selection_rule: str | None = None,
 ) -> MkfCandidateRow | None:
     data = _normalise_frame(records, as_of)
     if data.empty or data.iloc[-1]["date"] != pd.Timestamp(as_of):
@@ -114,21 +183,30 @@ def evaluate_mkf_candidate_stock(
 
     row_index = data.index[-1]
     gate_config = _config_with_min_adv20(config, min_adv20_cny)
+    allowed_lags = allowed_lags or mkf_allowed_lags(gate_config)
+    selection_rule = selection_rule or mkf_selection_rule(allowed_lags)
     admitted = production_gate_mask(code, data, gate_config)
     if row_index not in admitted.index or not bool(admitted.loc[row_index]):
         return None
 
-    signal = mkf_red_blue_cross20_under80_mask(data)
+    signal = mkf_red_blue_cross20_post_lag_mask(data, allowed_lags=allowed_lags)
     if row_index not in signal.index or not bool(signal.loc[row_index]):
         return None
 
+    cross_context = _latest_cross_context(data, row_index, allowed_lags)
+    if cross_context is None:
+        return None
+    cross_index, lag = cross_context
     lines = mkf_red_blue_cross20_lines(data)
     current = lines.loc[row_index]
-    red_cross, blue_cross = _cross_components(lines, data, row_index)
+    red_cross, blue_cross = _cross_components(lines, data, cross_index)
     latest = data.loc[row_index]
+    cross_row = data.loc[cross_index]
     return MkfCandidateRow(
         code=code,
         signal_date=as_of.isoformat(),
+        cross_date=pd.Timestamp(cross_row["date"]).date().isoformat(),
+        post_cross_lag=lag,
         research_close=_safe_float(latest.get("close"), 0.0),
         amount_cny=_safe_float(latest.get("amount"), 0.0),
         turn_pct=_safe_float(latest.get("turn"), 0.0),
@@ -139,6 +217,7 @@ def evaluate_mkf_candidate_stock(
         mkf_blue_cross_up_20=blue_cross,
         mkf_red_blue_cross_up_20_under_80=True,
         source_path=str(source_path or ""),
+        selection_reason=selection_rule,
     )
 
 
@@ -214,6 +293,10 @@ def run_mkf_candidate_selection(
 ) -> MkfSelectionResult:
     config = load_config(config_path)
     validate_config(config, config_path)
+    post_cross_lag_range = _mkf_lag_range_value(config)
+    allowed_lags = mkf_allowed_lags(config)
+    selector_id = mkf_selector_id(allowed_lags)
+    selection_rule = mkf_selection_rule(allowed_lags)
     codes = get_parquet_codes(data_root)
     if not codes:
         raise ValueError(f"no parquet files under {data_root}")
@@ -236,6 +319,8 @@ def run_mkf_candidate_selection(
                 as_of,
                 source_path=data_root / f"{code}.parquet",
                 min_adv20_cny=min_adv20_cny,
+                allowed_lags=allowed_lags,
+                selection_rule=selection_rule,
             )
             evaluated_count += 1
             if row is not None:
@@ -262,7 +347,10 @@ def run_mkf_candidate_selection(
         "candidate_count": len(selected),
         "error_counts": dict(sorted(failures.items())),
         "quantity_conservation_valid": evaluated_count + sum(failures.values()) == len(codes),
-        "selection_rule": SELECTION_RULE,
+        "selector_id": selector_id,
+        "selection_rule": selection_rule,
+        "post_cross_lag_range": post_cross_lag_range,
+        "allowed_post_cross_lags": sorted(allowed_lags),
         "selection_profile": selection_profile,
         "effective_min_adv20_cny": float(min_adv20_cny) if min_adv20_cny is not None else float((config.get("universe") or {}).get("min_adv20_cny", 0.0)),
         "review_order": "amount_cny_desc_code_asc",
@@ -304,4 +392,8 @@ def run_mkf_candidate_selection(
         manifest_path=directory / "manifest.json",
         signal_date=as_of,
         candidate_count=len(selected),
+        selector_id=selector_id,
+        selection_rule=selection_rule,
+        post_cross_lag_range=post_cross_lag_range,
+        allowed_post_cross_lags=tuple(sorted(allowed_lags)),
     )

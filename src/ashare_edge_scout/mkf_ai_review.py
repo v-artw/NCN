@@ -124,6 +124,31 @@ class MkfAIReviewResult:
     risk_attention_count: int
 
 
+CSV_FIELDNAMES = (
+    "code",
+    "signal_date",
+    "review_state",
+    "confidence",
+    "local_score",
+    "research_summary",
+    "technical_observations",
+    "risk_flags",
+    "model",
+    "source_selection_reason",
+    "committee_summary",
+    "committee_roles",
+    "technical_context_status",
+    "candlestick_patterns",
+    "candle_confirm_score",
+    "committee_disagreement_flags",
+    "news_context_status",
+    "news_cache_status",
+    "fatal_news_risks",
+    "attention_news_risks",
+    "experimental_unvalidated",
+)
+
+
 class OpenAICompatibleClient(SharedOpenAICompatibleClient):
     def __init__(self, *, base_url: str, api_key: str, model: str, timeout_seconds: float, provider: str = "injected", temperature: float = 0, seed: int | None = 42, response_format: Mapping[str, Any] | None = None, extra_options: Mapping[str, Any] | None = None):
         super().__init__(provider=provider, base_url=base_url, api_key=api_key, model=model, timeout_seconds=timeout_seconds, temperature=temperature, seed=seed, response_format=response_format, extra_options=extra_options)
@@ -135,7 +160,7 @@ class OpenAICompatibleClient(SharedOpenAICompatibleClient):
         model = self.resolved_model(user_agent="NCN-MKF-AI-Committee/1.0")
         system_prompt = (
             "你是A股只读研究候选的MKF AI委员会提示词角色，不是真实多代理并发投票系统。"
-            "候选已经由NCN现有MKF红蓝线规则产生；你不能创造、删除、修改候选，也不能改变SMC、watchlist或production。"
+            "候选已经由NCN红蓝线上穿20当日及后第1/2个交易日规则产生；你不能创造、删除、修改候选，也不能改变SMC、watchlist或production。"
             "技术分析必须只使用提供的NCN English Japanese candlestick/OHLCV上下文和MKF候选快照；"
             "消息面、舆情和基本面角色只能使用提供的CNstock兼容新闻上下文news_txt、fatal_risks和attn_risks；"
             f"如果news_txt为{NO_NEWS_TEXT}，相关角色必须说明evidence unavailable。"
@@ -151,7 +176,7 @@ class OpenAICompatibleClient(SharedOpenAICompatibleClient):
             "candidate": {
                 key: candidate.get(key)
                 for key in (
-                    "code", "signal_date", "research_close", "amount_cny", "turn_pct",
+                    "code", "signal_date", "cross_date", "post_cross_lag", "research_close", "amount_cny", "turn_pct",
                     "mkf_momentum", "mkf_inter", "mkf_near", "mkf_red_cross_up_20",
                     "mkf_blue_cross_up_20", "mkf_red_blue_cross_up_20_under_80", "selection_reason",
                 )
@@ -516,7 +541,7 @@ def _local_score(candidate: Mapping[str, Any], context: Mapping[str, Any]) -> tu
     inter = _safe_float(candidate.get("mkf_inter"))
     if 20.0 <= momentum <= 45.0 and 20.0 <= near <= 45.0:
         score += 1.0
-        observations.append("MKF红蓝线刚脱离低位且未过热")
+        observations.append("MKF红蓝线上穿日及后第1/2个交易日仍未过热")
     if inter >= 20.0:
         score += 0.5
         observations.append("MKF中线同步改善")
@@ -580,7 +605,7 @@ def _local_score(candidate: Mapping[str, Any], context: Mapping[str, Any]) -> tu
         score -= 0.5
         risks.append(f"本地蜡烛图上下文不可用:{context.get('status')}")
     if not observations:
-        observations.append("仅满足MKF红蓝线上穿20基础候选条件")
+        observations.append("仅满足MKF红蓝线上穿日及后第1/2个交易日基础候选条件")
     return max(1.0, min(10.0, round(score, 4))), tuple(observations), tuple(risks)
 
 
@@ -763,7 +788,7 @@ def run_mkf_ai_review(
         technical_contexts_path.write_text(json.dumps(contexts, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
         news_contexts_path.write_text(json.dumps(news_contexts, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
         with reviews_csv_path.open("w", encoding="utf-8", newline="") as file:
-            writer = csv.DictWriter(file, fieldnames=list(MkfAIReviewRow.__dataclass_fields__))
+            writer = csv.DictWriter(file, fieldnames=list(CSV_FIELDNAMES))
             writer.writeheader()
             for row in rows:
                 values = asdict(row)

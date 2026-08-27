@@ -44,6 +44,9 @@ def _print_existing(signal_date: str, existing: dict[str, object] | None) -> Non
         print("archive_duplicate=1")
         print(f"existing_archive_run_id={existing['run_id']}")
         print(f"existing_archive={existing['archive_path']}")
+        print(f"existing_news_run={existing.get('source_news_review_run', '')}")
+        print(f"existing_ai_committee_csv={existing.get('ai_committee_csv', '')}")
+        print(f"existing_ai_committee_latest_csv={existing.get('ai_committee_latest_csv', '')}")
     else:
         print("archive_duplicate=0")
 
@@ -69,6 +72,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         print(f"archive_signal_date={signal_date}")
         print(f"existing_archive_run_id={existing['run_id']}")
         print(f"existing_archive={existing['archive_path']}")
+        print(f"existing_news_run={existing.get('source_news_review_run', '')}")
+        print(f"existing_ai_committee_csv={existing.get('ai_committee_csv', '')}")
+        print(f"existing_ai_committee_latest_csv={existing.get('ai_committee_latest_csv', '')}")
         return
     destination = publish_smc_news_snapshot(
         selection_run=selection_run,

@@ -896,10 +896,17 @@ cmd_daily() {
     local news_status_text="skipped_existing_prospective_archive"
     local news_run=""
     local news_csv=""
+    local ai_committee_csv=""
+    local ai_committee_latest_csv=""
     local priority_count="0"
     local risk_count="0"
     local archive_status="skipped_existing_signal_date"
     local archive_path="${existing_archive}"
+    if [ "${archive_duplicate}" = "1" ]; then
+        news_run="$(printf '%s\n' "${preflight_output}" | awk -F= '/^existing_news_run=/ {value=$2} END {print value}')"
+        ai_committee_csv="$(printf '%s\n' "${preflight_output}" | awk -F= '/^existing_ai_committee_csv=/ {value=$2} END {print value}')"
+        ai_committee_latest_csv="$(printf '%s\n' "${preflight_output}" | awk -F= '/^existing_ai_committee_latest_csv=/ {value=$2} END {print value}')"
+    fi
     if [ "${archive_duplicate}" != "1" ]; then
         local news_output news_status archive_output archive_exit
         echo
@@ -917,6 +924,8 @@ cmd_daily() {
         risk_count="$(printf '%s\n' "${news_output}" | awk -F= '/^risk_excluded_count=/ {value=$2} END {print value}')"
         news_run="$(printf '%s\n' "${news_output}" | awk -F= '/^run_directory=/ {value=$2} END {print value}')"
         news_csv="$(printf '%s\n' "${news_output}" | awk -F= '/^timestamped_csv=/ {value=$2} END {print value}')"
+        ai_committee_csv="$(printf '%s\n' "${news_output}" | awk -F= '/^ai_committee_csv=/ {value=$2} END {print value}')"
+        ai_committee_latest_csv="$(printf '%s\n' "${news_output}" | awk -F= '/^ai_committee_latest_csv=/ {value=$2} END {print value}')"
         human_review_summary_csv="$(printf '%s\n' "${news_output}" | awk -F= '/^human_review_summary_csv=/ {value=$2} END {print value}')"
         if [ -z "${news_run}" ]; then
             echo "ERROR: daily 未能从新闻复核输出解析 run_directory，拒绝回退到 latest。" >&2
@@ -966,6 +975,8 @@ cmd_daily() {
     echo "risk_excluded_count=${risk_count}"
     echo "news_run=${news_run}"
     echo "news_csv=${news_csv}"
+    echo "ai_committee_csv=${ai_committee_csv}"
+    echo "ai_committee_latest_csv=${ai_committee_latest_csv}"
     echo "human_review_summary_csv=${human_review_summary_csv}"
     echo "existing_archive_run_id=${existing_archive_run_id}"
     echo "existing_archive=${existing_archive}"
@@ -977,7 +988,7 @@ cmd_daily() {
     echo "promotion_evidence_sufficient=${promotion_ok}"
     echo "evidence_sufficient=${evidence_ok}"
     echo "audit_output=${audit_path}"
-    echo "human_review_note=新闻 AI 仅供人工复核参考，未验证，不改变 SMC 入选、排序、阈值或生产逻辑。"
+    echo "human_review_note=新闻/日K AI委员会CSV仅供人工复核参考，未验证，不改变 SMC 入选、排序、阈值或生产逻辑。"
     echo "boundary=只读研究扫描；不连接券商；不提交订单；不计算 P&L/收益；不构成个性化建议。"
 }
 
@@ -1031,7 +1042,7 @@ A 股多因子 + 15 日蜡烛图短线研究系统
       使用现有本地日线运行 SMC 只读选股，不需要分钟或付费数据
 
   edge_scout_scan.sh daily [--top N]
-      每日 SMC+新闻一键流程：自动更新/选股/去重/复核/归档/审计，并输出人工复核摘要
+      每日 SMC+新闻一键流程：自动更新/选股/去重/AI委员会CSV/归档/审计，并输出人工复核摘要
 
   edge_scout_scan.sh select-review [--as-of YYYY-MM-DD] [--top N] [--post-smc-analysis|--no-post-smc-analysis]
       自动日期运行会冻结前瞻证据；手动 --as-of 仅做选股和复核，不进入前瞻归档
@@ -1049,7 +1060,7 @@ A 股多因子 + 15 日蜡烛图短线研究系统
       MKF 小资金一键流程：主板/非ST等硬门槛不变，ADV20 降为 5000 万
 
   edge_scout_scan.sh select-mkf [--as-of YYYY-MM-DD] [--top N]
-      运行独立 MKF 红蓝线上穿20候选源实验，不影响 SMC 候选
+      运行独立 MKF 红蓝线上穿20当日及后第1/2个交易日候选源实验，不影响 SMC 候选
 
   edge_scout_scan.sh review-mkf-ai [--selection-run DIR] [--top N]
       对指定或最新 MKF 候选源实验做只读 AI 研究分层，不写入 SMC 流程

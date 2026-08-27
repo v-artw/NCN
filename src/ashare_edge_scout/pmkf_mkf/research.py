@@ -92,7 +92,7 @@ def mkf_green_exit_mask(frame: pd.DataFrame) -> pd.Series:
 
 
 def mkf_red_blue_cross20_under80_mask(frame: pd.DataFrame) -> pd.Series:
-    """Require migrated US red(momentum) and blue(near) to cross up 20 on the same tradable row while under 80."""
+    """Legacy raw red/blue cross-up-20 mask, without green-zone episode state."""
 
     lines = mkf_red_blue_cross20_lines(frame)
     trading = frame.get("tradestatus", pd.Series(index=frame.index, dtype=object)).astype("string").eq("1").fillna(False)
@@ -104,6 +104,46 @@ def mkf_red_blue_cross20_under80_mask(frame: pd.DataFrame) -> pd.Series:
     signal = pd.Series(False, index=frame.index, dtype=bool)
     signal.loc[trading_lines.index] = (red_cross & blue_cross & under_80).fillna(False)
     return signal
+
+
+def mkf_red_blue_cross20_green_exit_under80_mask(frame: pd.DataFrame) -> pd.Series:
+    """Require red/blue to cross up 20 on the BULLCLUSTER exit row."""
+
+    lines = mkf_red_blue_cross20_lines(frame)
+    trading = frame.get("tradestatus", pd.Series(index=frame.index, dtype=object)).astype("string").eq("1").fillna(False)
+    trading_lines = lines.loc[trading]
+    prior = trading_lines.shift(1)
+    prior_bullcluster = prior[["momentum", "inter", "near"]].le(20.0).all(axis=1)
+    red_blue_cross = (
+        prior["momentum"].lt(20.0)
+        & trading_lines["momentum"].ge(20.0)
+        & prior["near"].lt(20.0)
+        & trading_lines["near"].ge(20.0)
+    )
+    under_80 = trading_lines["momentum"].lt(80.0) & trading_lines["near"].lt(80.0)
+    signal = pd.Series(False, index=frame.index, dtype=bool)
+    signal.loc[trading_lines.index] = (prior_bullcluster & red_blue_cross & under_80).fillna(False)
+    return signal
+
+
+def mkf_red_blue_cross20_post_lag_mask(frame: pd.DataFrame, allowed_lags: set[int] | frozenset[int] = frozenset({0, 1, 2})) -> pd.Series:
+    base = mkf_red_blue_cross20_green_exit_under80_mask(frame)
+    trading = frame.get("tradestatus", pd.Series(index=frame.index, dtype=object)).astype("string").eq("1").fillna(False)
+    tradable_indexes = list(frame.index[trading])
+    result = pd.Series(False, index=frame.index, dtype=bool)
+    for position, row_index in enumerate(tradable_indexes):
+        if not bool(base.loc[row_index]):
+            continue
+        for lag in allowed_lags:
+            if lag < 0:
+                continue
+            target_position = position + lag
+            if target_position < len(tradable_indexes):
+                result.loc[tradable_indexes[target_position]] = True
+    return result
+
+
+mkf_first_red_blue_cross20_after_green_exit_under80_mask = mkf_red_blue_cross20_green_exit_under80_mask
 
 
 def build_mkf_panel(code: str, frame: pd.DataFrame, config: Mapping[str, Any]) -> pd.DataFrame:

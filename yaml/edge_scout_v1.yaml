@@ -141,6 +141,10 @@ risk:
   partial_take_profit_r: 1.5
   final_take_profit_r: 2.0
 
+mkf:
+  candidate_selector:
+    post_cross_lag_range: lag0-lag5
+
 publication:
   write_csv: true
   write_json: true

@@ -140,6 +140,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"risk_excluded_count={result.risk_excluded_count}")
     print(f"run_directory={result.run_directory}")
     print(f"timestamped_csv={result.reviews_csv_path}")
+    print(f"ai_committee_csv={result.ai_committee_csv_path}")
+    print(f"ai_committee_latest_csv={result.ai_committee_latest_csv_path}")
     print(f"human_review_summary_csv={human_summary_path}")
     print("\n新闻 + 日K线 AI 二次复核（参考日本蜡烛图技术，未经胜率验证）")
     shown = rows[: args.top]

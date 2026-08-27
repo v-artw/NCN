@@ -27,6 +27,7 @@ def test_main_script_help_lists_control_commands() -> None:
     assert "./main.sh scan-local" in completed.stdout
     assert "./main.sh select" in completed.stdout
     assert "./main.sh daily [--top N]" in completed.stdout
+    assert "AI委员会CSV" in completed.stdout
     assert "./main.sh select-review [--as-of DATE] [--top N] [--post-smc-analysis]" in completed.stdout
     assert "./main.sh post-smc-analysis --selection-run DIR" in completed.stdout
     assert "手动日期仅复核" in completed.stdout
@@ -723,7 +724,7 @@ def test_edge_scout_daily_runs_new_signal_full_chain(tmp_path: Path) -> None:
         "    joined=\"$*\"\n"
         "    if [[ \"$joined\" == *--check-existing-signal-date* ]]; then echo 'archive_signal_date=2026-08-21'; echo 'archive_duplicate=0';\n"
         "    else printf 'archive_args=%s\\n' \"$*\"; echo 'smc_news_prospective_archive_status=created'; echo 'archive_signal_date=2026-08-21'; echo 'smc_news_prospective_archive=/tmp/archive-daily'; fi ;;\n"
-        "  */review_smc_news.py) printf 'review_args=%s\\n' \"$*\"; echo 'status=success'; echo 'priority_review_count=1'; echo 'risk_excluded_count=1'; echo 'run_directory=/tmp/news-daily'; echo 'timestamped_csv=/tmp/news.csv'; echo 'human_review_summary_csv=/tmp/select-daily/human_review_summary.csv' ;;\n"
+        "  */review_smc_news.py) printf 'review_args=%s\\n' \"$*\"; echo 'status=success'; echo 'priority_review_count=1'; echo 'risk_excluded_count=1'; echo 'run_directory=/tmp/news-daily'; echo 'timestamped_csv=/tmp/news.csv'; echo 'ai_committee_csv=/tmp/news-daily/ai_committee_reviews_20260821_120000.csv'; echo 'ai_committee_latest_csv=/tmp/news-daily/ai_committee_reviews_latest.csv'; echo 'human_review_summary_csv=/tmp/select-daily/human_review_summary.csv' ;;\n"
         "  */audit_smc_news_prospective.py) echo 'canonical_smc_news_snapshots=3'; echo 'mature_all_smc=0'; echo 'parent_maturity_sufficient=False'; echo 'promotion_evidence_sufficient=False'; echo 'evidence_sufficient=False'; echo 'output=/tmp/audit.json' ;;\n"
         "  *) echo unknown:$script >&2; exit 7 ;;\n"
         "esac\n",
@@ -763,6 +764,8 @@ def test_edge_scout_daily_runs_new_signal_full_chain(tmp_path: Path) -> None:
     assert "priority_review_count=1" in completed.stdout
     assert "archive_status=created" in completed.stdout
     assert "evidence_sufficient=False" in completed.stdout
+    assert "ai_committee_csv=/tmp/news-daily/ai_committee_reviews_20260821_120000.csv" in completed.stdout
+    assert "ai_committee_latest_csv=/tmp/news-daily/ai_committee_reviews_latest.csv" in completed.stdout
     assert "human_review_summary_csv=/tmp/select-daily/human_review_summary.csv" in completed.stdout
 
 
@@ -773,7 +776,7 @@ def test_edge_scout_daily_skips_duplicate_signal_archive(tmp_path: Path) -> None
         "script=\"$2\"\n"
         "case \"$script\" in\n"
         "  */select_stocks.py) echo 'status=success'; echo 'signal_date=2026-08-20'; echo 'candidate_count=14'; echo 'run_directory=/tmp/select-dup'; echo 'timestamped_csv=/tmp/select.csv'; echo 'human_review_summary_csv=/tmp/select-dup/human_review_summary.csv' ;;\n"
-        "  */archive_smc_news_prospective.py) echo 'archive_signal_date=2026-08-20'; echo 'archive_duplicate=1'; echo 'existing_archive_run_id=smc-news-existing'; echo 'existing_archive=/tmp/archive-existing' ;;\n"
+        "  */archive_smc_news_prospective.py) echo 'archive_signal_date=2026-08-20'; echo 'archive_duplicate=1'; echo 'existing_archive_run_id=smc-news-existing'; echo 'existing_archive=/tmp/archive-existing'; echo 'existing_news_run=/tmp/news-existing'; echo 'existing_ai_committee_csv=/tmp/news-existing/ai_committee_reviews_20260820_120000.csv'; echo 'existing_ai_committee_latest_csv=/tmp/news-existing/ai_committee_reviews_latest.csv' ;;\n"
         "  */review_smc_news.py) echo review_should_not_run >&2; exit 7 ;;\n"
         "  */audit_smc_news_prospective.py) echo 'canonical_smc_news_snapshots=2'; echo 'mature_all_smc=0'; echo 'parent_maturity_sufficient=False'; echo 'promotion_evidence_sufficient=False'; echo 'evidence_sufficient=False'; echo 'output=/tmp/audit.json' ;;\n"
         "  *) echo unknown:$script >&2; exit 7 ;;\n"
@@ -810,6 +813,9 @@ def test_edge_scout_daily_skips_duplicate_signal_archive(tmp_path: Path) -> None
     assert "review_should_not_run" not in completed.stderr
     assert "news_review=skipped_existing_prospective_archive" in completed.stdout
     assert "archive_status=skipped_existing_signal_date" in completed.stdout
+    assert "news_run=/tmp/news-existing" in completed.stdout
+    assert "ai_committee_csv=/tmp/news-existing/ai_committee_reviews_20260820_120000.csv" in completed.stdout
+    assert "ai_committee_latest_csv=/tmp/news-existing/ai_committee_reviews_latest.csv" in completed.stdout
     assert "existing_archive=/tmp/archive-existing" in completed.stdout
     assert "human_review_summary_csv=/tmp/select-dup/human_review_summary.csv" in completed.stdout
     assert "canonical_smc_news_snapshots=2" in completed.stdout
@@ -869,7 +875,7 @@ def test_main_menu_daily_option_routes_to_one_key_flow(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     fake.chmod(0o755)
-    down = "\\033\\[B" * 6
+    down = "\\033\\[B" * 9
     script = (
         'set timeout 10; spawn env EDGE_SCOUT_SCAN_SCRIPT=' + str(fake) + ' ./main.sh; '
         'expect "启动 Web 监控"; '
@@ -897,7 +903,7 @@ def test_main_menu_local_smc_option_routes_to_selector(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     fake.chmod(0o755)
-    down = "\\033\\[B" * 8
+    down = "\\033\\[B" * 11
     script = (
         'set timeout 10; spawn env EDGE_SCOUT_SCAN_SCRIPT=' + str(fake) + ' ./main.sh; '
         'expect "启动 Web 监控"; '
@@ -926,7 +932,7 @@ def test_main_menu_auto_smc_default_enter_enables_post_smc_analysis(tmp_path: Pa
         encoding="utf-8",
     )
     fake.chmod(0o755)
-    down = "\\033\\[B" * 7
+    down = "\\033\\[B" * 10
     script = (
         'set timeout 10; spawn env EDGE_SCOUT_SCAN_SCRIPT=' + str(fake) + ' ./main.sh; '
         'expect "启动 Web 监控"; '
@@ -955,7 +961,7 @@ def test_main_menu_auto_smc_explicit_no_skips_post_smc_analysis(tmp_path: Path) 
         encoding="utf-8",
     )
     fake.chmod(0o755)
-    down = "\\033\\[B" * 7
+    down = "\\033\\[B" * 10
     script = (
         'set timeout 10; spawn env EDGE_SCOUT_SCAN_SCRIPT=' + str(fake) + ' ./main.sh; '
         'expect "启动 Web 监控"; '
@@ -984,7 +990,7 @@ def test_main_menu_auto_smc_runs_selector_then_news_review(tmp_path: Path) -> No
         encoding="utf-8",
     )
     fake.chmod(0o755)
-    down = "\\033\\[B" * 7
+    down = "\\033\\[B" * 10
     script = (
         'set timeout 10; spawn env EDGE_SCOUT_SCAN_SCRIPT=' + str(fake) + ' ./main.sh; '
         'expect "启动 Web 监控"; '
@@ -1012,7 +1018,7 @@ def test_main_menu_mkf_options_route_to_independent_commands(tmp_path: Path) -> 
         encoding="utf-8",
     )
     fake.chmod(0o755)
-    review_down = "\\033\\[B" * 12
+    review_down = "\\033\\[B" * 17
     small_down = "\\033\\[B"
     auto_down = "\\033\\[B"
     local_down = "\\033\\[B"
@@ -1060,8 +1066,8 @@ def test_main_menu_research_evidence_options_route_without_extra_input(tmp_path:
         encoding="utf-8",
     )
     fake.chmod(0o755)
-    audit_down = "\\033\\[B" * 20
-    replay_down = "\\033\\[B" * 21
+    audit_down = "\\033\\[B" * 14
+    replay_down = "\\033\\[B" * 15
     script = (
         'set timeout 10; spawn env EDGE_SCOUT_SCAN_SCRIPT=' + str(fake) + ' ./main.sh; '
         'expect "启动 Web 监控"; '

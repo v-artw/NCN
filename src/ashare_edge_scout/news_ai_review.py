@@ -119,6 +119,8 @@ class NewsReviewResult:
     run_directory: Path
     reviews_path: Path
     reviews_csv_path: Path
+    ai_committee_csv_path: Path
+    ai_committee_latest_csv_path: Path
     news_path: Path
     summary_path: Path
     manifest_path: Path
@@ -190,6 +192,18 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: file.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _write_review_rows_csv(path: Path, rows: Sequence[NewsReviewRow]) -> None:
+    csv_fields = list(NewsReviewRow.__dataclass_fields__)
+    with path.open("w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=csv_fields)
+        writer.writeheader()
+        for row in rows:
+            values = asdict(row)
+            for field in ("evidence", "risk_flags", "hard_risk_terms", "attention_terms"):
+                values[field] = "|".join(values[field])
+            writer.writerow(values)
 
 
 def _http_get(url: str, timeout_seconds: float) -> bytes:
@@ -710,21 +724,19 @@ def run_news_ai_review(
     temporary.mkdir()
     try:
         generated_at = datetime.now().astimezone()
-        reviews_csv_name = f"news_ai_reviews_{generated_at.strftime('%Y%m%d_%H%M%S')}.csv"
+        timestamp = generated_at.strftime('%Y%m%d_%H%M%S')
+        reviews_csv_name = f"news_ai_reviews_{timestamp}.csv"
+        ai_committee_csv_name = f"ai_committee_reviews_{timestamp}.csv"
+        ai_committee_latest_csv_name = "ai_committee_reviews_latest.csv"
         reviews_path = temporary / "reviews.json"
         reviews_csv_path = temporary / reviews_csv_name
+        ai_committee_csv_path = temporary / ai_committee_csv_name
+        ai_committee_latest_csv_path = temporary / ai_committee_latest_csv_name
         news_path = temporary / "news.json"
         summary_path = temporary / "summary.json"
         reviews_path.write_text(json.dumps([asdict(row) for row in rows], ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
-        csv_fields = list(NewsReviewRow.__dataclass_fields__)
-        with reviews_csv_path.open("w", encoding="utf-8", newline="") as file:
-            writer = csv.DictWriter(file, fieldnames=csv_fields)
-            writer.writeheader()
-            for row in rows:
-                values = asdict(row)
-                for field in ("evidence", "risk_flags", "hard_risk_terms", "attention_terms"):
-                    values[field] = "|".join(values[field])
-                writer.writerow(values)
+        for csv_path in (reviews_csv_path, ai_committee_csv_path, ai_committee_latest_csv_path):
+            _write_review_rows_csv(csv_path, rows)
         news_path.write_text(json.dumps(news_records, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
         counts = {state: sum(row.review_state == state for row in rows) for state in state_order}
         news_candidate_count = sum(bool(record["items"]) for record in news_records)
@@ -743,6 +755,8 @@ def run_news_ai_review(
             "status": status,
             "run_id": actual_run_id,
             "timestamped_reviews_csv": reviews_csv_name,
+            "timestamped_ai_committee_csv": ai_committee_csv_name,
+            "latest_ai_committee_csv": ai_committee_latest_csv_name,
             "published_at_utc": _utc_now(),
             "source_selection_run": str(source_run),
             "source_candidates_sha256": candidates_sha,
@@ -766,6 +780,13 @@ def run_news_ai_review(
             "state_counts": counts,
             "ai_error_counts": ai_errors,
             "review_order": "state_priority_then_ai_confidence_desc_then_code",
+            "ai_committee_review": {
+                "enabled": True,
+                "artifact_schema": "ncn_smc_news_ai_committee_csv_v1",
+                "source": "same_validated_news_ai_review_rows",
+                "execution": "existing_single_news_kline_ai_review_no_extra_provider_call",
+                "stable_latest_reference": ai_committee_latest_csv_name,
+            },
             "decision_boundary": "experimental_human_review_priority_not_validated_win_probability",
             "causality_boundary": "news_visible_at_review_publication_only; never backfill historical selection precision",
             "limitations": [
@@ -779,13 +800,22 @@ def run_news_ai_review(
         summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
         files = {
             name: {"sha256": _sha256(temporary / name)}
-            for name in ("reviews.json", reviews_csv_name, "news.json", "summary.json")
+            for name in (
+                "reviews.json",
+                reviews_csv_name,
+                ai_committee_csv_name,
+                ai_committee_latest_csv_name,
+                "news.json",
+                "summary.json",
+            )
         }
         manifest = {
             "schema_version": "ncn_smc_news_ai_review_v1",
             "run_id": actual_run_id,
             "source_candidates_sha256": candidates_sha,
             "timestamped_reviews_csv": reviews_csv_name,
+            "timestamped_ai_committee_csv": ai_committee_csv_name,
+            "latest_ai_committee_csv": ai_committee_latest_csv_name,
             "files": files,
         }
         (temporary / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
@@ -797,6 +827,8 @@ def run_news_ai_review(
         run_directory=destination,
         reviews_path=destination / "reviews.json",
         reviews_csv_path=destination / reviews_csv_name,
+        ai_committee_csv_path=destination / ai_committee_csv_name,
+        ai_committee_latest_csv_path=destination / ai_committee_latest_csv_name,
         news_path=destination / "news.json",
         summary_path=destination / "summary.json",
         manifest_path=destination / "manifest.json",

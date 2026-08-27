@@ -60,7 +60,7 @@ def test_candidate_masks_define_a_b_c_relationships(monkeypatch) -> None:
     frame = _frame()
     fake_mkf = pd.Series(False, index=frame.index)
     fake_mkf.iloc[-1] = True
-    monkeypatch.setattr("ashare_edge_scout.research_pmkf_mkf_t5_quality.mkf_red_blue_cross20_under80_mask", lambda _: fake_mkf)
+    monkeypatch.setattr("ashare_edge_scout.research_pmkf_mkf_t5_quality.mkf_red_blue_cross20_green_exit_under80_mask", lambda _: fake_mkf)
     monkeypatch.setattr("ashare_edge_scout.research_pmkf_mkf_t5_quality.pmkf_base_score_series", lambda _: pd.Series([0.0] * (len(frame) - 1) + [80.0], index=frame.index))
 
     masks = candidate_masks(frame, _config(), "sh.600001")
@@ -106,7 +106,7 @@ def test_panel_and_report_include_side_by_side_readonly_metadata(monkeypatch) ->
     frame = _frame(70)
     fake_mkf = pd.Series(False, index=frame.index)
     fake_mkf.iloc[59] = True
-    monkeypatch.setattr("ashare_edge_scout.research_pmkf_mkf_t5_quality.mkf_red_blue_cross20_under80_mask", lambda _: fake_mkf)
+    monkeypatch.setattr("ashare_edge_scout.research_pmkf_mkf_t5_quality.mkf_red_blue_cross20_green_exit_under80_mask", lambda _: fake_mkf)
     scores = pd.Series(0.0, index=frame.index)
     scores.iloc[59] = 80.0
     scores.iloc[60] = 80.0

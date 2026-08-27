@@ -3,7 +3,13 @@
 import pytest
 from pathlib import Path
 
-from ashare_edge_scout.config import load_config, validate_config, compute_config_sha256, build_strategy_rule_set
+from ashare_edge_scout.config import (
+    build_strategy_rule_set,
+    compute_config_sha256,
+    load_config,
+    parse_mkf_post_cross_lag_range,
+    validate_config,
+)
 
 
 def test_load_config():
@@ -17,10 +23,20 @@ def test_load_config():
         assert "mode" in config
         assert "market_regime" not in config
         assert config["research_market_regime"]["enforcement"] == "none"
+        assert config["mkf"]["candidate_selector"]["post_cross_lag_range"] == "lag0-lag2"
+        assert parse_mkf_post_cross_lag_range(config["mkf"]["candidate_selector"]["post_cross_lag_range"]) == frozenset({0, 1, 2})
         assert "score_weights" not in config["ranking"]
     else:
         with pytest.raises(FileNotFoundError):
             load_config(Path("nonexistent.yaml"))
+
+
+def test_parse_mkf_post_cross_lag_range() -> None:
+    assert parse_mkf_post_cross_lag_range("lag0-lag2") == frozenset({0, 1, 2})
+    assert parse_mkf_post_cross_lag_range("lag0-lag5") == frozenset({0, 1, 2, 3, 4, 5})
+    for value in ("lag1-lag5", "lag0..lag5", "lag0-lagX", "lag0-lag-1", [0, 1, 2], 5):
+        with pytest.raises(ValueError, match="post_cross_lag_range"):
+            parse_mkf_post_cross_lag_range(value)
 
 
 def test_validate_config():

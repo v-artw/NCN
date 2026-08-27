@@ -114,6 +114,14 @@ def _validate_news_run(news_run: Path) -> tuple[dict[str, Any], list[dict[str, A
     reviews_sha = _require_manifest_hash(news_run, manifest, "reviews.json")
     news_sha = _require_manifest_hash(news_run, manifest, "news.json")
     summary_sha = _require_manifest_hash(news_run, manifest, "summary.json")
+    news_hashes = {"reviews.json": reviews_sha, "news.json": news_sha, "summary.json": summary_sha, "manifest.json": _sha256(manifest_path)}
+    for csv_key in ("timestamped_ai_committee_csv", "latest_ai_committee_csv"):
+        csv_name = manifest.get(csv_key) or summary.get(csv_key)
+        if csv_name:
+            csv_name = str(csv_name)
+            if "/" in csv_name or "\\" in csv_name:
+                raise ValueError(f"invalid committee csv name: {csv_key}")
+            news_hashes[csv_name] = _require_manifest_hash(news_run, manifest, csv_name)
     source_sha = str(summary.get("source_candidates_sha256") or "")
     if source_sha != str(manifest.get("source_candidates_sha256") or ""):
         raise ValueError("news source_candidates_sha256 mismatch")
@@ -128,7 +136,7 @@ def _validate_news_run(news_run: Path) -> tuple[dict[str, Any], list[dict[str, A
     news_codes = [str(row.get("code") or "") for row in news]
     if any(not code for code in news_codes) or len(set(news_codes)) != len(news_codes):
         raise ValueError("news record codes invalid")
-    return summary, reviews, news, manifest, {"reviews.json": reviews_sha, "news.json": news_sha, "summary.json": summary_sha, "manifest.json": _sha256(manifest_path)}
+    return summary, reviews, news, manifest, news_hashes
 
 
 def resolve_latest_news_run(news_root: Path) -> Path:
@@ -379,17 +387,43 @@ def canonical_smc_news_snapshots(output_root: Path) -> tuple[list[dict[str, Any]
     }
 
 
+def _existing_news_review_artifacts(news_run_value: object) -> dict[str, str]:
+    news_run = Path(str(news_run_value or ""))
+    if not news_run.is_dir():
+        return {}
+    manifest_path = news_run / "manifest.json"
+    summary_path = news_run / "summary.json"
+    try:
+        manifest = _read_json(manifest_path) if manifest_path.is_file() else {}
+        summary = _read_json(summary_path) if summary_path.is_file() else {}
+    except (OSError, json.JSONDecodeError):
+        return {"source_news_review_run": str(news_run)}
+    result = {"source_news_review_run": str(news_run)}
+    for key, output_key in (
+        ("timestamped_ai_committee_csv", "ai_committee_csv"),
+        ("latest_ai_committee_csv", "ai_committee_latest_csv"),
+    ):
+        name = manifest.get(key) or summary.get(key)
+        if name and "/" not in str(name) and "\\" not in str(name):
+            path = news_run / str(name)
+            if path.is_file():
+                result[output_key] = str(path)
+    return result
+
+
 def find_canonical_smc_news_snapshot(output_root: Path, signal_date: str) -> dict[str, Any] | None:
     snapshots, _ = canonical_smc_news_snapshots(output_root)
     for snapshot in snapshots:
         if str(snapshot.get("signal_date") or "") == str(signal_date):
             run_id = str(snapshot.get("run_id") or "")
-            return {
+            result = {
                 "run_id": run_id,
                 "signal_date": str(snapshot.get("signal_date") or ""),
                 "archive_path": str(output_root / run_id) if run_id else "",
                 "published_at_utc": snapshot.get("published_at_utc"),
             }
+            result.update(_existing_news_review_artifacts(snapshot.get("source_news_review_run")))
+            return result
     return None
 
 

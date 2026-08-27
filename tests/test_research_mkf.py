@@ -71,55 +71,99 @@ def test_decision_requires_stable_lift_and_uncertainty_gates() -> None:
     assert "precision_lift_below_0.03" in decision["failure_codes"]["holdout_2025_2026"]
     assert "wilson_lower_not_above_baseline" in decision["failure_codes"]["holdout_2025_2026"]
 
-from ashare_edge_scout.research_mkf import mkf_red_blue_cross20_lines, mkf_red_blue_cross20_under80_mask
+from ashare_edge_scout.research_mkf import (
+    mkf_red_blue_cross20_green_exit_under80_mask,
+    mkf_red_blue_cross20_lines,
+    mkf_red_blue_cross20_post_lag_mask,
+)
 
 
-def test_red_blue_cross20_under80_requires_same_tradable_date(monkeypatch) -> None:
+def test_red_blue_cross_green_exit_can_fire_on_exit_row(monkeypatch) -> None:
     frame = pd.DataFrame({"tradestatus": ["1", "1", "1"]})
     lines = pd.DataFrame({
         "momentum": [15.0, 25.0, 30.0],
-        "inter": [40.0, 42.0, 43.0],
+        "inter": [18.0, 42.0, 43.0],
         "near": [18.0, 35.0, 40.0],
     })
     monkeypatch.setattr("ashare_edge_scout.research_mkf.mkf_red_blue_cross20_lines", lambda _: lines)
 
-    assert mkf_red_blue_cross20_under80_mask(frame).tolist() == [False, True, False]
+    assert mkf_red_blue_cross20_green_exit_under80_mask(frame).tolist() == [False, True, False]
 
 
-def test_red_blue_cross20_under80_rejects_single_line_crosses(monkeypatch) -> None:
+def test_red_blue_cross_green_exit_allows_inter_to_remain_below_20_on_exit_row(monkeypatch) -> None:
     frame = pd.DataFrame({"tradestatus": ["1", "1", "1"]})
     lines = pd.DataFrame({
         "momentum": [15.0, 25.0, 30.0],
-        "inter": [40.0, 42.0, 43.0],
-        "near": [22.0, 35.0, 18.0],
+        "inter": [18.0, 18.0, 19.0],
+        "near": [18.0, 35.0, 40.0],
     })
     monkeypatch.setattr("ashare_edge_scout.research_mkf.mkf_red_blue_cross20_lines", lambda _: lines)
 
-    assert mkf_red_blue_cross20_under80_mask(frame).tolist() == [False, False, False]
+    assert mkf_red_blue_cross20_green_exit_under80_mask(frame).tolist() == [False, True, False]
 
 
-def test_red_blue_cross20_under80_rejects_current_overheated_lines(monkeypatch) -> None:
+def test_red_blue_cross_green_exit_requires_prior_bullcluster(monkeypatch) -> None:
+    frame = pd.DataFrame({"tradestatus": ["1", "1", "1"]})
+    lines = pd.DataFrame({
+        "momentum": [15.0, 25.0, 30.0],
+        "inter": [55.0, 56.0, 57.0],
+        "near": [18.0, 35.0, 40.0],
+    })
+    monkeypatch.setattr("ashare_edge_scout.research_mkf.mkf_red_blue_cross20_lines", lambda _: lines)
+
+    assert mkf_red_blue_cross20_green_exit_under80_mask(frame).tolist() == [False, False, False]
+
+
+def test_red_blue_cross_green_exit_requires_reentry_to_bullcluster(monkeypatch) -> None:
+    frame = pd.DataFrame({"tradestatus": ["1", "1", "1", "1", "1", "1"]})
+    lines = pd.DataFrame({
+        "momentum": [15.0, 25.0, 15.0, 25.0, 15.0, 25.0],
+        "inter": [18.0, 42.0, 42.0, 43.0, 18.0, 42.0],
+        "near": [18.0, 35.0, 18.0, 35.0, 18.0, 35.0],
+    })
+    monkeypatch.setattr("ashare_edge_scout.research_mkf.mkf_red_blue_cross20_lines", lambda _: lines)
+
+    assert mkf_red_blue_cross20_green_exit_under80_mask(frame).tolist() == [False, True, False, False, False, True]
+
+
+def test_red_blue_cross_green_exit_rejects_current_overheated_lines(monkeypatch) -> None:
     frame = pd.DataFrame({"tradestatus": ["1", "1"]})
     lines = pd.DataFrame({
         "momentum": [15.0, 80.0],
-        "inter": [40.0, 42.0],
+        "inter": [18.0, 42.0],
         "near": [18.0, 35.0],
     })
     monkeypatch.setattr("ashare_edge_scout.research_mkf.mkf_red_blue_cross20_lines", lambda _: lines)
 
-    assert mkf_red_blue_cross20_under80_mask(frame).tolist() == [False, False]
+    assert mkf_red_blue_cross20_green_exit_under80_mask(frame).tolist() == [False, False]
 
 
-def test_red_blue_cross20_under80_ignores_suspension_as_prior(monkeypatch) -> None:
+def test_red_blue_cross_green_exit_ignores_suspension_as_prior(monkeypatch) -> None:
     frame = pd.DataFrame({"tradestatus": ["1", "0", "1"]})
     lines = pd.DataFrame({
         "momentum": [15.0, 30.0, 25.0],
-        "inter": [40.0, 42.0, 43.0],
+        "inter": [18.0, 42.0, 43.0],
         "near": [18.0, 30.0, 35.0],
     })
     monkeypatch.setattr("ashare_edge_scout.research_mkf.mkf_red_blue_cross20_lines", lambda _: lines)
 
-    assert mkf_red_blue_cross20_under80_mask(frame).tolist() == [False, False, True]
+    assert mkf_red_blue_cross20_green_exit_under80_mask(frame).tolist() == [False, False, True]
+
+
+def test_red_blue_cross_post_lag_mask_selects_cross_day_and_first_two_tradable_rows(monkeypatch) -> None:
+    frame = pd.DataFrame({"tradestatus": ["1", "1", "1", "1"]})
+    base = pd.Series([True, False, False, False], index=frame.index)
+    monkeypatch.setattr("ashare_edge_scout.research_mkf.mkf_red_blue_cross20_green_exit_under80_mask", lambda _: base)
+
+    assert mkf_red_blue_cross20_post_lag_mask(frame).tolist() == [True, True, True, False]
+
+
+def test_red_blue_cross_post_lag_mask_ignores_suspension_as_lag(monkeypatch) -> None:
+    frame = pd.DataFrame({"tradestatus": ["1", "0", "1", "1", "1"]})
+    base = pd.Series([True, False, False, False, False], index=frame.index)
+    monkeypatch.setattr("ashare_edge_scout.research_mkf.mkf_red_blue_cross20_green_exit_under80_mask", lambda _: base)
+
+    assert mkf_red_blue_cross20_post_lag_mask(frame).tolist() == [True, False, True, True, False]
 
 
 def test_red_blue_cross20_lines_match_migrated_us_formula() -> None:

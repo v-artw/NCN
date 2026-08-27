@@ -55,36 +55,74 @@ def _records() -> list[dict[str, object]]:
     return rows
 
 
-def _patch_mkf(monkeypatch: pytest.MonkeyPatch, *, selected: bool = True) -> None:
-    def fake_mask(frame: pd.DataFrame) -> pd.Series:
+def _patch_mkf(monkeypatch: pytest.MonkeyPatch, *, selected: bool = True, lag: int = 1) -> None:
+    def fake_base_mask(frame: pd.DataFrame) -> pd.Series:
         values = [False] * len(frame)
-        if selected and values:
+        cross_position = len(frame) - 1 - lag
+        if selected and cross_position >= 0:
+            values[cross_position] = True
+        return pd.Series(values, index=frame.index, dtype=bool)
+
+    def fake_post_lag_mask(frame: pd.DataFrame, *, allowed_lags: frozenset[int] = frozenset({0, 1, 2})) -> pd.Series:
+        values = [False] * len(frame)
+        if selected and lag in allowed_lags and values:
             values[-1] = True
         return pd.Series(values, index=frame.index, dtype=bool)
 
     def fake_lines(frame: pd.DataFrame) -> pd.DataFrame:
         lines = pd.DataFrame(25.0, index=frame.index, columns=["momentum", "inter", "near"])
-        if len(frame) >= 2:
-            lines.loc[frame.index[-2], ["momentum", "near"]] = [15.0, 18.0]
-            lines.loc[frame.index[-1], ["momentum", "inter", "near"]] = [30.0, 24.0, 35.0]
+        cross_position = len(frame) - 1 - lag
+        if 0 < cross_position < len(frame):
+            lines.loc[frame.index[cross_position - 1], ["momentum", "near"]] = [15.0, 18.0]
+            lines.loc[frame.index[cross_position], ["momentum", "inter", "near"]] = [30.0, 24.0, 35.0]
         return lines
 
-    monkeypatch.setattr(selector, "mkf_red_blue_cross20_under80_mask", fake_mask)
+    monkeypatch.setattr(selector, "mkf_red_blue_cross20_green_exit_under80_mask", fake_base_mask)
+    monkeypatch.setattr(selector, "mkf_red_blue_cross20_post_lag_mask", fake_post_lag_mask)
     monkeypatch.setattr(selector, "mkf_red_blue_cross20_lines", fake_lines)
 
 
-def test_mkf_candidate_selector_selects_latest_cross_under80(monkeypatch: pytest.MonkeyPatch) -> None:
-    _patch_mkf(monkeypatch)
+def test_mkf_candidate_selector_selects_cross_day_lag0(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_mkf(monkeypatch, lag=0)
     records = _records()
 
     row = evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"])
 
     assert row is not None
-    assert row.selection_reason == "mkf_red_blue_cross20_under80_v1_and_existing_hard_gates"
+    assert row.selection_reason == "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5_and_existing_hard_gates"
+    assert row.cross_date == records[-1]["date"].isoformat()
+    assert row.post_cross_lag == 0
     assert row.mkf_red_cross_up_20 is True
     assert row.mkf_blue_cross_up_20 is True
     assert row.mkf_red_blue_cross_up_20_under_80 is True
     assert row.research_only is True
+
+
+def test_mkf_candidate_selector_selects_first_post_cross_day(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_mkf(monkeypatch, lag=1)
+    records = _records()
+
+    row = evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"])
+
+    assert row is not None
+    assert row.selection_reason == "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5_and_existing_hard_gates"
+    assert row.cross_date == records[-2]["date"].isoformat()
+    assert row.post_cross_lag == 1
+    assert row.mkf_red_cross_up_20 is True
+    assert row.mkf_blue_cross_up_20 is True
+    assert row.mkf_red_blue_cross_up_20_under_80 is True
+    assert row.research_only is True
+
+
+def test_mkf_candidate_selector_selects_second_post_cross_day(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_mkf(monkeypatch, lag=2)
+    records = _records()
+
+    row = evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"])
+
+    assert row is not None
+    assert row.cross_date == records[-3]["date"].isoformat()
+    assert row.post_cross_lag == 2
 
 
 def test_mkf_candidate_selector_rejects_absent_signal(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -92,6 +130,26 @@ def test_mkf_candidate_selector_rejects_absent_signal(monkeypatch: pytest.Monkey
     records = _records()
 
     assert evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"]) is None
+
+
+def test_mkf_candidate_selector_rejects_third_post_cross_day(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_mkf(monkeypatch, lag=3)
+    records = _records()
+
+    assert evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"]) is None
+
+
+def test_mkf_candidate_selector_accepts_configured_lag5(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_mkf(monkeypatch, lag=5)
+    records = _records()
+    config = {**CONFIG, "mkf": {"candidate_selector": {"post_cross_lag_range": "lag0-lag5"}}}
+
+    row = evaluate_mkf_candidate_stock("sh.600001", records, config, records[-1]["date"])
+
+    assert row is not None
+    assert row.post_cross_lag == 5
+    assert row.cross_date == records[-6]["date"].isoformat()
+    assert row.selection_reason == "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_v5_and_existing_hard_gates"
 
 
 def test_mkf_candidate_selector_is_causal_at_manual_as_of(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -139,14 +197,14 @@ def test_mkf_candidate_selector_honors_min_adv20_override(monkeypatch: pytest.Mo
 
 def test_mkf_atomic_publish_keeps_all_rows_and_refuses_overwrite(tmp_path: Path) -> None:
     rows = [
-        MkfCandidateRow("sh.600001", "2026-04-09", 10.0, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, "a"),
-        MkfCandidateRow("sh.600002", "2026-04-09", 11.0, 1e8, 3.0, 25.0, 22.0, 28.0, True, True, True, "b"),
+        MkfCandidateRow("sh.600001", "2026-04-09", "2026-04-08", 1, 10.0, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, "a"),
+        MkfCandidateRow("sh.600002", "2026-04-09", "2026-04-07", 2, 11.0, 1e8, 3.0, 25.0, 22.0, 28.0, True, True, True, "b"),
     ]
     directory = _atomic_publish(tmp_path, "mkf-run-1", rows, {"candidate_count": 2, "published_at_utc": "2026-04-09T00:00:00+00:00"})
 
     assert len(json.loads((directory / "candidates.json").read_text())) == 2
     manifest = json.loads((directory / "manifest.json").read_text())
-    assert manifest["schema_version"] == "ncn_mkf_candidate_selector_v1"
+    assert manifest["schema_version"] == "ncn_mkf_candidate_selector_v5"
     assert re.fullmatch(r"mkf_candidates_\d{8}_\d{6}\.csv", manifest["timestamped_candidates_csv"])
     assert (directory / manifest["timestamped_candidates_csv"]).read_bytes() == (directory / "candidates.csv").read_bytes()
     with pytest.raises(FileExistsError):
@@ -175,12 +233,18 @@ def test_mkf_selection_reports_boundaries_and_progress(tmp_path: Path, monkeypat
     assert result.candidate_count == 1
     assert events[-1][0:2] == (1, 1)
     summary = json.loads(result.summary_path.read_text())
-    assert summary["schema_version"] == "ncn_mkf_candidate_selector_v1"
+    assert summary["schema_version"] == "ncn_mkf_candidate_selector_v5"
+    assert summary["selector_id"] == "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5"
+    assert summary["selection_rule"] == "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5_and_existing_hard_gates"
+    assert summary["post_cross_lag_range"] == "lag0-lag2"
+    assert summary["allowed_post_cross_lags"] == [0, 1, 2]
     assert summary["selection_profile"] == "small_capital"
     assert summary["effective_min_adv20_cny"] == 50_000_000.0
     assert summary["boundaries"]["production_enabled"] is False
     assert summary["boundaries"]["smc_admission_modified"] is False
     assert summary["boundaries"]["watchlist_modified"] is False
+
+
 
 
 def test_mkf_cli_top_is_display_only_and_must_be_positive(tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch) -> None:
@@ -204,7 +268,8 @@ def test_mkf_cli_top_is_display_only_and_must_be_positive(tmp_path: Path, capsys
     output = capsys.readouterr().out
     summary = json.loads((tmp_path / "out" / "mkf-cli" / "summary.json").read_text())
     assert exit_code == 0
-    assert "selector=mkf_red_blue_cross20_under80_v1" in output
+    assert "selector=mkf_red_blue_cross20_post_lag0_lag1_lag2_v5" in output
+    assert "post_cross_lag_range=lag0-lag2" in output
     assert "selection_profile=small_capital" in output
     assert "effective_min_adv20_cny=50000000" in output
     assert "candidate_count=1" in output

@@ -256,7 +256,7 @@ output/edge_scout/news_reviews/<review-run-id>/
 
 流程：
 
-1. 运行独立 MKF 红蓝线上穿 20 候选源；
+1. 运行独立 MKF 红蓝线上穿 20 后第 1/2 个交易日 候选源；
 2. 对本次明确的 selection run 运行 AI 委员会复核；
 3. 无候选时跳过 AI；
 4. 不影响 SMC 候选、排序或 watchlist。
@@ -266,6 +266,8 @@ output/edge_scout/news_reviews/<review-run-id>/
 ```bash
 ./main.sh mkf-small --top 10
 ```
+
+候选源规则为：先识别上一交易日处于 MFK4 绿色背景块（`momentum/inter/near <= 20`），且红线 `momentum` 与蓝线 `near` 同时从 20 下方上穿到 20 以上、红蓝线仍低于 80 的上穿日；候选日取该上穿日当天、上穿日后的第 1 个或第 2 个股票可交易日。停牌日不消耗 lag，lag3 以后不入选。
 
 该模式保留主板、非 ST、价格、停牌等硬门槛，将 ADV20 门槛降为 5000 万。
 

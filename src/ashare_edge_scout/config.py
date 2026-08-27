@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -14,6 +15,35 @@ from .paper_risk import normalize_paper_risk
 import yaml
 
 ALLOWED_MODES = {"read_only_research", "phased_production_adjacent"}
+DEFAULT_MKF_POST_CROSS_LAG_RANGE = "lag0-lag2"
+
+
+def parse_mkf_post_cross_lag_range(value: Any | None = None) -> frozenset[int]:
+    """Parse an inclusive ``lag0-lagX`` MKF selector range."""
+
+    if value is None:
+        value = DEFAULT_MKF_POST_CROSS_LAG_RANGE
+    if not isinstance(value, str):
+        raise ValueError("mkf.candidate_selector.post_cross_lag_range must be a string like 'lag0-lag2'")
+    match = re.fullmatch(r"lag0-lag([0-9]+)", value.strip())
+    if match is None:
+        raise ValueError("mkf.candidate_selector.post_cross_lag_range must match 'lag0-lagX'")
+    upper = int(match.group(1))
+    return frozenset(range(upper + 1))
+
+
+def _validate_mkf_config(config: Mapping[str, Any]) -> None:
+    mkf = config.get("mkf")
+    if mkf is None:
+        return
+    if not isinstance(mkf, Mapping):
+        raise ValueError("mkf must be a mapping")
+    selector = mkf.get("candidate_selector")
+    if selector is None:
+        return
+    if not isinstance(selector, Mapping):
+        raise ValueError("mkf.candidate_selector must be a mapping")
+    parse_mkf_post_cross_lag_range(selector.get("post_cross_lag_range"))
 
 
 def load_config(config_path: str | Path) -> dict[str, Any]:
@@ -113,6 +143,7 @@ def validate_config(config: Mapping[str, Any], config_path: str | Path) -> None:
             "research_market_regime.enforcement must be 'none' in Edge Scout V1"
         )
 
+    _validate_mkf_config(config)
     _validate_demo_portfolio_config(config, config_path)
     _validate_paper_trading_config(config, config_path)
     normalize_paper_risk(config.get("paper_risk"))

@@ -18,33 +18,84 @@ run_menu() {
     fi
 
     local options=(
+        "── Web 监控 ──"
         "启动 Web 监控"
         "关闭 Web 监控"
         "重启 Web 监控"
         "查看 Web 状态"
+        "── 全市场 / 单股 ──"
         "全市场扫描（自动更新数据）"
         "全市场扫描（仅本地数据）"
-        "每日 SMC+新闻一键流程（自动更新/去重/审计）"
+        "单股扫描（自动更新数据）"
+        "单股扫描（仅本地数据）"
+        "仅更新研究数据"
+        "── SMC / 新闻 ──"
+        "每日 SMC+新闻一键流程（自动更新/去重/AI委员会CSV/审计）"
         "SMC 选股（自动更新数据）"
         "SMC 选股（仅本地数据）"
         "SMC 新闻 AI 二次复核"
+        "SMC+新闻前瞻成熟度审计"
+        "SMC+新闻回放检查（simulation only）"
+        "── A 类扫描 ──"
         "A类低位启动扫描（自动更新数据）"
         "A类低位启动扫描（仅本地数据）"
+        "── MKF 研究 ──"
         "MKF一键流程（自动更新/AI分层）"
         "MKF小资金一键流程（自动更新/AI分层，ADV20 5000万）"
         "MKF候选源实验（自动更新数据）"
         "MKF候选源实验（仅本地数据）"
         "MKF候选源AI研究分层（最新MKF候选）"
-        "单股扫描（自动更新数据）"
-        "单股扫描（仅本地数据）"
-        "仅更新研究数据"
-        "SMC+新闻前瞻成熟度审计"
-        "SMC+新闻回放检查（simulation only）"
+        "── 系统 ──"
         "运行测试"
         "退出"
     )
-    local selected=0
+    local actions=(
+        ""
+        "web-start"
+        "web-stop"
+        "web-restart"
+        "web-status"
+        ""
+        "market-auto"
+        "market-local"
+        "single-auto"
+        "single-local"
+        "update-data"
+        ""
+        "daily"
+        "smc-auto"
+        "smc-local"
+        "review-news"
+        "audit-smc-news"
+        "replay-smc-news"
+        ""
+        "a-class-auto"
+        "a-class-local"
+        ""
+        "mkf-review"
+        "mkf-small"
+        "select-mkf"
+        "select-mkf-local"
+        "review-mkf-ai"
+        ""
+        "test"
+        "exit"
+    )
+    local selected=1
     local key sequence
+
+    menu_next_selectable() {
+        local current="$1"
+        local direction="$2"
+        local count="${#actions[@]}"
+        while true; do
+            current=$(((current + direction + count) % count))
+            if [ -n "${actions[$current]}" ]; then
+                printf '%s' "${current}"
+                return 0
+            fi
+        done
+    }
 
     while true; do
         printf '\033[2J\033[H'
@@ -52,7 +103,10 @@ run_menu() {
         printf '使用 ↑/↓ 选择，回车确认，q 退出\n\n'
         local index
         for index in "${!options[@]}"; do
-            if [ "${index}" -eq "${selected}" ]; then
+            if [ -z "${actions[$index]}" ]; then
+                if [ "${index}" -gt 0 ]; then printf '\n'; fi
+                printf '  %s\n' "${options[$index]}"
+            elif [ "${index}" -eq "${selected}" ]; then
                 printf '\033[7m  > %s  \033[0m\n' "${options[$index]}"
             else
                 printf '    %s\n' "${options[$index]}"
@@ -63,8 +117,8 @@ run_menu() {
         if [ "${key}" = $'\033' ]; then
             IFS= read -rsn2 sequence || true
             case "${sequence}" in
-                "[A"|"OA") selected=$((selected > 0 ? selected - 1 : ${#options[@]} - 1)) ;;
-                "[B"|"OB") selected=$((selected < ${#options[@]} - 1 ? selected + 1 : 0)) ;;
+                "[A"|"OA") selected="$(menu_next_selectable "${selected}" -1)" ;;
+                "[B"|"OB") selected="$(menu_next_selectable "${selected}" 1)" ;;
             esac
             continue
         fi
@@ -75,8 +129,9 @@ run_menu() {
         if [ -z "${key}" ]; then
             printf '\033[2J\033[H'
             local result=0
-            execute_menu_choice "${selected}" || result=$?
-            if [ "${selected}" -eq 23 ]; then
+            local action="${actions[$selected]}"
+            execute_menu_choice "${action}" || result=$?
+            if [ "${action}" = "exit" ]; then
                 return "${result}"
             fi
             printf '\n按回车返回菜单...'
@@ -86,57 +141,57 @@ run_menu() {
 }
 
 execute_menu_choice() {
-    local selected="$1"
+    local action="$1"
     local code as_of
-    case "${selected}" in
-        0) "${WEB_CONTROL}" start ;;
-        1) "${WEB_CONTROL}" stop ;;
-        2) "${WEB_CONTROL}" restart ;;
-        3) "${WEB_CONTROL}" status || true ;;
-        4)
+    case "${action}" in
+        web-start) "${WEB_CONTROL}" start ;;
+        web-stop) "${WEB_CONTROL}" stop ;;
+        web-restart) "${WEB_CONTROL}" restart ;;
+        web-status) "${WEB_CONTROL}" status || true ;;
+        market-auto)
             prompt_as_of
             as_of="${PROMPTED_AS_OF}"
             if [ -n "${as_of}" ]; then "${SCAN_CONTROL}" market --as-of "${as_of}"; else "${SCAN_CONTROL}" market; fi
             ;;
-        5)
+        market-local)
             prompt_as_of
             as_of="${PROMPTED_AS_OF}"
             if [ -n "${as_of}" ]; then EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" market --as-of "${as_of}"; else EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" market; fi
             ;;
-        6) "${SCAN_CONTROL}" daily ;;
-        7)
+        daily) "${SCAN_CONTROL}" daily ;;
+        smc-auto)
             if prompt_default_yes "是否进行 SMC 后人工复核建议分析（只读，默认Y）？"; then
                 "${SCAN_CONTROL}" select-review --post-smc-analysis
             else
                 "${SCAN_CONTROL}" select-review --no-post-smc-analysis
             fi
             ;;
-        8) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select ;;
-        9) "${SCAN_CONTROL}" review-news ;;
-        10) "${SCAN_CONTROL}" select-a-class ;;
-        11) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select-a-class ;;
-        12) "${SCAN_CONTROL}" mkf-review ;;
-        13) "${SCAN_CONTROL}" mkf-review-small ;;
-        14) "${SCAN_CONTROL}" select-mkf ;;
-        15) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select-mkf ;;
-        16) "${SCAN_CONTROL}" review-mkf-ai ;;
-        17|18)
+        smc-local) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select ;;
+        review-news) "${SCAN_CONTROL}" review-news ;;
+        a-class-auto) "${SCAN_CONTROL}" select-a-class ;;
+        a-class-local) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select-a-class ;;
+        mkf-review) "${SCAN_CONTROL}" mkf-review ;;
+        mkf-small) "${SCAN_CONTROL}" mkf-review-small ;;
+        select-mkf) "${SCAN_CONTROL}" select-mkf ;;
+        select-mkf-local) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select-mkf ;;
+        review-mkf-ai) "${SCAN_CONTROL}" review-mkf-ai ;;
+        single-auto|single-local)
             printf '请输入股票代码（如 600519 或 sh.600519）：'
             IFS= read -r code
             if [ -z "${code}" ]; then printf '已取消：股票代码不能为空。\n'; return 0; fi
             prompt_as_of
             as_of="${PROMPTED_AS_OF}"
-            if [ "${selected}" -eq 18 ]; then
+            if [ "${action}" = "single-local" ]; then
                 if [ -n "${as_of}" ]; then EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" single "${code}" --as-of "${as_of}"; else EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" single "${code}"; fi
             else
                 if [ -n "${as_of}" ]; then "${SCAN_CONTROL}" single "${code}" --as-of "${as_of}"; else "${SCAN_CONTROL}" single "${code}"; fi
             fi
             ;;
-        19) "${SCAN_CONTROL}" update ;;
-        20) "${SCAN_CONTROL}" audit-smc-news ;;
-        21) "${SCAN_CONTROL}" replay-smc-news --dry-run ;;
-        22) "${SCAN_CONTROL}" test ;;
-        23) printf '已退出。\n' ;;
+        update-data) "${SCAN_CONTROL}" update ;;
+        audit-smc-news) "${SCAN_CONTROL}" audit-smc-news ;;
+        replay-smc-news) "${SCAN_CONTROL}" replay-smc-news --dry-run ;;
+        test) "${SCAN_CONTROL}" test ;;
+        exit) printf '已退出。\n' ;;
     esac
 }
 
@@ -280,7 +335,7 @@ case "${ACTION}" in
             '  ./main.sh scan --as-of YYYY-MM-DD     指定 T 日执行全市场扫描' \
             '  ./main.sh scan-local                   跳过联网更新，使用本地数据扫描' \
             '  ./main.sh select [--as-of DATE]       运行 SMC 只读选股程序' \
-            '  ./main.sh daily [--top N]             每日 SMC+新闻一键流程：自动更新/去重/审计' \
+            '  ./main.sh daily [--top N]             每日 SMC+新闻一键流程：自动更新/去重/AI委员会CSV/审计' \
             '  ./main.sh select-review [--as-of DATE] [--top N] [--post-smc-analysis]  自动日期会冻结前瞻证据；手动日期仅复核' \
             '  ./main.sh post-smc-analysis --selection-run DIR [--news-run DIR] [--top N]  生成只读人工复核建议分析CSV' \
             '  ./main.sh select-local                仅用本地数据运行 SMC 选股' \

@@ -336,7 +336,15 @@ def test_review_publishes_immutable_evidence_and_binds_source(tmp_path: Path) ->
     assert re.fullmatch(r"news_ai_reviews_\d{8}_\d{6}\.csv", timestamped_name)
     assert result.reviews_csv_path == result.run_directory / timestamped_name
     assert timestamped_name in manifest["files"]
-    csv_text = result.reviews_csv_path.read_text(encoding="utf-8")
+    committee_name = manifest["timestamped_ai_committee_csv"]
+    assert re.fullmatch(r"ai_committee_reviews_\d{8}_\d{6}\.csv", committee_name)
+    assert manifest["latest_ai_committee_csv"] == "ai_committee_reviews_latest.csv"
+    assert result.ai_committee_csv_path == result.run_directory / committee_name
+    assert result.ai_committee_latest_csv_path == result.run_directory / "ai_committee_reviews_latest.csv"
+    assert committee_name in manifest["files"]
+    assert "ai_committee_reviews_latest.csv" in manifest["files"]
+    assert result.ai_committee_csv_path.read_bytes() == result.ai_committee_latest_csv_path.read_bytes()
+    csv_text = result.ai_committee_csv_path.read_text(encoding="utf-8")
     assert "sh.600001" in csv_text
     assert "priority_review" in csv_text
     with pytest.raises(FileExistsError):
@@ -366,6 +374,8 @@ def test_review_cli_writes_ai_merged_human_summary(tmp_path: Path, capsys: pytes
 
     output = capsys.readouterr().out
     assert exit_code == 0
+    assert "ai_committee_csv=" in output
+    assert "ai_committee_latest_csv=" in output
     assert "human_review_summary_csv=" in output
     assert "SMC 派生人工复核分组" in output
     human_summary = selection / "human_review_summary.csv"

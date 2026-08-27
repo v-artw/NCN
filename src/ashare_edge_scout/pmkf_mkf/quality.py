@@ -8,7 +8,7 @@ import pandas as pd
 
 from ..discovery import _kalman_prices
 from ..research_barrier_quality import first_touch_state
-from .research import mkf_red_blue_cross20_under80_mask
+from .research import mkf_red_blue_cross20_green_exit_under80_mask
 from ..research_precision70 import five_close_label, production_gate_mask
 from ..research_v2 import summarize_counts
 
@@ -78,7 +78,7 @@ def pmkf_base_score_series(frame: pd.DataFrame) -> pd.Series:
 
 def candidate_masks(frame: pd.DataFrame, config: Mapping[str, Any], code: str) -> dict[str, pd.Series]:
     admitted = production_gate_mask(code, frame, config)
-    mkf = mkf_red_blue_cross20_under80_mask(frame).reindex(frame.index, fill_value=False).astype(bool)
+    mkf = mkf_red_blue_cross20_green_exit_under80_mask(frame).reindex(frame.index, fill_value=False).astype(bool)
     pmkf_score = pmkf_base_score_series(frame)
     pmkf = pmkf_score.ge(PMKF_MIN_BASE_SCORE).fillna(False)
     return {
@@ -297,9 +297,9 @@ def build_comparison_report(
         "pnl_modeled": False,
         "futu_signals_ignored": True,
         "candidate_definitions": {
-            "A_mkf_red_blue": {"definition": "production_gate_mask AND mkf_red_blue_cross20_under80_mask"},
+            "A_mkf_red_blue": {"definition": "production_gate_mask AND mkf_red_blue_cross20_green_exit_under80_mask"},
             "B_pmkf_backbone": {"definition": "production_gate_mask AND cnstock_base_score >= 75.0", "futu_bonus": 0.0},
-            "C_pmkf_plus_mkf_timing": {"definition": "B_pmkf_backbone AND mkf_red_blue_cross20_under80_mask"},
+            "C_pmkf_plus_mkf_timing": {"definition": "B_pmkf_backbone AND mkf_red_blue_cross20_green_exit_under80_mask"},
         },
         "thresholds": {
             "pmkf_min_base_score": PMKF_MIN_BASE_SCORE,

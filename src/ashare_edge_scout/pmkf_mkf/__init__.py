@@ -21,6 +21,9 @@ _EXPORTS = {
     "mkf_lines": ("research", "mkf_lines"),
     "mkf_red_blue_cross20_lines": ("research", "mkf_red_blue_cross20_lines"),
     "mkf_red_blue_cross20_under80_mask": ("research", "mkf_red_blue_cross20_under80_mask"),
+    "mkf_red_blue_cross20_green_exit_under80_mask": ("research", "mkf_red_blue_cross20_green_exit_under80_mask"),
+    "mkf_red_blue_cross20_post_lag_mask": ("research", "mkf_red_blue_cross20_post_lag_mask"),
+    "mkf_first_red_blue_cross20_after_green_exit_under80_mask": ("research", "mkf_first_red_blue_cross20_after_green_exit_under80_mask"),
 }
 
 __all__ = list(_EXPORTS)
