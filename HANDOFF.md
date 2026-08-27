@@ -1,5 +1,26 @@
 # Reviewer Handoff
 
+## Current Task: GitHub Release for MKF main checkpoint
+
+### Changed Files
+- `HANDOFF.md`: added this release handoff entry.
+- Git tag `mkf-main-checkpoint-2026-08-27` created and pushed at commit `375bb7e`.
+- GitHub Release created for the tag: `https://github.com/v-artw/NCN/releases/tag/mkf-main-checkpoint-2026-08-27`.
+
+### Behavior / Logic Changes
+- No code behavior changed.
+- Release provides GitHub-generated source ZIP/tar.gz downloads for the committed `main` checkpoint.
+
+### Validation
+- Before release creation, `origin/main` pointed to `375bb7e316e25965f2a69b6580f34b60be06cd2c`.
+- Checked target tag/release name did not already exist before creation.
+- `git push origin mkf-main-checkpoint-2026-08-27`: pushed the new tag.
+- `gh release create mkf-main-checkpoint-2026-08-27`: returned the release URL.
+
+### Risks / Review Notes
+- Two untracked local result directories existed and were intentionally **not** included in the release/tag because the release is pinned to committed `375bb7e`: `docs/research/results/mkf/lag0-to_lag5_t20-close-fallback/` and `docs/research/results/mkf/lag0-to_lag5_target_grid/`.
+- The release is a research/demo/paper checkpoint only; live trading remains unauthorized.
+
 ## Current Task: Current-main GitHub milestone
 
 ### Changed Files
