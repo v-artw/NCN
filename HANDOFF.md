@@ -1,5 +1,27 @@
 # Reviewer Handoff
 
+## Current Task: Merge MKF checkpoint into main
+
+### Changed Files
+- `HANDOFF.md`: added this merge-to-main handoff entry.
+- `main` was fast-forwarded to the MKF checkpoint branch tip.
+
+### Behavior / Logic Changes
+- No additional code behavior was changed during the merge step.
+- `main` now includes the structured MKF/PMKF research checkpoint, target-grid/friction artifacts, AI review/config updates, SMC/news updates, docs, and tests already present on `chore/ncn-structured-research-checkpoint`.
+
+### Validation
+- Started from clean `chore/ncn-structured-research-checkpoint` tracking `origin/chore/ncn-structured-research-checkpoint`.
+- `git fetch origin` completed.
+- `git rev-list --left-right --count origin/main...HEAD` returned `0 5`, so the checkpoint branch was ahead of `origin/main` with no remote-main-only commits.
+- `git switch main && git merge --ff-only chore/ncn-structured-research-checkpoint`: fast-forwarded `main` to `46feeca`.
+- `git push origin main`: pushed `main` from `a633c34` to `46feeca`.
+- Final status before this handoff update: `main` tracking `origin/main`, clean.
+
+### Risks / Review Notes
+- Merge used fast-forward only; no merge conflict resolution or synthetic merge commit was created.
+- Do not reset/force-push `main`; if reverting is needed, create a normal revert commit after review.
+
 ## Current Task: GitHub checkpoint upload and milestone
 
 ### Changed Files
