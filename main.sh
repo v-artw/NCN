@@ -4,6 +4,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WEB_CONTROL="${PROJECT_ROOT}/scripts/edge_scout_web_control.sh"
 SCAN_CONTROL="${EDGE_SCOUT_SCAN_SCRIPT:-${PROJECT_ROOT}/scripts/edge_scout_scan.sh}"
+MKF_CONTROL="${PROJECT_ROOT}/mkf.sh"
 ACTION="${1:-menu}"
 
 if [ ! -x "${WEB_CONTROL}" ]; then
@@ -40,11 +41,7 @@ run_menu() {
         "A类低位启动扫描（自动更新数据）"
         "A类低位启动扫描（仅本地数据）"
         "── MKF 研究 ──"
-        "MKF一键流程（自动更新/AI分层）"
-        "MKF小资金一键流程（自动更新/AI分层，ADV20 5000万）"
-        "MKF候选源实验（自动更新数据）"
-        "MKF候选源实验（仅本地数据）"
-        "MKF候选源AI研究分层（最新MKF候选）"
+        "MKF 研究入口"
         "── 系统 ──"
         "运行测试"
         "退出"
@@ -72,11 +69,7 @@ run_menu() {
         "a-class-auto"
         "a-class-local"
         ""
-        "mkf-review"
-        "mkf-small"
-        "select-mkf"
-        "select-mkf-local"
-        "review-mkf-ai"
+        "mkf-menu"
         ""
         "test"
         "exit"
@@ -170,11 +163,7 @@ execute_menu_choice() {
         review-news) "${SCAN_CONTROL}" review-news ;;
         a-class-auto) "${SCAN_CONTROL}" select-a-class ;;
         a-class-local) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select-a-class ;;
-        mkf-review) "${SCAN_CONTROL}" mkf-review ;;
-        mkf-small) "${SCAN_CONTROL}" mkf-review-small ;;
-        select-mkf) "${SCAN_CONTROL}" select-mkf ;;
-        select-mkf-local) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select-mkf ;;
-        review-mkf-ai) "${SCAN_CONTROL}" review-mkf-ai ;;
+        mkf-menu) "${MKF_CONTROL}" menu ;;
         single-auto|single-local)
             printf '请输入股票代码（如 600519 或 sh.600519）：'
             IFS= read -r code
@@ -255,26 +244,29 @@ case "${ACTION}" in
         shift
         exec "${SCAN_CONTROL}" review-news "$@"
         ;;
+    mkf|mkf-menu)
+        shift
+        exec "${MKF_CONTROL}" menu "$@"
+        ;;
     mkf-review)
         shift
-        exec "${SCAN_CONTROL}" mkf-review "$@"
+        exec "${MKF_CONTROL}" mkf-review "$@"
         ;;
     mkf-small)
         shift
-        exec "${SCAN_CONTROL}" mkf-review-small "$@"
+        exec "${MKF_CONTROL}" mkf-small "$@"
         ;;
     select-mkf)
         shift
-        exec "${SCAN_CONTROL}" select-mkf "$@"
+        exec "${MKF_CONTROL}" select-mkf "$@"
         ;;
     select-mkf-local)
         shift
-        export EDGE_SCOUT_AUTO_UPDATE=0
-        exec "${SCAN_CONTROL}" select-mkf "$@"
+        exec "${MKF_CONTROL}" select-mkf-local "$@"
         ;;
     review-mkf-ai)
         shift
-        exec "${SCAN_CONTROL}" review-mkf-ai "$@"
+        exec "${MKF_CONTROL}" review-mkf-ai "$@"
         ;;
     archive-smc-news)
         shift
@@ -340,11 +332,13 @@ case "${ACTION}" in
             '  ./main.sh post-smc-analysis --selection-run DIR [--news-run DIR] [--top N]  生成只读人工复核建议分析CSV' \
             '  ./main.sh select-local                仅用本地数据运行 SMC 选股' \
             '  ./main.sh review-news [--top N]       新闻 AI 二次复核；--top 仅限制终端展示' \
-            '  ./main.sh mkf-review [--as-of DATE] [--top N]  MKF候选源+AI分层一键流程' \
-            '  ./main.sh mkf-small [--as-of DATE] [--top N]  小资金 MKF 一键流程：ADV20 降为 5000 万，候选源+AI分层' \
-            '  ./main.sh select-mkf [--as-of DATE]   运行独立 MKF 候选源实验，不影响 SMC' \
-            '  ./main.sh select-mkf-local            仅用本地数据运行独立 MKF 候选源实验' \
-            '  ./main.sh review-mkf-ai [--selection-run DIR] [--top N]  MKF 候选源 AI 只读研究分层' \
+            '  ./main.sh mkf                         打开 MKF 对话入口（包含原 main.sh 全部 MKF 功能）' \
+            '  ./mkf.sh                              打开 MKF 方向键菜单；自动化参数请用下方 MKF 命令追加' \
+            '  ./main.sh mkf-review                  兼容旧 MKF 一键流程命令；高级自动化参数仍可追加' \
+            '  ./main.sh mkf-small                   兼容旧小资金 MKF 命令：ADV20 降为 5000 万；高级自动化参数仍可追加' \
+            '  ./main.sh select-mkf                  兼容旧 MKF 候选源实验命令；高级自动化参数仍可追加' \
+            '  ./main.sh select-mkf-local            兼容旧本地 MKF 候选源实验命令；高级自动化参数仍可追加' \
+            '  ./main.sh review-mkf-ai               兼容旧 MKF AI 分层命令；高级自动化参数仍可追加' \
             '  ./main.sh archive-smc-news            冻结最新 SMC 选股和新闻复核前瞻证据' \
             '  ./main.sh audit-smc-news              审计 SMC 选股 + 新闻复核前瞻成熟度' \
             '  ./main.sh replay-smc-news             生成 simulation_only SMC+新闻回放，不是前瞻证据' \

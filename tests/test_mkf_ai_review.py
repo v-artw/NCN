@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import http.client
 import json
 from pathlib import Path
@@ -15,6 +16,7 @@ from ashare_edge_scout.mkf_candidate_selector import MkfCandidateRow, _atomic_pu
 
 class FakeClient:
     def __init__(self, payload: dict[str, object] | None = None, fail: bool = False):
+        self.calls: list[str] = []
         self.payload = payload or {
             "review_state": "priority_research",
             "confidence": 0.8,
@@ -33,6 +35,7 @@ class FakeClient:
         self.news_context: dict[str, object] | None = None
 
     def analyze(self, candidate: dict[str, object], context: dict[str, object], news_context: dict[str, object]) -> tuple[dict[str, object], str]:
+        self.calls.append(str(candidate["code"]))
         self.candidate = candidate
         self.context = context
         self.news_context = news_context
@@ -41,9 +44,12 @@ class FakeClient:
         return self.payload, "fake-model"
 
 
-def _mkf_run(root: Path) -> Path:
-    rows = [MkfCandidateRow("sh.600001", "2026-04-09", "2026-04-08", 1, 10.0, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, "")]
-    return _atomic_publish(root, "mkf-select-test", rows, {"schema_version": "ncn_mkf_candidate_selector_v5", "candidate_count": 1, "published_at_utc": "2026-04-09T00:00:00+00:00"})
+def _mkf_run(root: Path, count: int = 1) -> Path:
+    rows = [
+        MkfCandidateRow(f"sh.{600000 + index:06d}", "2026-04-09", "2026-04-08", 1, 9.0 + index, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, "")
+        for index in range(1, count + 1)
+    ]
+    return _atomic_publish(root, "mkf-select-test", rows, {"schema_version": "ncn_mkf_candidate_selector_v5", "candidate_count": count, "published_at_utc": "2026-04-09T00:00:00+00:00"})
 
 
 def _news_config(path: Path) -> Path:
@@ -94,27 +100,30 @@ def _ai_provider_config(path: Path) -> Path:
     return config
 
 
-def _config(path: Path) -> Path:
+def _config(path: Path, *, max_candidates: int | None = None) -> Path:
     news = _news_config(path)
     ai = _ai_provider_config(path)
     config = path / "mkf_ai.yaml"
+    review = "" if max_candidates is None else f"review:\n  max_candidates: {max_candidates}\n"
     config.write_text(
-        f"ai_config: {ai}\nnews_config: {news}\n",
+        f"ai_config: {ai}\nnews_config: {news}\n{review}",
         encoding="utf-8",
     )
     return config
 
 
-def _data(root: Path) -> Path:
+def _data(root: Path, count: int = 1) -> Path:
     data_root = root / "data"
     data_root.mkdir()
     dates = pd.bdate_range(end="2026-04-09", periods=30)
-    rows = []
-    for index, date in enumerate(dates):
-        close = 10.0 + index * 0.02
-        rows.append({"code": "sh.600001", "date": date.date(), "open": close - 0.05, "high": close + 0.2, "low": close - 0.2, "close": close, "preclose": close - 0.02, "volume": 1000 + index * 10, "amount": 2000000 + index * 1000, "turn": 2.0, "tradestatus": "1", "isST": "0"})
-    rows[-1]["close"] = rows[-1]["open"] + 0.2
-    pd.DataFrame(rows).to_parquet(data_root / "sh.600001.parquet", index=False)
+    for code_index in range(1, count + 1):
+        code = f"sh.{600000 + code_index:06d}"
+        rows = []
+        for index, date in enumerate(dates):
+            close = 9.0 + code_index + index * 0.02
+            rows.append({"code": code, "date": date.date(), "open": close - 0.05, "high": close + 0.2, "low": close - 0.2, "close": close, "preclose": close - 0.02, "volume": 1000 + index * 10, "amount": 2000000 + index * 1000, "turn": 2.0, "tradestatus": "1", "isST": "0"})
+        rows[-1]["close"] = rows[-1]["open"] + 0.2
+        pd.DataFrame(rows).to_parquet(data_root / f"{code}.parquet", index=False)
     return data_root
 
 
@@ -176,6 +185,8 @@ def test_mkf_ai_review_publishes_research_labels_and_source_hash(tmp_path: Path,
     assert summary["ai_provider_schema"] == "ncn_ai_providers_v1"
     assert summary["ai_client_status"] == "injected"
     assert summary["ai_config_sha256"]
+    assert summary["prompt_source"] == "module_default_prompt.system"
+    assert summary["prompt_sha256"] == hashlib.sha256(mkf_ai_review.DEFAULT_MKF_AI_SYSTEM_PROMPT.encode("utf-8")).hexdigest()
     assert summary["boundaries"]["smc_ranking_modified"] is False
     assert summary["boundaries"]["mkf_selection_modified"] is False
     assert summary["boundaries"]["pmkf_kalman_used"] is False
@@ -206,6 +217,57 @@ def test_mkf_ai_review_publishes_research_labels_and_source_hash(tmp_path: Path,
     for forbidden in ("futu_bonus", "futu_status", "mhpg", "dxbd", "bullcluster", "powerline"):
         assert forbidden not in context_text
     assert result.run_directory.parent.name == "reviews"
+
+
+def test_mkf_ai_review_limits_ai_calls_from_yaml_but_keeps_all_rows(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(mkf_ai_review, "build_mkf_news_context", _fake_news_context)
+    selection_root = tmp_path / "selections"
+    run = _mkf_run(selection_root, count=3)
+    client = FakeClient()
+    result = run_mkf_ai_review(
+        selection_root=selection_root,
+        selection_run=run,
+        output_root=tmp_path / "reviews",
+        config_path=_config(tmp_path, max_candidates=2),
+        data_root=_data(tmp_path, count=3),
+        ai_client=client,
+        run_id="mkf-ai-yaml-limit",
+    )
+
+    rows = json.loads(result.reviews_path.read_text())
+    summary = json.loads(result.summary_path.read_text())
+    assert client.calls == ["sh.600001", "sh.600002"]
+    assert len(rows) == 3
+    assert rows[2]["review_state"] == "ai_unavailable"
+    assert summary["configured_max_candidates"] == 2
+    assert summary["effective_max_candidates"] == 2
+    assert summary["ai_attempt_count"] == 2
+    assert summary["ai_skipped_by_max_candidates"] == 1
+
+
+def test_mkf_ai_review_cli_limit_overrides_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(mkf_ai_review, "build_mkf_news_context", _fake_news_context)
+    selection_root = tmp_path / "selections"
+    run = _mkf_run(selection_root, count=3)
+    client = FakeClient()
+    result = run_mkf_ai_review(
+        selection_root=selection_root,
+        selection_run=run,
+        output_root=tmp_path / "reviews",
+        config_path=_config(tmp_path, max_candidates=1),
+        data_root=_data(tmp_path, count=3),
+        max_candidates=3,
+        ai_client=client,
+        run_id="mkf-ai-cli-limit",
+    )
+
+    rows = json.loads(result.reviews_path.read_text())
+    summary = json.loads(result.summary_path.read_text())
+    assert client.calls == ["sh.600001", "sh.600002", "sh.600003"]
+    assert [row["review_state"] for row in rows] == ["priority_research", "priority_research", "priority_research"]
+    assert summary["configured_max_candidates"] == 1
+    assert summary["effective_max_candidates"] == 3
+    assert summary["ai_skipped_by_max_candidates"] == 0
 
 
 def test_mkf_ai_review_fails_closed_when_ai_fails(tmp_path: Path) -> None:
@@ -345,6 +407,43 @@ def test_mkf_ai_config_loads_unified_provider_yaml(tmp_path: Path) -> None:
     assert loaded["ai"]["provider_config_style"] == "ncn_ai_providers_v1"
     assert loaded["ai_config_path"] == str(providers.resolve())
     assert loaded["ai_config_sha256"]
+    assert loaded["prompt"]["source"] == "module_default_prompt.system"
+    assert loaded["prompt"]["system"] == mkf_ai_review.DEFAULT_MKF_AI_SYSTEM_PROMPT
+    assert loaded["prompt"]["sha256"] == hashlib.sha256(loaded["prompt"]["system"].encode("utf-8")).hexdigest()
+
+
+def test_repository_mkf_ai_config_loads_yaml_prompt() -> None:
+    root = Path(__file__).parents[1]
+    loaded = load_mkf_ai_config(root / "yaml" / "mkf_ai_review.yaml")
+
+    assert loaded["prompt"]["source"] == "business_yaml_prompt.system"
+    assert loaded["prompt"]["system"]
+    assert "MKF AI委员会" in loaded["prompt"]["system"]
+    assert loaded["prompt"]["sha256"] == hashlib.sha256(loaded["prompt"]["system"].encode("utf-8")).hexdigest()
+
+
+def test_mkf_ai_client_uses_yaml_prompt(tmp_path: Path) -> None:
+    news = _news_config(tmp_path)
+    providers = _ai_provider_config(tmp_path)
+    config = tmp_path / "mkf_ai.yaml"
+    config.write_text(
+        f"ai_config: {providers}\nnews_config: {news}\nprompt:\n  system: '自定义MKF提示词，只读研究。'\n",
+        encoding="utf-8",
+    )
+    client = mkf_ai_review.build_ai_client(load_mkf_ai_config(config))
+    assert client is not None
+    captured: dict[str, object] = {}
+
+    def fake_chat(messages, *, user_agent):
+        captured["messages"] = messages
+        return {"choices": [{"message": {"content": json.dumps({"review_state": "standard_research", "confidence": 0.4}, ensure_ascii=False)}}]}, "fake"
+
+    client.chat_json = fake_chat  # type: ignore[method-assign]
+    client.analyze({"code": "sh.600001"}, {}, {"news_txt": "暂无新闻数据"})
+
+    messages = captured["messages"]
+    assert isinstance(messages, list)
+    assert messages[0] == {"role": "system", "content": "自定义MKF提示词，只读研究。"}
 
 
 def test_mkf_business_config_rejects_provider_override(tmp_path: Path) -> None:

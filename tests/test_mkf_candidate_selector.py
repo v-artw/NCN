@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from ashare_edge_scout import mkf_candidate_selector as selector
+from ashare_edge_scout.config import load_config, parse_mkf_post_cross_lag_range
 from ashare_edge_scout.mkf_candidate_selector import (
     MkfCandidateRow,
     _atomic_publish,
@@ -233,11 +234,15 @@ def test_mkf_selection_reports_boundaries_and_progress(tmp_path: Path, monkeypat
     assert result.candidate_count == 1
     assert events[-1][0:2] == (1, 1)
     summary = json.loads(result.summary_path.read_text())
+    repo_config = load_config(config_path)
+    configured_lag_range = repo_config["mkf"]["candidate_selector"]["post_cross_lag_range"]
+    configured_lags = sorted(parse_mkf_post_cross_lag_range(configured_lag_range))
+    expected_selector = selector.mkf_selector_id(frozenset(configured_lags))
     assert summary["schema_version"] == "ncn_mkf_candidate_selector_v5"
-    assert summary["selector_id"] == "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5"
-    assert summary["selection_rule"] == "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5_and_existing_hard_gates"
-    assert summary["post_cross_lag_range"] == "lag0-lag2"
-    assert summary["allowed_post_cross_lags"] == [0, 1, 2]
+    assert summary["selector_id"] == expected_selector
+    assert summary["selection_rule"] == f"{expected_selector}_and_existing_hard_gates"
+    assert summary["post_cross_lag_range"] == configured_lag_range
+    assert summary["allowed_post_cross_lags"] == configured_lags
     assert summary["selection_profile"] == "small_capital"
     assert summary["effective_min_adv20_cny"] == 50_000_000.0
     assert summary["boundaries"]["production_enabled"] is False
@@ -267,9 +272,13 @@ def test_mkf_cli_top_is_display_only_and_must_be_positive(tmp_path: Path, capsys
 
     output = capsys.readouterr().out
     summary = json.loads((tmp_path / "out" / "mkf-cli" / "summary.json").read_text())
+    repo_config = load_config(config_path)
+    configured_lag_range = repo_config["mkf"]["candidate_selector"]["post_cross_lag_range"]
+    configured_lags = sorted(parse_mkf_post_cross_lag_range(configured_lag_range))
+    expected_selector = selector.mkf_selector_id(frozenset(configured_lags))
     assert exit_code == 0
-    assert "selector=mkf_red_blue_cross20_post_lag0_lag1_lag2_v5" in output
-    assert "post_cross_lag_range=lag0-lag2" in output
+    assert f"selector={expected_selector}" in output
+    assert f"post_cross_lag_range={configured_lag_range}" in output
     assert "selection_profile=small_capital" in output
     assert "effective_min_adv20_cny=50000000" in output
     assert "candidate_count=1" in output

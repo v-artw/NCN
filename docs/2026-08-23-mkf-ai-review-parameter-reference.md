@@ -4,8 +4,8 @@
 
 ## 适用范围
 
-- 默认 MKF 候选 lag 范围由 `yaml/edge_scout_v1.yaml` 的 `mkf.candidate_selector.post_cross_lag_range` 控制；`lag0-lag2` 表示 lag0、lag1、lag2，改为 `lag0-lag5` 表示 lag0 至 lag5。
-- 默认配置仍使用 `lag0-lag2`，对应候选规则 `mkf_red_blue_cross20_post_lag0_lag1_lag2_v5_and_existing_hard_gates`。
+- 默认 MKF 候选 lag 范围由 `yaml/edge_scout_v1.yaml` 的 `mkf.candidate_selector.post_cross_lag_range` 控制；`lag0-lag2` 表示 lag0、lag1、lag2，`lag0-lag5` 表示 lag0 至 lag5。
+- 当前默认配置使用 `lag0-lag5`，对应候选规则 `mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_v5_and_existing_hard_gates`。
 - 适用于 MKF AI 复核输出文件：`reviews.json`、`mkf_ai_reviews_*.csv`。
 - 不适用于 SMC 主扫描、SMC 新闻复核、Demo/Paper 组合、实盘交易或收益承诺。
 - `experimental_unvalidated = TRUE` 表示该研究层仍是实验性输出，必须通过单独预注册验证后才能提升为稳定策略依据。
@@ -18,8 +18,8 @@
 2. 上穿日的上一交易日必须处于该绿色背景块。
 3. 上穿日红线 `mkf_momentum` 和蓝线 `mkf_near` 必须同一交易日从 20 下方上穿到 20 以上。
 4. 上穿日红线和蓝线必须仍低于 80，避免过热起点。
-5. 入选日取上穿日当天、上穿日后的第 1 个或第 2 个股票可交易日；停牌日不消耗 lag，lag3 以后不入选。
-6. 输出中的 `cross_date` 是原始上穿日，`signal_date` 是入选日，`post_cross_lag` 只能为 0、1 或 2。
+5. 入选日取上穿日当天及配置允许的后续股票可交易日；当前默认 `lag0-lag5` 表示上穿日当天至上穿日后的第 5 个股票可交易日，停牌日不消耗 lag。
+6. 输出中的 `cross_date` 是原始上穿日，`signal_date` 是入选日，`post_cross_lag` 由 `yaml/edge_scout_v1.yaml` 的 `mkf.candidate_selector.post_cross_lag_range` 决定；当前默认可为 0、1、2、3、4 或 5。
 7. 其他主板、非 ST、价格、停牌、流动性等硬门槛保持不变。
 
 ## 股票排序规则
@@ -71,7 +71,7 @@ review_state 优先级 → confidence 降序 → local_score 降序 → code 升
 
 因此，不能只看 `local_score` 或 `confidence` 做全局排序。例如，一个 `standard_research` 且 `confidence=0.90` 的股票，仍排在所有 `priority_research` 后面。
 
-CLI 参数 `--top` 只限制终端展示数量，不限制实际处理数量；AI 复核会处理输入候选源中的全部候选。
+AI 复核默认分析数量由 `yaml/mkf_ai_review.yaml` 的 `review.max_candidates` 控制，当前默认 20；CLI 参数 `--top N` 是本次运行的临时覆盖。超过上限的候选仍会保留 `ai_unavailable` 复核行，保证候选源与复核输出可追溯。
 
 ## 核心字段对照
 
@@ -85,7 +85,7 @@ CLI 参数 `--top` 只限制终端展示数量，不限制实际处理数量；A
 | `technical_observations` | 字符串数组 | AI；缺失时用本地规则 | 技术观察，例如 MKF、K线、量价、20日位置。 | 可作为人工复核检查清单。 |
 | `risk_flags` | 字符串数组 | AI；本地和新闻风险会补充 | 风险提示，例如长上影、量价背离、新闻风险词。 | 风险项不等于必然下跌，只表示需要核查。 |
 | `local_score` | 1–10 小数 | 本地确定性规则 | 本地 MKF/K线/OHLCV 技术分。 | 第三排序键；不能单独代表最终排序。 |
-| `model` | 字符串 | 中央 AI 配置 | 实际复核模型。 | 目前示例为 `Qwen3.8-27B-4bit`。 |
+| `model` | 字符串 | 中央 AI 配置 | 实际复核模型。 | 目前示例为 `Qwen3.8-27B-oQ4e-mtp`。 |
 | `source_selection_reason` | 字符串 | 候选源 | 原始入选规则。 | 用于追溯候选为什么进入 AI 复核。 |
 | `committee_summary` | JSON 对象 | AI | 模拟委员会各角色的 stance/notes。 | 单次 LLM 结构化输出，不是真实多代理投票。 |
 | `committee_roles` | 字符串数组 | 固定配置 | 参与复核的角色列表。 | 包含技术、情绪、基本面、多空、策略、风控等。 |
@@ -161,7 +161,7 @@ risk_flags = 长上影线、未突破20日高点、动能不稳定
 - `local_score=8.6` 不是“可以买入”。
 - `priority_research` 不是买入建议。
 - `risk_attention` 不是必然下跌判断。
-- `--top 10` 不是只处理 10 只股票，只是展示前 10 条有效 AI 评分结果。
+- `--top 10` 会把本次 AI 调用上限临时覆盖为 10；未传时使用 `yaml/mkf_ai_review.yaml` 的 `review.max_candidates`。
 - 本文排序规则只说明研究输出如何排列，不证明该排序能产生稳定超额收益。
 
 ## 代码依据

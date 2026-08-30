@@ -256,7 +256,7 @@ output/edge_scout/news_reviews/<review-run-id>/
 
 流程：
 
-1. 运行独立 MKF 红蓝线上穿 20 后第 1/2 个交易日 候选源；
+1. 运行独立 MKF 红蓝线上穿 20 后 YAML 配置允许 lag 范围内的候选源；
 2. 对本次明确的 selection run 运行 AI 委员会复核；
 3. 无候选时跳过 AI；
 4. 不影响 SMC 候选、排序或 watchlist。
@@ -267,7 +267,7 @@ output/edge_scout/news_reviews/<review-run-id>/
 ./main.sh mkf-small --top 10
 ```
 
-候选源规则为：先识别上一交易日处于 MFK4 绿色背景块（`momentum/inter/near <= 20`），且红线 `momentum` 与蓝线 `near` 同时从 20 下方上穿到 20 以上、红蓝线仍低于 80 的上穿日；候选日取该上穿日当天、上穿日后的第 1 个或第 2 个股票可交易日。停牌日不消耗 lag，lag3 以后不入选。
+候选源规则为：先识别上一交易日处于 MFK4 绿色背景块（`momentum/inter/near <= 20`），且红线 `momentum` 与蓝线 `near` 同时从 20 下方上穿到 20 以上、红蓝线仍低于 80 的上穿日；候选日取该上穿日当天及 `yaml/edge_scout_v1.yaml` 中 `mkf.candidate_selector.post_cross_lag_range` 允许的后续股票可交易日。当前配置为 `lag0-lag5`，即上穿日当天至上穿后第 5 个股票可交易日；停牌日不消耗 lag。
 
 该模式保留主板、非 ST、价格、停牌等硬门槛，将 ADV20 门槛降为 5000 万。
 
@@ -298,7 +298,7 @@ output/edge_scout/mkf_candidate_selections/<run-id>/
 output/edge_scout/mkf_ai_reviews/<run-id>/
 ```
 
-> `--top` 同样只限制终端展示，不限制 AI 实际处理数量。做小样本 smoke 时，应构造显式小候选 fixture，而不是依赖 `--top`。
+> AI 复核默认分析数量由 `yaml/mkf_ai_review.yaml` 的 `review.max_candidates` 控制，当前默认 20；`--top N` 是本次运行的临时覆盖。超过上限的候选仍保留复核行但标记为 AI 未评分。
 
 ## 8. 统一 AI 模型配置
 
@@ -327,7 +327,7 @@ provider: local_finance
 
 ```text
 Endpoint: http://ts.dorisw.kdns.fr:18090/v1
-Model: Qwen3.8-27B-4bit
+Model: Qwen3.8-27B-oQ4e-mtp
 Credential: EDGE_SCOUT_LOCAL_AI_API_KEY 或 Key/ts.key
 ```
 
@@ -406,7 +406,7 @@ PYTHONPATH=src .venv/bin/python -B scripts/smoke_ai_provider.py \
 当前 Doris 验证状态：
 
 - `/v1/models` 可用；
-- `Qwen3.8-27B-4bit` 在模型列表中；
+- `Qwen3.8-27B-oQ4e-mtp` 在模型列表中；
 - tiny JSON chat 可用；
 - MKF 与 SMC/news 三候选隔离 smoke 均为 3/3 AI 成功。
 
@@ -672,9 +672,9 @@ extra_options:
 
 AI 失败会 fail-closed 为 `ai_unavailable` 或 partial status，不会自动切换其他 provider。
 
-### 16.6 `--top` 没有限制 AI 调用数量
+### 16.6 调整 AI 复核股票数量
 
-这是预期行为：`--top` 只限制终端展示。需要小样本时，应创建显式小候选 fixture 或使用专门的 bounded 参数（若后续实现），不能把 `--top` 当作处理上限。
+默认数量在业务 YAML 中配置：SMC/news 使用 `yaml/news_ai_review.yaml` 的 `review.max_candidates`，MKF 使用 `yaml/mkf_ai_review.yaml` 的 `review.max_candidates`，当前均为 20。命令行 `--top N` 会临时覆盖本次 AI 调用上限；输出仍保留完整候选复核行，超过上限的候选标记为 AI 未评分。
 
 ## 17. 安全边界与禁止事项
 
@@ -777,4 +777,4 @@ PYTHONPATH=src .venv/bin/python -B scripts/smoke_ai_provider.py \
 
 ---
 
-最后更新依据：项目完整测试 `497 passed, 3 skipped`；Doris `Qwen3.8-27B-4bit` models/chat 与隔离三候选 MKF、SMC/news smoke 均已通过。
+最后更新依据：项目完整测试 `497 passed, 3 skipped`；Doris `Qwen3.8-27B-oQ4e-mtp` models/chat 与隔离三候选 MKF、SMC/news smoke 均已通过。

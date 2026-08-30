@@ -37,6 +37,7 @@ from .mkf_news_context import NO_NEWS_TEXT, build_mkf_news_context, load_mkf_new
 from .research_nextday_validation import candlestick_masks
 
 SCHEMA_VERSION = "ncn_mkf_ai_review_v3"
+DEFAULT_MAX_CANDIDATES = 20
 VALID_REVIEW_STATES = {"priority_research", "standard_research", "risk_attention", "insufficient_evidence", "ai_unavailable"}
 FORBIDDEN_ACTION_LABELS = {"BUY", "HOLD", "AVOID", "SELL", "WAIT", "PRE-BUY", "PREBUY"}
 FORBIDDEN_RESPONSE_KEYS = {
@@ -58,6 +59,20 @@ COMMITTEE_ROLES = (
     "bearish_researcher",
     "chief_strategist",
     "risk_manager",
+)
+DEFAULT_MKF_AI_SYSTEM_PROMPT = (
+    "你是A股只读研究候选的MKF AI委员会提示词角色，不是真实多代理并发投票系统。"
+    "候选已经由NCN红蓝线上穿20当日及后第1/2个交易日规则产生；你不能创造、删除、修改候选，也不能改变SMC、watchlist或production。"
+    "技术分析必须只使用提供的NCN English Japanese candlestick/OHLCV上下文和MKF候选快照；"
+    "消息面、舆情和基本面角色只能使用提供的CNstock兼容新闻上下文news_txt、fatal_risks和attn_risks；"
+    f"如果news_txt为{NO_NEWS_TEXT}，相关角色必须说明evidence unavailable。"
+    "禁止使用PMKF Kalman、Futu/MHPG/DXBD/BULLCLUSTER/MFK4/GDING/BBUY/Dingdi/POWERLINE、CNstock旧交易上下文、模型外部记忆或自行联网补充事实。"
+    "请在单次JSON输出中模拟technical_analyst、sentiment_analyst、fundamental_analyst、bullish_researcher、bearish_researcher、chief_strategist、risk_manager。"
+    "不得编造政策、业绩、诉讼、公告、行业情绪或资金消息；未提供证据时必须说明不可得。"
+    "禁止输出买入、卖出、持有、等待、下单、仓位、收益、止盈止损、目标价、P&L等操作建议；不得使用BUY/HOLD/AVOID/SELL/WAIT/PRE-BUY。"
+    "仅输出JSON对象，字段为review_state(priority_research|standard_research|risk_attention|insufficient_evidence)、"
+    "confidence(0到1)、research_summary、technical_observations(字符串数组)、risk_flags(字符串数组)、"
+    "committee(对象，可含各角色stance和notes)、committee_disagreement_flags(字符串数组)。"
 )
 BULLISH_CANDLE_PATTERNS = {
     "candle_hammer",
@@ -150,28 +165,15 @@ CSV_FIELDNAMES = (
 
 
 class OpenAICompatibleClient(SharedOpenAICompatibleClient):
-    def __init__(self, *, base_url: str, api_key: str, model: str, timeout_seconds: float, provider: str = "injected", temperature: float = 0, seed: int | None = 42, response_format: Mapping[str, Any] | None = None, extra_options: Mapping[str, Any] | None = None):
+    def __init__(self, *, base_url: str, api_key: str, model: str, timeout_seconds: float, provider: str = "injected", temperature: float = 0, seed: int | None = 42, response_format: Mapping[str, Any] | None = None, extra_options: Mapping[str, Any] | None = None, system_prompt: str = DEFAULT_MKF_AI_SYSTEM_PROMPT):
         super().__init__(provider=provider, base_url=base_url, api_key=api_key, model=model, timeout_seconds=timeout_seconds, temperature=temperature, seed=seed, response_format=response_format, extra_options=extra_options)
+        self.system_prompt = system_prompt
 
     def _request_json(self, path: str, payload: Mapping[str, Any] | None = None) -> Any:
         return self.request_json(path, payload, user_agent="NCN-MKF-AI-Committee/1.0")
 
     def analyze(self, candidate: Mapping[str, Any], context: Mapping[str, Any], news_context: Mapping[str, Any]) -> tuple[dict[str, Any], str]:
         model = self.resolved_model(user_agent="NCN-MKF-AI-Committee/1.0")
-        system_prompt = (
-            "你是A股只读研究候选的MKF AI委员会提示词角色，不是真实多代理并发投票系统。"
-            "候选已经由NCN红蓝线上穿20当日及后第1/2个交易日规则产生；你不能创造、删除、修改候选，也不能改变SMC、watchlist或production。"
-            "技术分析必须只使用提供的NCN English Japanese candlestick/OHLCV上下文和MKF候选快照；"
-            "消息面、舆情和基本面角色只能使用提供的CNstock兼容新闻上下文news_txt、fatal_risks和attn_risks；"
-            f"如果news_txt为{NO_NEWS_TEXT}，相关角色必须说明evidence unavailable。"
-            "禁止使用PMKF Kalman、Futu/MHPG/DXBD/BULLCLUSTER/MFK4/GDING/BBUY/Dingdi/POWERLINE、CNstock旧交易上下文、模型外部记忆或自行联网补充事实。"
-            "请在单次JSON输出中模拟technical_analyst、sentiment_analyst、fundamental_analyst、bullish_researcher、bearish_researcher、chief_strategist、risk_manager。"
-            "不得编造政策、业绩、诉讼、公告、行业情绪或资金消息；未提供证据时必须说明不可得。"
-            "禁止输出买入、卖出、持有、等待、下单、仓位、收益、止盈止损、目标价、P&L等操作建议；不得使用BUY/HOLD/AVOID/SELL/WAIT/PRE-BUY。"
-            "仅输出JSON对象，字段为review_state(priority_research|standard_research|risk_attention|insufficient_evidence)、"
-            "confidence(0到1)、research_summary、technical_observations(字符串数组)、risk_flags(字符串数组)、"
-            "committee(对象，可含各角色stance和notes)、committee_disagreement_flags(字符串数组)。"
-        )
         user_payload = {
             "candidate": {
                 key: candidate.get(key)
@@ -197,7 +199,7 @@ class OpenAICompatibleClient(SharedOpenAICompatibleClient):
             },
         }
         messages = [
-                {"role": "system", "content": system_prompt},
+                {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False, sort_keys=True)},
             ]
         response, model = self.chat_json(
@@ -215,8 +217,39 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _normalize_prompt_config(payload: Mapping[str, Any]) -> dict[str, Any]:
+    prompt = payload.get("prompt") or {}
+    if not isinstance(prompt, Mapping):
+        raise ValueError("prompt config section must be a mapping")
+    if "system" in prompt:
+        system = str(prompt.get("system") or "").strip()
+        source = "business_yaml_prompt.system"
+    else:
+        system = DEFAULT_MKF_AI_SYSTEM_PROMPT
+        source = "module_default_prompt.system"
+    if not system:
+        raise ValueError("prompt.system must be a non-empty string")
+    return {
+        **dict(prompt),
+        "system": system,
+        "source": source,
+        "sha256": _sha256_text(system),
+    }
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _normalize_max_candidates(review: Mapping[str, Any]) -> int:
+    value = int(review.get("max_candidates", DEFAULT_MAX_CANDIDATES))
+    if value < 1:
+        raise ValueError("review.max_candidates must be at least 1")
+    return value
 
 
 def _string_tuple(value: Any, *, maximum: int = 8) -> tuple[str, ...]:
@@ -302,6 +335,8 @@ def load_mkf_ai_config(path: Path) -> dict[str, Any]:
     review = payload.get("review") or {}
     if not isinstance(review, dict):
         raise ValueError("review config section must be a mapping")
+    review["max_candidates"] = _normalize_max_candidates(review)
+    payload["review"] = review
     technical = review.get("technical_context") or {}
     if not isinstance(technical, dict):
         raise ValueError("review.technical_context must be a mapping")
@@ -309,6 +344,7 @@ def load_mkf_ai_config(path: Path) -> dict[str, Any]:
         raise ValueError("MKF AI committee must not use PMKF Kalman context")
     if bool(technical.get("use_futu_fields", False)):
         raise ValueError("MKF AI committee must not use Futu fields")
+    payload["prompt"] = _normalize_prompt_config(payload)
     news_config_value = payload.get("news_config") or "yaml/mkf_news_context.yaml"
     news_config_path = Path(str(news_config_value)).expanduser()
     if not news_config_path.is_absolute():
@@ -330,6 +366,8 @@ def build_ai_client(config: Mapping[str, Any]) -> OpenAICompatibleClient | None:
     shared = build_shared_ai_client(provider_config)
     if shared is None:
         return None
+    prompt = config.get("prompt") or {}
+    system_prompt = str(prompt.get("system") or DEFAULT_MKF_AI_SYSTEM_PROMPT)
     return OpenAICompatibleClient(
         provider=shared.provider,
         base_url=shared.base_url,
@@ -340,6 +378,7 @@ def build_ai_client(config: Mapping[str, Any]) -> OpenAICompatibleClient | None:
         seed=shared.seed,
         response_format=shared.response_format,
         extra_options=shared.extra_options,
+        system_prompt=system_prompt,
     )
 
 
@@ -704,12 +743,18 @@ def run_mkf_ai_review(
     selection_run: Path | None = None,
     run_id: str | None = None,
     data_root: Path | None = None,
+    max_candidates: int | None = None,
     ai_client: Any | None = None,
     progress: Callable[..., None] | None = None,
 ) -> MkfAIReviewResult:
     config = load_mkf_ai_config(config_path)
     source_run = resolve_mkf_selection_run(selection_root, selection_run)
     candidates, candidates_sha = validate_mkf_selection_run(source_run)
+    review_config = config.get("review") if isinstance(config.get("review"), Mapping) else {}
+    yaml_max_candidates = _normalize_max_candidates(review_config)
+    max_candidates = yaml_max_candidates if max_candidates is None else max_candidates
+    if max_candidates < 1:
+        raise ValueError("max_candidates must be at least 1")
     client = ai_client if ai_client is not None else build_ai_client(config)
     rows: list[MkfAIReviewRow] = []
     ai_errors: Counter[str] = Counter()
@@ -749,7 +794,7 @@ def run_mkf_ai_review(
         }
         if progress is not None:
             progress(index, len(candidates), code, "news", detail)
-        if client is None:
+        if client is None or index > max_candidates:
             row = _fallback_row(candidate, context, news_context, state="ai_unavailable")
         else:
             ai_attempt_count += 1
@@ -810,6 +855,7 @@ def run_mkf_ai_review(
                         news_source_error_counts[f"{source}:{source_state}"] += 1
         status = "success" if not candidates or client is None or ai_attempt_count == ai_success_count else ("partial" if ai_success_count else "ai_failed")
         news_config_path = Path(str(config.get("news_config_path") or ""))
+        prompt_config = config.get("prompt") or {}
         ai_config = config.get("_ai_provider_config")
         ai_mapping = config.get("ai") or {}
         ai_model = None
@@ -827,7 +873,12 @@ def run_mkf_ai_review(
             "config_sha256": _sha256(config_path),
             "ai_config_path": str(config.get("ai_config_path") or config_path),
             "ai_config_sha256": config.get("ai_config_sha256"),
+            "prompt_source": str(prompt_config.get("source") or "module_default_prompt.system"),
+            "prompt_sha256": str(prompt_config.get("sha256") or _sha256_text(str(prompt_config.get("system") or DEFAULT_MKF_AI_SYSTEM_PROMPT))),
             "candidate_count": len(candidates),
+            "configured_max_candidates": yaml_max_candidates,
+            "effective_max_candidates": max_candidates,
+            "ai_skipped_by_max_candidates": max(0, len(candidates) - max_candidates) if client is not None else 0,
             "ai_provider": str(ai_mapping.get("provider", "injected_or_disabled")),
             "ai_provider_config_style": str(ai_mapping.get("provider_config_style", "ncn_ai_providers_v1")),
             "ai_provider_schema": str(ai_mapping.get("schema_version", "ncn_ai_providers_v1")),

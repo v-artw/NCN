@@ -12,6 +12,8 @@ from scripts.review_smc_news import _format_review_card, main as review_smc_news
 
 from ashare_edge_scout.news_ai_review import (
     AIRequestError,
+    DEFAULT_NEWS_AI_SYSTEM_PROMPT,
+    OpenAICompatibleClient,
     NewsFetchResult,
     NewsItem,
     fetch_news,
@@ -24,7 +26,7 @@ from ashare_edge_scout.news_ai_review import (
 )
 
 
-def _review_config(root: Path, *, enabled: bool = False) -> Path:
+def _review_config(root: Path, *, enabled: bool = False, max_candidates: int | None = None) -> Path:
     key = root / "test-ai.key"
     key.write_text("test-secret\n", encoding="utf-8")
     providers = root / "ai_providers.yaml"
@@ -45,8 +47,10 @@ def _review_config(root: Path, *, enabled: bool = False) -> Path:
         encoding="utf-8",
     )
     config = root / "config.yaml"
+    review = "" if max_candidates is None else f"review:\n  max_candidates: {max_candidates}\n"
     config.write_text(
         f"ai_config: {providers}\n"
+        f"{review}"
         "news:\n  days: 7\n  cache_dir: cache\n  refresh_hours: 6\n  per_source_limit: 100\n  timeout_seconds: 1\n",
         encoding="utf-8",
     )
@@ -190,9 +194,44 @@ def test_repository_news_ai_config_defaults_to_doris_qwen() -> None:
 
     assert ai["provider"] == "local_finance"
     assert provider["base_url"] == "http://ts.dorisw.kdns.fr:18090/v1"
-    assert provider["model"] == "Qwen3.8-27B-4bit"
+    assert provider["model"] == "Qwen3.8-27B-oQ4e-mtp"
     assert provider["api_key_env"] == "EDGE_SCOUT_LOCAL_AI_API_KEY"
     assert Path(provider["key_file"]) == root / "Key" / "ts.key"
+    assert config["prompt"]["source"] == "business_yaml_prompt.system"
+    assert config["prompt"]["system"]
+    assert "A股短周期复核员" in config["prompt"]["system"]
+    assert config["prompt"]["sha256"] == hashlib.sha256(config["prompt"]["system"].encode("utf-8")).hexdigest()
+
+
+def test_news_ai_config_uses_default_prompt_when_omitted(tmp_path: Path) -> None:
+    config = load_review_config(_review_config(tmp_path))
+
+    assert config["prompt"]["source"] == "module_default_prompt.system"
+    assert config["prompt"]["system"] == DEFAULT_NEWS_AI_SYSTEM_PROMPT
+    assert config["prompt"]["sha256"] == hashlib.sha256(DEFAULT_NEWS_AI_SYSTEM_PROMPT.encode("utf-8")).hexdigest()
+
+
+def test_news_ai_client_uses_yaml_prompt() -> None:
+    client = OpenAICompatibleClient(
+        provider="test",
+        base_url="http://example.invalid/v1",
+        api_key="secret",
+        model="fake",
+        timeout_seconds=1,
+        system_prompt="自定义新闻提示词，只读研究。",
+    )
+    captured: dict[str, object] = {}
+
+    def fake_chat(messages, *, user_agent):
+        captured["messages"] = messages
+        return {"choices": [{"message": {"content": json.dumps({"assessment": "neutral", "confidence": 0.4}, ensure_ascii=False)}}]}, "fake"
+
+    client.chat_json = fake_chat  # type: ignore[method-assign]
+    client.analyze(_candidate(), (), None)
+
+    messages = captured["messages"]
+    assert isinstance(messages, list)
+    assert messages[0] == {"role": "system", "content": "自定义新闻提示词，只读研究。"}
 
 
 def test_news_business_config_rejects_provider_override(tmp_path: Path) -> None:
@@ -282,19 +321,21 @@ class _FailingAI:
 
 class _CapturingAI:
     def __init__(self) -> None:
+        self.codes: list[str] = []
         self.item_counts: list[int] = []
         self.technical_statuses: list[str | None] = []
 
     def analyze(self, candidate, items, technical=None):
+        self.codes.append(str(candidate["code"]))
         self.item_counts.append(len(items))
         self.technical_statuses.append(None if technical is None else technical.status)
         return _ai(), "fake-model"
 
 
-def _selection_run(root: Path) -> Path:
+def _selection_run(root: Path, count: int = 2) -> Path:
     run = root / "select-1"
     run.mkdir(parents=True)
-    candidates = [_candidate(), _candidate("sh.600002")]
+    candidates = [_candidate(f"sh.{600000 + index:06d}") for index in range(1, count + 1)]
     candidates_path = run / "candidates.json"
     candidates_path.write_text(json.dumps(candidates, ensure_ascii=False), encoding="utf-8")
     digest = hashlib.sha256(candidates_path.read_bytes()).hexdigest()
@@ -327,6 +368,8 @@ def test_review_publishes_immutable_evidence_and_binds_source(tmp_path: Path) ->
     assert summary["ai_provider_schema"] == "ncn_ai_providers_v1"
     assert summary["ai_client_status"] == "injected"
     assert summary["ai_config_sha256"]
+    assert summary["prompt_source"] == "module_default_prompt.system"
+    assert summary["prompt_sha256"] == hashlib.sha256(DEFAULT_NEWS_AI_SYSTEM_PROMPT.encode("utf-8")).hexdigest()
     assert summary["status"] == "success"
     assert summary["ai_success_count"] == 1
     assert "never backfill" in summary["causality_boundary"]
@@ -357,6 +400,55 @@ def test_review_publishes_immutable_evidence_and_binds_source(tmp_path: Path) ->
             news_fetcher=lambda code, cfg: _news(),
             ai_client=_FakeAI(),
         )
+
+
+def test_news_ai_review_limits_ai_calls_from_yaml_but_keeps_all_rows(tmp_path: Path) -> None:
+    selection = _selection_run(tmp_path / "selections", count=3)
+    config = _review_config(tmp_path, max_candidates=2)
+    ai = _CapturingAI()
+    result = run_news_ai_review(
+        selection_root=selection.parent,
+        selection_run=selection,
+        output_root=tmp_path / "reviews",
+        config_path=config,
+        run_id="review-yaml-limit",
+        news_fetcher=lambda code, cfg: _news(f"{code} 签订重大订单公告", f"{code} 业绩预增公告"),
+        ai_client=ai,
+    )
+
+    rows = json.loads(result.reviews_path.read_text(encoding="utf-8"))
+    summary = json.loads(result.summary_path.read_text(encoding="utf-8"))
+    assert ai.codes == ["sh.600001", "sh.600002"]
+    assert len(rows) == 3
+    assert rows[2]["review_state"] == "ai_unavailable"
+    assert summary["configured_max_candidates"] == 2
+    assert summary["effective_max_candidates"] == 2
+    assert summary["ai_attempt_count"] == 2
+    assert summary["ai_skipped_by_max_candidates"] == 1
+
+
+def test_news_ai_review_cli_limit_overrides_yaml(tmp_path: Path) -> None:
+    selection = _selection_run(tmp_path / "selections", count=3)
+    config = _review_config(tmp_path, max_candidates=1)
+    ai = _CapturingAI()
+    result = run_news_ai_review(
+        selection_root=selection.parent,
+        selection_run=selection,
+        output_root=tmp_path / "reviews",
+        config_path=config,
+        run_id="review-cli-limit",
+        max_candidates=3,
+        news_fetcher=lambda code, cfg: _news(f"{code} 签订重大订单公告", f"{code} 业绩预增公告"),
+        ai_client=ai,
+    )
+
+    rows = json.loads(result.reviews_path.read_text(encoding="utf-8"))
+    summary = json.loads(result.summary_path.read_text(encoding="utf-8"))
+    assert ai.codes == ["sh.600001", "sh.600002", "sh.600003"]
+    assert [row["review_state"] for row in rows] == ["priority_review", "priority_review", "priority_review"]
+    assert summary["configured_max_candidates"] == 1
+    assert summary["effective_max_candidates"] == 3
+    assert summary["ai_skipped_by_max_candidates"] == 0
 
 
 def test_review_cli_writes_ai_merged_human_summary(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

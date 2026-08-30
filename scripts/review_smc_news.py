@@ -93,9 +93,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--data-root", type=Path)
     parser.add_argument("--run-id")
-    parser.add_argument("--top", type=int, default=20)
+    parser.add_argument("--top", type=int)
     args = parser.parse_args(argv)
-    if args.top < 1:
+    if args.top is not None and args.top < 1:
         parser.error("--top must be at least 1")
     return args
 
@@ -124,6 +124,7 @@ def main(argv: list[str] | None = None) -> int:
             config_path=args.config,
             run_id=args.run_id,
             data_root=args.data_root,
+            max_candidates=args.top,
             progress=progress,
         )
     except Exception as exc:
@@ -144,7 +145,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"ai_committee_latest_csv={result.ai_committee_latest_csv_path}")
     print(f"human_review_summary_csv={human_summary_path}")
     print("\n新闻 + 日K线 AI 二次复核（参考日本蜡烛图技术，未经胜率验证）")
-    shown = rows[: args.top]
+    display_limit = args.top if args.top is not None else int(summary.get("effective_max_candidates") or 20)
+    shown = rows[:display_limit]
     printed = 0
     for state, title in GROUP_ORDER:
         group = [row for row in shown if row.get("review_state") == state]

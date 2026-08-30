@@ -32,9 +32,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--data-root", type=Path)
     parser.add_argument("--run-id")
-    parser.add_argument("--top", type=int, default=20)
+    parser.add_argument("--top", type=int)
     args = parser.parse_args(argv)
-    if args.top < 1:
+    if args.top is not None and args.top < 1:
         parser.error("--top must be at least 1")
     return args
 
@@ -100,6 +100,7 @@ def main(argv: list[str] | None = None) -> int:
             config_path=args.config,
             run_id=args.run_id,
             data_root=args.data_root,
+            max_candidates=args.top,
             progress=progress,
         )
     except Exception as exc:
@@ -119,7 +120,8 @@ def main(argv: list[str] | None = None) -> int:
     print("\nMKF AI 委员会研究分层（仅展示AI有效评分；只读研究，未经胜率验证）")
     scored_rows = [row for row in rows if row.get("review_state") != "ai_unavailable"]
     unavailable_rows = [row for row in rows if row.get("review_state") == "ai_unavailable"]
-    for index, row in enumerate(scored_rows[: args.top], start=1):
+    display_limit = args.top if args.top is not None else int(summary.get("effective_max_candidates") or 20)
+    for index, row in enumerate(scored_rows[:display_limit], start=1):
         label = STATE_LABELS.get(str(row.get("review_state")), str(row.get("review_state")))
         print(
             f"{index:>2}. {row.get('code')}  {label}  置信度={float(row.get('confidence') or 0.0):.2f} "

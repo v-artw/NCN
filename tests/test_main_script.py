@@ -260,7 +260,7 @@ def test_edge_scout_mkf_commands_invoke_bound_clis(tmp_path: Path) -> None:
     config = tmp_path / "edge.yaml"
     config.write_text("schema_version: edge_scout_v1\n", encoding="utf-8")
     mkf_ai = tmp_path / "mkf_ai.yaml"
-    mkf_ai.write_text("ai: {enabled: false}\n", encoding="utf-8")
+    mkf_ai.write_text("review:\n  max_candidates: 4\nai: {enabled: false}\n", encoding="utf-8")
     env = {
         **os.environ,
         "VENV_PYTHON": str(fake_python),
@@ -295,6 +295,14 @@ def test_edge_scout_mkf_commands_invoke_bound_clis(tmp_path: Path) -> None:
         text=True,
         timeout=10,
     )
+    default_reviewed = subprocess.run(
+        ["bash", str(ROOT / "scripts/edge_scout_scan.sh"), "mkf-review"],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
 
     assert selected.returncode == 0, selected.stdout + selected.stderr
     assert "--output-root " + str(tmp_path / "output" / "mkf_candidate_selections") in selected.stdout
@@ -309,6 +317,11 @@ def test_edge_scout_mkf_commands_invoke_bound_clis(tmp_path: Path) -> None:
     assert "--as-of 2026-08-21" in small_reviewed.stdout
     assert "--top 3" in small_reviewed.stdout
     assert "--selection-run /tmp/mkf-select" in small_reviewed.stdout
+    assert default_reviewed.returncode == 0, default_reviewed.stdout + default_reviewed.stderr
+    assert "--top 4 --selection-profile standard" in default_reviewed.stdout
+    default_ai_line = next(line for line in default_reviewed.stdout.splitlines() if line.startswith("mkf_ai_args="))
+    assert "--selection-run /tmp/mkf-select" in default_ai_line
+    assert "--top 4" in default_ai_line
     ai_line = next(line for line in small_reviewed.stdout.splitlines() if line.startswith("mkf_ai_args="))
     assert "--selection-profile" not in ai_line
     assert "--min-adv20-cny" not in ai_line
@@ -549,7 +562,7 @@ def test_edge_scout_select_review_with_post_smc_analysis_binds_exact_artifacts(t
     assert "--selection-run /tmp/select-analysis --news-run /tmp/news-analysis" in completed.stdout
 
 
-def test_edge_scout_select_review_without_args_binds_exact_artifacts(tmp_path: Path) -> None:
+def test_edge_scout_select_review_without_args_uses_yaml_default_top(tmp_path: Path) -> None:
     fake_python = tmp_path / "fake_python.sh"
     fake_python.write_text(
         "#!/usr/bin/env bash\n"
@@ -568,7 +581,7 @@ def test_edge_scout_select_review_without_args_binds_exact_artifacts(tmp_path: P
     config = tmp_path / "edge.yaml"
     config.write_text("schema_version: edge_scout_v1\n", encoding="utf-8")
     news = tmp_path / "news.yaml"
-    news.write_text("news: {}\n", encoding="utf-8")
+    news.write_text("review:\n  max_candidates: 9\nnews: {}\n", encoding="utf-8")
     env = {
         **os.environ,
         "VENV_PYTHON": str(fake_python),
@@ -589,7 +602,7 @@ def test_edge_scout_select_review_without_args_binds_exact_artifacts(tmp_path: P
     )
 
     assert completed.returncode == 0, completed.stdout + completed.stderr
-    assert "--top 20 --selection-run /tmp/select-default" in completed.stdout
+    assert "--top 9 --selection-run /tmp/select-default" in completed.stdout
     assert "--selection-run /tmp/select-default --news-run /tmp/news-default" in completed.stdout
 
 
@@ -767,6 +780,56 @@ def test_edge_scout_daily_runs_new_signal_full_chain(tmp_path: Path) -> None:
     assert "ai_committee_csv=/tmp/news-daily/ai_committee_reviews_20260821_120000.csv" in completed.stdout
     assert "ai_committee_latest_csv=/tmp/news-daily/ai_committee_reviews_latest.csv" in completed.stdout
     assert "human_review_summary_csv=/tmp/select-daily/human_review_summary.csv" in completed.stdout
+
+
+def test_edge_scout_daily_without_top_uses_yaml_default_top(tmp_path: Path) -> None:
+    fake_python = tmp_path / "fake_python.sh"
+    fake_python.write_text(
+        "#!/usr/bin/env bash\n"
+        "script=\"$2\"\n"
+        "case \"$script\" in\n"
+        "  */select_stocks.py) printf 'select_args=%s\\n' \"$*\"; echo 'status=success'; echo 'signal_date=2026-08-21'; echo 'candidate_count=2'; echo 'run_directory=/tmp/select-daily-yaml'; echo 'timestamped_csv=/tmp/select.csv'; echo 'human_review_summary_csv=/tmp/select-daily-yaml/human_review_summary.csv' ;;\n"
+        "  */archive_smc_news_prospective.py)\n"
+        "    joined=\"$*\"\n"
+        "    if [[ \"$joined\" == *--check-existing-signal-date* ]]; then echo 'archive_signal_date=2026-08-21'; echo 'archive_duplicate=0';\n"
+        "    else echo 'smc_news_prospective_archive_status=created'; echo 'smc_news_prospective_archive=/tmp/archive-daily-yaml'; fi ;;\n"
+        "  */review_smc_news.py) printf 'review_args=%s\\n' \"$*\"; echo 'status=success'; echo 'priority_review_count=1'; echo 'risk_excluded_count=0'; echo 'run_directory=/tmp/news-daily-yaml'; echo 'timestamped_csv=/tmp/news.csv'; echo 'ai_committee_csv=/tmp/news/ai.csv'; echo 'ai_committee_latest_csv=/tmp/news/latest.csv'; echo 'human_review_summary_csv=/tmp/select-daily-yaml/human_review_summary.csv' ;;\n"
+        "  */audit_smc_news_prospective.py) echo 'canonical_smc_news_snapshots=3'; echo 'mature_all_smc=0'; echo 'parent_maturity_sufficient=False'; echo 'promotion_evidence_sufficient=False'; echo 'evidence_sufficient=False'; echo 'output=/tmp/audit.json' ;;\n"
+        "  *) echo unknown:$script >&2; exit 7 ;;\n"
+        "esac\n",
+        encoding="utf-8",
+    )
+    fake_python.chmod(0o755)
+    data_root = tmp_path / "data"
+    data_root.mkdir()
+    config = tmp_path / "edge.yaml"
+    config.write_text("schema_version: edge_scout_v1\n", encoding="utf-8")
+    news = tmp_path / "news.yaml"
+    news.write_text("review:\n  max_candidates: 8\nnews: {}\n", encoding="utf-8")
+    env = {
+        **os.environ,
+        "VENV_PYTHON": str(fake_python),
+        "EDGE_SCOUT_AUTO_UPDATE": "0",
+        "EDGE_SCOUT_DATA_ROOT": str(data_root),
+        "EDGE_SCOUT_CONFIG": str(config),
+        "EDGE_SCOUT_NEWS_AI_CONFIG": str(news),
+        "EDGE_SCOUT_OUTPUT_ROOT": str(tmp_path / "output"),
+    }
+
+    completed = subprocess.run(
+        ["bash", str(ROOT / "scripts/edge_scout_scan.sh"), "daily"],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert "--top 8" in next(line for line in completed.stdout.splitlines() if line.startswith("select_args="))
+    review_line = next(line for line in completed.stdout.splitlines() if line.startswith("review_args="))
+    assert "--selection-run /tmp/select-daily-yaml" in review_line
+    assert "--top 8" in review_line
 
 
 def test_edge_scout_daily_skips_duplicate_signal_archive(tmp_path: Path) -> None:
@@ -1008,7 +1071,7 @@ def test_main_menu_auto_smc_runs_selector_then_news_review(tmp_path: Path) -> No
     assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
-def test_main_menu_mkf_options_route_to_independent_commands(tmp_path: Path) -> None:
+def test_main_menu_mkf_entry_opens_independent_menu(tmp_path: Path) -> None:
     expect = shutil.which("expect")
     if expect is None:
         return
@@ -1018,31 +1081,56 @@ def test_main_menu_mkf_options_route_to_independent_commands(tmp_path: Path) -> 
         encoding="utf-8",
     )
     fake.chmod(0o755)
-    review_down = "\\033\\[B" * 17
-    small_down = "\\033\\[B"
-    auto_down = "\\033\\[B"
-    local_down = "\\033\\[B"
-    ai_down = "\\033\\[B"
+    mkf_entry_down = "\\033\\[B" * 17
     script = (
         'set timeout 10; spawn env EDGE_SCOUT_SCAN_SCRIPT=' + str(fake) + ' ./main.sh; '
         'expect "启动 Web 监控"; '
-        f'send "{review_down}"; '
+        f'send "{mkf_entry_down}"; '
+        'expect -re {> MKF 研究入口}; send "\r"; '
+        'expect "NCN MKF 研究"; '
+        'expect -re {> MKF一键流程}; send "\r"; '
+        'expect "unset|mkf-review"; exit 0'
+    )
+    completed = subprocess.run(
+        [expect, "-c", script],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+
+
+def test_mkf_menu_options_route_to_scan_commands(tmp_path: Path) -> None:
+    expect = shutil.which("expect")
+    if expect is None:
+        return
+    fake = tmp_path / "fake_scan.sh"
+    fake.write_text(
+        "#!/usr/bin/env bash\nprintf '%s|%s\\n' \"${EDGE_SCOUT_AUTO_UPDATE:-unset}\" \"$*\"\n",
+        encoding="utf-8",
+    )
+    fake.chmod(0o755)
+    down = "\\033\\[B"
+    script = (
+        'set timeout 10; spawn env EDGE_SCOUT_SCAN_SCRIPT=' + str(fake) + ' ./mkf.sh; '
+        'expect "NCN MKF 研究"; '
         'expect -re {> MKF一键流程}; send "\r"; '
         'expect "unset|mkf-review"; '
-        'expect "按回车返回菜单"; send "\r"; expect "启动 Web 监控"; '
-        f'send "{small_down}"; '
+        'expect "按回车返回 MKF 菜单"; send "\r"; expect "NCN MKF 研究"; '
+        f'send "{down}"; '
         'expect -re {> MKF小资金一键流程}; send "\r"; '
         'expect "unset|mkf-review-small"; '
-        'expect "按回车返回菜单"; send "\r"; expect "启动 Web 监控"; '
-        f'send "{auto_down}"; '
+        'expect "按回车返回 MKF 菜单"; send "\r"; expect "NCN MKF 研究"; '
+        f'send "{down}"; '
         'expect -re {> MKF候选源实验（自动更新数据）}; send "\r"; '
         'expect "unset|select-mkf"; '
-        'expect "按回车返回菜单"; send "\r"; expect "启动 Web 监控"; '
-        f'send "{local_down}"; '
+        'expect "按回车返回 MKF 菜单"; send "\r"; expect "NCN MKF 研究"; '
+        f'send "{down}"; '
         'expect -re {> MKF候选源实验（仅本地数据）}; send "\r"; '
         'expect "0|select-mkf"; '
-        'expect "按回车返回菜单"; send "\r"; expect "启动 Web 监控"; '
-        f'send "{ai_down}"; '
+        'expect "按回车返回 MKF 菜单"; send "\r"; expect "NCN MKF 研究"; '
+        f'send "{down}"; '
         'expect -re {> MKF候选源AI研究分层}; send "\r"; '
         'expect "unset|review-mkf-ai"; exit 0'
     )

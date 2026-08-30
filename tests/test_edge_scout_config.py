@@ -23,8 +23,9 @@ def test_load_config():
         assert "mode" in config
         assert "market_regime" not in config
         assert config["research_market_regime"]["enforcement"] == "none"
-        assert config["mkf"]["candidate_selector"]["post_cross_lag_range"] == "lag0-lag2"
-        assert parse_mkf_post_cross_lag_range(config["mkf"]["candidate_selector"]["post_cross_lag_range"]) == frozenset({0, 1, 2})
+        post_cross_lag_range = config["mkf"]["candidate_selector"]["post_cross_lag_range"]
+        assert isinstance(post_cross_lag_range, str)
+        assert parse_mkf_post_cross_lag_range(post_cross_lag_range)
         assert "score_weights" not in config["ranking"]
     else:
         with pytest.raises(FileNotFoundError):

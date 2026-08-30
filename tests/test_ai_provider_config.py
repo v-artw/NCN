@@ -51,7 +51,7 @@ def test_repository_ai_provider_inventory() -> None:
     assert config.provider == "local_finance"
     selected = config.providers[config.provider]
     assert selected["base_url"] == "http://ts.dorisw.kdns.fr:18090/v1"
-    assert selected["model"] == "Qwen3.8-27B-4bit"
+    assert selected["model"] == "Qwen3.8-27B-oQ4e-mtp"
     assert selected["enabled"] is True
     assert config.providers["deepseek"]["enabled"] is True
     for name in ("deepseek_chat", "deepseek_pro", "lmstudio_finance_8b", "tongyi", "kimi", "zhipu"):
@@ -155,7 +155,7 @@ def test_mkf_and_news_resolve_same_repository_provider() -> None:
     assert mkf["ai"]["provider"] == news["ai"]["provider"] == "local_finance"
     assert mkf_client is not None and news_client is not None
     assert mkf_client.base_url == news_client.base_url
-    assert mkf_client.model == news_client.model == "Qwen3.8-27B-4bit"
+    assert mkf_client.model == news_client.model == "Qwen3.8-27B-oQ4e-mtp"
     assert mkf_client.timeout_seconds == news_client.timeout_seconds
 
 

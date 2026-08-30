@@ -39,6 +39,23 @@ MINIMUM_LATEST_COVERAGE="${EDGE_SCOUT_MINIMUM_LATEST_COVERAGE:-0.95}"
 # 默认输出根目录
 DEFAULT_OUTPUT_ROOT="${EDGE_SCOUT_OUTPUT_ROOT:-${PROJECT_ROOT}/output/edge_scout}"
 
+read_review_max_candidates() {
+    local config_path="$1"
+    local fallback="20"
+    local value=""
+    if [ -f "${config_path}" ]; then
+        value="$(awk '
+            /^[^[:space:]]/ { in_review = ($1 == "review:") }
+            in_review && /^[[:space:]]+max_candidates:[[:space:]]*/ { print $2; exit }
+        ' "${config_path}")"
+    fi
+    if [[ "${value}" =~ ^[0-9]+$ ]] && [ "${value}" -ge 1 ]; then
+        printf '%s\n' "${value}"
+    else
+        printf '%s\n' "${fallback}"
+    fi
+}
+
 # ---------------------------------------------------------------------------
 # 股票代码标准化：支持 sh.600000 / 000001 / 600000，自动补全交易所前缀
 # ---------------------------------------------------------------------------
@@ -314,7 +331,7 @@ cmd_single() {
 
 cmd_select_review() {
     local prospective_archive=1
-    local review_top="20"
+    local review_top=""
     local post_smc_analysis=0
     local original_args=()
     while [ $# -gt 0 ]; do
@@ -344,12 +361,16 @@ cmd_select_review() {
         esac
     done
     local selection_output selection_run news_output news_run
-    set +e
+    local effective_top="${review_top:-$(read_review_max_candidates "${NEWS_AI_CONFIG}")}"
+    local selection_args=()
     if [ "${#original_args[@]}" -gt 0 ]; then
-        selection_output="$(cmd_select "${original_args[@]}" 2>&1)"
-    else
-        selection_output="$(cmd_select 2>&1)"
+        selection_args+=("${original_args[@]}")
     fi
+    if [ -z "${review_top}" ]; then
+        selection_args+=(--top "${effective_top}")
+    fi
+    set +e
+    selection_output="$(cmd_select "${selection_args[@]}" 2>&1)"
     local selection_status=$?
     set -e
     printf '%s\n' "${selection_output}"
@@ -363,8 +384,9 @@ cmd_select_review() {
     fi
     echo
     echo "SMC 新闻 AI 二次复核：开始分析最新选股结果..."
+    local review_args=(--selection-run "${selection_run}" --top "${effective_top}")
     set +e
-    news_output="$(cmd_review_news --selection-run "${selection_run}" --top "${review_top}" 2>&1)"
+    news_output="$(cmd_review_news "${review_args[@]}" 2>&1)"
     local news_status=$?
     set -e
     printf '%s\n' "${news_output}"
@@ -379,7 +401,8 @@ cmd_select_review() {
     if [ "${post_smc_analysis}" -eq 1 ]; then
         echo
         echo "SMC 后人工复核建议分析：基于本次选股和新闻复核生成只读 CSV..."
-        cmd_post_smc_analysis --selection-run "${selection_run}" --news-run "${news_run}" --top "${review_top}"
+        local analysis_args=(--selection-run "${selection_run}" --top "${effective_top}" --news-run "${news_run}")
+        cmd_post_smc_analysis "${analysis_args[@]}"
     fi
     if [ "${prospective_archive}" -eq 1 ]; then
         echo
@@ -517,7 +540,7 @@ cmd_select_mkf() {
 
 cmd_review_news() {
     local selection_run=""
-    local top="20"
+    local top=""
     while [ $# -gt 0 ]; do
         case "$1" in
             --selection-run)
@@ -547,8 +570,10 @@ cmd_review_news() {
         --config "${NEWS_AI_CONFIG}"
         --data-root "${DATA_ROOT}"
         --run-id "${run_id}"
-        --top "${top}"
     )
+    if [ -n "${top}" ]; then
+        args+=(--top "${top}")
+    fi
     if [ -n "${selection_run}" ]; then
         args+=(--selection-run "${selection_run}")
     fi
@@ -558,7 +583,7 @@ cmd_review_news() {
 
 cmd_review_mkf_ai() {
     local selection_run=""
-    local top="20"
+    local top=""
     while [ $# -gt 0 ]; do
         case "$1" in
             --selection-run)
@@ -588,8 +613,10 @@ cmd_review_mkf_ai() {
         --config "${MKF_AI_CONFIG}"
         --data-root "${DATA_ROOT}"
         --run-id "${run_id}"
-        --top "${top}"
     )
+    if [ -n "${top}" ]; then
+        args+=(--top "${top}")
+    fi
     if [ -n "${selection_run}" ]; then
         args+=(--selection-run "${selection_run}")
     fi
@@ -599,7 +626,7 @@ cmd_review_mkf_ai() {
 
 cmd_mkf_review() {
     local as_of=""
-    local review_top="20"
+    local review_top=""
     local min_adv20_cny=""
     local selection_profile="standard"
     while [ $# -gt 0 ]; do
@@ -631,7 +658,8 @@ cmd_mkf_review() {
         esac
     done
 
-    local selection_args=(--top "${review_top}" --selection-profile "${selection_profile}")
+    local effective_top="${review_top:-$(read_review_max_candidates "${MKF_AI_CONFIG}")}"
+    local selection_args=(--top "${effective_top}" --selection-profile "${selection_profile}")
     if [ -n "${min_adv20_cny}" ]; then
         selection_args+=(--min-adv20-cny "${min_adv20_cny}")
     fi
@@ -675,8 +703,9 @@ cmd_mkf_review() {
         echo
         echo "MKF AI 研究分层：基于本次 MKF 候选源结果生成只读分层..."
         review_output_file="$(mktemp "${TMPDIR:-/tmp}/mkf-review-ai.XXXXXX")"
+        local review_args=(--selection-run "${selection_run}" --top "${effective_top}")
         set +e
-        cmd_review_mkf_ai --selection-run "${selection_run}" --top "${review_top}" 2>&1 | tee "${review_output_file}"
+        cmd_review_mkf_ai "${review_args[@]}" 2>&1 | tee "${review_output_file}"
         review_status=${PIPESTATUS[0]}
         set -e
         review_output="$(<"${review_output_file}")"
@@ -839,7 +868,7 @@ cmd_archive_smc_news_preflight() {
 }
 
 cmd_daily() {
-    local review_top="20"
+    local review_top=""
     while [ $# -gt 0 ]; do
         case "$1" in
             --top)
@@ -861,9 +890,10 @@ cmd_daily() {
     auto_update_data
     check_data_root
 
+    local effective_top="${review_top:-$(read_review_max_candidates "${NEWS_AI_CONFIG}")}"
     local selection_output selection_status selection_run signal_date selection_count selection_csv human_review_summary_csv
     set +e
-    selection_output="$(cmd_select --top "${review_top}" 2>&1)"
+    selection_output="$(cmd_select --top "${effective_top}" 2>&1)"
     selection_status=$?
     set -e
     printf '%s\n' "${selection_output}"
@@ -911,8 +941,9 @@ cmd_daily() {
         local news_output news_status archive_output archive_exit
         echo
         echo "SMC 新闻 AI 二次复核：开始分析本次 daily 选股结果..."
+        local review_args=(--selection-run "${selection_run}" --top "${effective_top}")
         set +e
-        news_output="$(cmd_review_news --selection-run "${selection_run}" --top "${review_top}" 2>&1)"
+        news_output="$(cmd_review_news "${review_args[@]}" 2>&1)"
         news_status=$?
         set -e
         printf '%s\n' "${news_output}"
@@ -1060,7 +1091,7 @@ A 股多因子 + 15 日蜡烛图短线研究系统
       MKF 小资金一键流程：主板/非ST等硬门槛不变，ADV20 降为 5000 万
 
   edge_scout_scan.sh select-mkf [--as-of YYYY-MM-DD] [--top N]
-      运行独立 MKF 红蓝线上穿20当日及后第1/2个交易日候选源实验，不影响 SMC 候选
+      运行独立 MKF 红蓝线上穿20后 YAML 配置允许 lag 范围内的候选源实验，不影响 SMC 候选
 
   edge_scout_scan.sh review-mkf-ai [--selection-run DIR] [--top N]
       对指定或最新 MKF 候选源实验做只读 AI 研究分层，不写入 SMC 流程
