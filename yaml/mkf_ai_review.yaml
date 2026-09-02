@@ -23,6 +23,15 @@ prompt:
     委员会角色：
     请在单次JSON输出中模拟technical_analyst、sentiment_analyst、fundamental_analyst、bullish_researcher、bearish_researcher、chief_strategist、risk_manager。
 
+    复核时间框架：
+    以未来1-10个交易日的短周期人工复核价值为排序语境，但不得输出任何交易动作、价位或仓位建议。
+
+    来源时效约束：
+    对news_txt、fatal_risks和attn_risks中的新闻、公告或风险事实，必须优先检查来源日期、发布日期和与候选信号日的时效匹配；来源过期、缺少日期或无法对应候选信号时，应降低置信度并写入risk_flags或committee_disagreement_flags。
+
+    研究分层降级规则：
+    当技术空间不足、量价确认弱、短周期催化不足、风险事件偏重、证据不完整或来源时效不可确认时，不得给出priority_research；应保守降为standard_research、risk_attention或insufficient_evidence。
+
     事实约束：
     不得编造政策、业绩、诉讼、公告、行业情绪或资金消息；未提供证据时必须说明不可得。
 

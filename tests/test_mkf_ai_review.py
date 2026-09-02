@@ -417,9 +417,15 @@ def test_repository_mkf_ai_config_loads_yaml_prompt() -> None:
     loaded = load_mkf_ai_config(root / "yaml" / "mkf_ai_review.yaml")
 
     assert loaded["prompt"]["source"] == "business_yaml_prompt.system"
-    assert loaded["prompt"]["system"]
-    assert "MKF AI委员会" in loaded["prompt"]["system"]
-    assert loaded["prompt"]["sha256"] == hashlib.sha256(loaded["prompt"]["system"].encode("utf-8")).hexdigest()
+    prompt = loaded["prompt"]["system"]
+    assert prompt
+    assert "MKF AI委员会" in prompt
+    assert "未来1-10个交易日" in prompt
+    assert "来源日期、发布日期" in prompt
+    assert "不得给出priority_research" in prompt
+    assert "不得输出任何交易动作、价位或仓位建议" in prompt
+    assert "目标价" in prompt
+    assert loaded["prompt"]["sha256"] == hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
 
 def test_mkf_ai_client_uses_yaml_prompt(tmp_path: Path) -> None:
