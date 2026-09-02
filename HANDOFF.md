@@ -1,5 +1,365 @@
 # Reviewer Handoff
 
+## Current Task: Tighten local MKF AI analysis template boundaries (2026-09-02)
+
+### Changed Files
+- `yaml/mkf_ai_review.yaml`: added local `review-mkf-ai` prompt language for future 1-10 trading-day research-review context, supplied-source recency/date checks, and conservative downgrade rules.
+- `tests/test_mkf_ai_review.py`: added repository-prompt assertions for the new short-cycle, source-recency, downgrade, and no trading-action/price/position boundary language.
+- `HANDOFF.md`: updated this handoff entry.
+
+### Behavior / Logic Changes
+- Local MKF AI review remains JSON-only and evidence-bounded; it still forbids buy/sell/hold/wait labels, target price, stop loss, position sizing, P&L, external model memory, and self-directed internet facts.
+- The prompt now clarifies that local AI ranking is in a future 1-10 trading-day manual review context, but not a trading decision table.
+- The prompt now tells the model to check supplied `news_txt`, `fatal_risks`, and `attn_risks` for source date/publication-date recency relative to the candidate signal date, lowering confidence and recording risks when timing is stale, missing, or mismatched.
+- The prompt now explicitly downgrades weak/uncertain cases away from `priority_research` when technical space, volume-price confirmation, short-cycle catalyst, risk burden, evidence completeness, or source timing is insufficient.
+- No scanner selection/ranking logic, Web AI Markdown exporter, API provider config, watchlist behavior, production flags, broker/login/order paths, or live-trading behavior changed.
+
+### Validation
+- WSL priority used: `./scripts/remote_test_env.sh check` passed on `10.20.98.161` with project ready; `./scripts/remote_test_env.sh sync-code` completed.
+- WSL focused validation passed: `./scripts/remote_test_env.sh test tests/test_mkf_ai_review.py -q` -> `21 passed in 0.80s`.
+- Local focused validation passed: `.venv/bin/python -m pytest tests/test_mkf_ai_review.py -q` -> `21 passed in 0.65s`.
+- Local whitespace check passed: `git diff --check`.
+
+### Risks / Review Notes
+- Do not copy the Web AI Markdown 4% take-profit / 3% stop-loss / buy-hold-sell decision-table wording into local `review-mkf-ai`; parser/tests intentionally reject those action outputs.
+- This is prompt-boundary wording only; it does not prove better forward hit rate or production usefulness without future outcome validation.
+- Existing working tree also contains earlier unrelated modified/untracked files from prior tasks; this task intentionally changed only the three files listed above.
+
+
+## Current Task: Add internet cross-check and 4/3 trade frame to Web AI Markdown (2026-09-02)
+
+### Changed Files
+- `scripts/export_scan_csv_for_web_ai.py`: updated `build_hold_observation_markdown()` to use the agreed short execution-style Web AI template.
+- `tests/test_export_scan_csv_for_web_ai.py`: updated assertions for internet cross-checking, no model-memory-only conclusions, 4% take-profit / 3% stop-loss pricing, downgrade rules, and source publication dates.
+- `HANDOFF.md`: prepended this handoff entry.
+
+### Behavior / Logic Changes
+- Generated Web AI Markdown now asks the webpage AI to internet-search and cross-check each stock before concluding, rather than relying only on stock code/name or model memory.
+- The prompt now encodes the user's trade frame: take profit about 4%, stop loss about 3%, target price from latest available price +4%, stop price from latest available price -3%.
+- The prompt now tells Web AI to downgrade stocks to `减仓观察` or `卖出或回避` when the 4%/3% reward-risk frame does not fit, short-term room is insufficient, or risk events are too heavy.
+- The final prompt still uses a concise decision-table format and does not introduce local CSV/path/internal-process language.
+- No menu/wrapper behavior, scanner selection/ranking, API AI review prompt/config, watchlist behavior, production flags, broker/login/order paths, or live-trading behavior changed.
+
+### Validation
+- Local focused validation passed: `.venv/bin/python -m pytest tests/test_export_scan_csv_for_web_ai.py -q` -> `11 passed in 0.04s`.
+- Local sample generation passed using latest 2026-09-01 MKF candidate CSV with `--top 16`; output `/tmp/ncn_web_ai_sample.md` was 1507 bytes and included internet cross-check + 4%/3% trade-frame wording.
+- Local whitespace check passed: `git diff --check`.
+- WSL sync/test attempt was blocked by the Claude Code auto-mode classifier for the remote sync/test command, so remote validation was not rerun for this small wording update.
+
+### Risks / Review Notes
+- This is a prompt wording update only; Web AI output remains dependent on external webpage model/search behavior.
+- `tests/test_main_script.py` was not rerun because no wrapper/menu/help behavior changed.
+
+
+## Current Task: Add short role line to Web AI Markdown prompt (2026-09-02)
+
+### Changed Files
+- `scripts/export_scan_csv_for_web_ai.py`: added a concise Web AI-visible role line before the decision-table task in `build_hold_observation_markdown()`.
+- `tests/test_export_scan_csv_for_web_ai.py`: added assertions that the generated prompt includes the A-share short-swing/swing analyst role and directly comparable decision-table task.
+- `HANDOFF.md`: prepended this handoff entry.
+
+### Behavior / Logic Changes
+- Generated Web AI Markdown now starts with: `你是一名A股短线/波段交易分析员，任务是为未来1-10个交易日生成直接可比较的交易决策表。`
+- The prompt still directly asks webpage AI to generate the future 1-10 trading-day decision table and keeps the existing conclusion choices, output columns, source-link requirement, and no-fabrication instruction.
+- No menu/wrapper behavior, scanner selection/ranking, API AI review prompt/config, watchlist behavior, production flags, broker/login/order paths, or live-trading behavior changed.
+
+### Validation
+- Local focused validation passed: `.venv/bin/python -m pytest tests/test_export_scan_csv_for_web_ai.py -q` -> `11 passed in 0.04s`.
+- Local sample generation passed using latest 2026-09-01 MKF candidate CSV with `--top 16`; output `/tmp/ncn_web_ai_sample.md` was 1303 bytes and included the new role line.
+- Local whitespace check passed: `git diff --check`.
+- WSL validation passed after `./scripts/remote_test_env.sh sync-code`: `./scripts/remote_test_env.sh test tests/test_export_scan_csv_for_web_ai.py -q` -> `11 passed in 0.04s`.
+
+### Risks / Review Notes
+- This is a prompt wording update only. Web AI output remains dependent on external webpage model/search behavior.
+- `tests/test_main_script.py` was not rerun because no wrapper/menu/help behavior changed.
+
+
+## Current Task: Optimize Web AI Markdown prompt body for decision-table generation (2026-09-02)
+
+### Changed Files
+- `scripts/export_scan_csv_for_web_ai.py`: revised the final Web AI-visible Markdown body generated by `build_hold_observation_markdown()`; added `candidate_labels()` so candidate rows can render as `code name` when `name` or `stock_name` exists.
+- `tests/test_export_scan_csv_for_web_ai.py`: updated prompt-body assertions for the new decision-table wording and added coverage for stock-name rendering.
+- `HANDOFF.md`: prepended this handoff entry.
+
+### Behavior / Logic Changes
+- Web AI Markdown now defaults to the title `A股候选短线决策表` and directly asks webpage AI to generate an A-share future 1-10 trading-day short-swing/swing decision table, with explicit conclusion choices: `买入 / 继续持有 / 减仓观察 / 卖出或回避`.
+- Prompt body now emphasizes latest price/date, target price, stop-loss price, position sizing, core driver, veto risk, and supporting source links; it instructs the web AI not to drift into long-term value-investing summaries and not to fabricate announcements, links, dates, or prices.
+- Candidate stocks are emitted one per line instead of a `、`-joined line; names are included only if already present in CSV rows.
+- No changes were made to scanner selection/ranking, API AI review prompts, watchlist behavior, menu/wrapper logic, production flags, broker/login/order paths, or live-trading behavior.
+
+### Validation
+- WSL remote was checked first and was reachable: `./scripts/remote_test_env.sh check` -> host ready with project synced target.
+- WSL validation passed after `./scripts/remote_test_env.sh sync-code`: `./scripts/remote_test_env.sh test tests/test_export_scan_csv_for_web_ai.py -q` -> `11 passed in 0.04s`; reran after the default title update with the same result.
+- Local focused validation passed: `.venv/bin/python -m pytest tests/test_export_scan_csv_for_web_ai.py -q` -> `11 passed in 0.04s`.
+- Local whitespace check passed: `git diff --check`.
+- Local sample generation passed using latest 2026-09-01 MKF candidate CSV with `--top 16`; output `/tmp/ncn_web_ai_sample.md` was 1179 bytes.
+
+### Risks / Review Notes
+- Web AI behavior remains non-deterministic and model/provider-dependent; this change improves the copied prompt wording but does not guarantee external webpage AI will follow it perfectly.
+- `tests/test_main_script.py` was not rerun because wrapper/menu/help behavior was not changed in this task.
+
+
+## Current Task: GitHub research for prompt-efficiency methods (2026-09-02)
+
+### Changed Files
+- `HANDOFF.md`: prepended this research handoff entry only.
+
+### Behavior / Logic Changes
+- No NCN runtime code, scanner logic, prompts, watchlists, ranking logic, YAML config, production flags, broker paths, or AI provider config were changed.
+- Researched GitHub repositories relevant to reducing prompt/API token cost and improving prompt effectiveness: prompt compression, prompt/program optimization, prompt evaluation, semantic caching, and Claude prompt caching/cost examples.
+
+### Validation
+- Local/GitHub read-only research only; no tests or backtests were run.
+- GitHub CLI metadata/readme checks used for: `microsoft/LLMLingua`, `stanfordnlp/dspy`, `microsoft/PromptWizard`, `promptfoo/promptfoo`, `zilliztech/GPTCache`, and `anthropics/claude-cookbooks`.
+- `WebSearch` attempts failed with `502 Upstream access forbidden`; GitHub CLI was used instead.
+
+### Risks / Review Notes
+- Do not immediately wire prompt-compression or prompt-optimization frameworks into NCN production-adjacent flows without a fixed eval set; compression can remove financially material evidence and optimizer loops can overfit.
+- For NCN, safest next action is an offline A/B eval of current MKF/news prompts versus compacted prompts, measuring JSON validity, field completeness, actionable source links, conservative-risk language, output stability, token count, latency, and cost.
+- Sources used: https://github.com/microsoft/LLMLingua, https://github.com/stanfordnlp/dspy, https://github.com/microsoft/PromptWizard, https://github.com/promptfoo/promptfoo, https://github.com/zilliztech/GPTCache, https://github.com/anthropics/claude-cookbooks.
+
+
+## Current Task: Integrate MKF CSV Web AI Markdown exporter into interactive MKF menu (2026-09-01)
+
+### Changed Files
+- `scripts/export_scan_csv_for_web_ai.py`: added CSV-to-Markdown prompt-pack generation for scanner CSVs, plus candidate-run discovery, newest-run default selection, TTY arrow-key CSV picker, timestamped non-overwriting output names, and compact Web AI prompt text. Default output is capped at 4000 UTF-8 bytes and contains only a webpage-AI trading-reference prompt plus stock codes; it omits NCN/MKF wording, scan/cross/lag fields, MKF indicators, local paths, CSV SHA256, long project metadata, and per-row JSON. The prompt assigns a cautious but conclusion-oriented A-share short-swing research role, fixes the timeframe to future 1-10 trading days, asks webpage ChatGPT/Gemini/Grok-style AI to avoid long-term value-investing substitution, and requests buy/continue-hold/reduce/sell-or-avoid tendency, reference target price, reference stop-loss price, suggested position, positives, risks, source links, and priority grouping. The CSV selector reads raw key bytes from stdin with `os.read()` so arrow-key escape sequences are not misclassified as Esc cancellation.
+- `scripts/edge_scout_scan.sh`: added internal `export-mkf-web-ai` wrapper. It only converts existing CSVs to Markdown under `${EDGE_SCOUT_OUTPUT_ROOT:-output/edge_scout}/mdfile`; it does not update data, rescan, run AI review, or mutate SMC/watchlist/production outputs. It accepts explicit `--select` and `--max-bytes` for menu-driven interactive selection and rejects conflicting `--latest/--select/--csv` combinations.
+- `mkf.sh`: added the `MKF候选CSV导出Web AI Markdown` keyboard-menu item. The menu action calls the wrapper with `--select --max-bytes 4000`, so selecting it from `./mkf.sh` always enters the CSV selector path and generates a compact Markdown prompt instead of relying on implicit TTY detection or command-line parameters. Help text presents this as an interactive-menu feature rather than a command-line workflow.
+- `tests/test_export_scan_csv_for_web_ai.py`: added coverage for direct CSV export, `--output-root`, timestamped naming, overwrite avoidance, candidate-run discovery/default selection, latest selection, empty-root errors, 4000-byte prompt size, CSV selector terminal rendering with CRLF/page-limited output, and raw arrow-key byte handling.
+- `tests/test_main_script.py`: updated help/menu assertions so the visible MKF help emphasizes the interactive menu, and the expect-based menu test verifies the new menu item routes to `export-mkf-web-ai --select`. Internal CLI forwarding remains covered only as a regression path.
+- Runtime Markdown outputs generated under `output/edge_scout/mdfile/`: one earlier smoke file with 2 rows from `--top 2`, and one full latest-MKF file with 16 rows (`mkf_candidates_20260901_210326_web_ai_prompt_20260901_221324.md`).
+
+### Behavior / Logic Changes
+- Primary user workflow is now interactive: run `./mkf.sh`, choose `MKF候选CSV导出Web AI Markdown`, then use ↑/↓ to choose the CSV; the newest timestamped candidate CSV is highlighted by default. The CSV selector uses CRLF while in raw terminal mode, only renders a page-sized window of choices, and reads escape sequences from raw bytes so ↑/↓ move the selection instead of producing `status=cancelled`.
+- Generated Markdown goes to `output/edge_scout/mdfile/` by default; filenames are `<csv_stem>_web_ai_prompt_<YYYYMMDD_HHMMSS>.md`, with `_01`, `_02`, etc. on same-second conflicts.
+- Default Markdown is a compact Web AI input package under 4000 bytes intended for copy/paste into webpage ChatGPT/Gemini/Grok. It keeps only stock codes and asks the Web AI to use internet research to judge buy/hold/sell-or-avoid tendency, reference target price, reference stop-loss price, position suggestion, positives, risks, and priority grouping.
+- The exporter includes all selected CSV rows unless an internal/manual `--top` limit is explicitly supplied; the 2-row smoke output was caused by test use of `--top 2`, not by the exporter dropping stocks.
+- No scanner rules, AI review prompt/config, SMC selection, Web UI, watchlist, broker, order, leverage, or live-execution behavior changed.
+- The generated prompt is a user-facing webpage-AI trading-reference request, not an internal NCN/MKF explanation. It intentionally asks for buy/hold/sell-or-avoid tendency, reference target price, reference stop-loss price, and position suggestion because those are the user's desired Web AI reference outputs.
+
+### Validation
+- WSL priority attempted with `./scripts/remote_test_env.sh check`; TCP to `10.20.98.161:22` succeeded but SSH closed the session, so WSL was unavailable.
+- Doris priority attempted with `ssh -p 56731 ... cd $HOME/NCN && test -x .venv-doris/bin/python && .venv-doris/bin/python --version`; command exited non-zero with no usable Python output, so Doris was unavailable.
+- Local validation passed: `.venv/bin/python -m py_compile scripts/export_scan_csv_for_web_ai.py && .venv/bin/python -m pytest tests/test_export_scan_csv_for_web_ai.py tests/test_main_script.py -q && bash -n mkf.sh && bash -n scripts/edge_scout_scan.sh && git diff --check` -> `37 passed`.
+
+### Risks / Review Notes
+- Do not present command-line arguments as the user-facing way to use this feature; the intended path is the `./mkf.sh` arrow-key menu and then the CSV arrow-key selector.
+- Do not re-add NCN/MKF names, scan date, cross date, lag, local file paths, CSV hashes, per-row JSON, or prohibitions on buy/hold/sell/target/stop/position outputs to the default Web AI Markdown prompt.
+- The command only converts existing CSVs; it intentionally does not refresh data or generate a new scan. Use the existing MKF candidate-source menu item first if a fresh MKF candidate CSV is needed.
+- Web AI output remains external research input and must be source-checked by a human before changing scanner/watchlist decisions.
+- Do not wire this exporter into automatic production publication or AI review unless explicitly requested later.
+
+## Current Task: Backtest AI4Finance selector against main MKF target grid on WSL (2026-08-31)
+
+### Changed Files
+- `experiments/ai4finance/scripts/backtest_selector_target_grid.py`: added isolated AI4Finance sandbox selector target-grid backtest. It writes only requested output paths under `.runtime/ai4finance/` and does not import or modify production entrypoints/YAML.
+- Runtime outputs fetched locally under `.runtime/ai4finance/backtests/`: `main-mkf-target-grid-wsl-20260831.{json,csv,pid}`, `ai4finance-target-grid-wsl-20260831.{json,csv,pid}`, `ai4finance-main-universe-target-grid-wsl-20260831.{json,csv}`, `selector-comparison-report-20260831.md`, `selector-comparison-summary-20260831.csv`, and `selector-period-best-comparison-20260831.csv`.
+- Runtime logs fetched locally under `.runtime/ai4finance/logs/`: `main-mkf-target-grid-wsl-20260831.log`, `ai4finance-target-grid-wsl-20260831.log`, and `ai4finance-main-universe-target-grid-wsl-20260831.log`.
+- `HANDOFF.md`: added this continuation entry.
+
+### Behavior / Logic Changes
+- No production selector, production YAML, `main.sh`, `mkf.sh`, scan wrapper, watchlist, broker, order, leverage, or live-execution behavior changed.
+- User revised the requested grid to match main exactly: lag0-lag7, T+1..T+20, target 1%-20% step 1%, target-zero-return method, and main's period split (`full_period`, `selection_2021_2023`, `audit_2024_present`, yearly periods).
+- Backtest method: entry is the next stock-tradable open after the lag signal close; A-share buy-day high is excluded; target hit uses future T+1..T+N high; misses contribute 0% simplified return; no T+N close fallback, fees, slippage, stop loss, sizing, or fillability modeled.
+- AI4Finance sandbox script uses current `experiments/ai4finance/scripts/select_candidates.py`-compatible event logic: red/blue cross after prior momentum/inter/near <=20, lag cohorts, and sandbox `production_gate_mask`. `ai4finance_score` is recorded for diagnostics only and is not an inclusion threshold or outcome ranking key.
+- Because default AI4Finance config uses a wider universe (`sh.60`, `sh.68`, `sz.00`, `sz.30`) and lower liquidity threshold (`min_adv20_cny=50M`) than main, a control run was also executed with main-board prefixes and `min_adv20_cny=100M`.
+
+### Validation
+- Read `AGENTS.md`, newest `HANDOFF.md`, main target-grid code, MKF candidate selector code, AI4Finance selector/config, and target-grid documentation before implementing/running.
+- Local validation passed: `.venv/bin/python -m py_compile experiments/ai4finance/scripts/backtest_selector_target_grid.py`, `experiments/ai4finance/amkf.sh self-check`, `bash -n experiments/ai4finance/amkf.sh`, and `git diff --check`.
+- Protected production-file check passed with no diffs for `main.sh`, `mkf.sh`, `scripts/edge_scout_scan.sh`, `yaml/mkf_ai_review.yaml`, and `yaml/news_ai_review.yaml`.
+- WSL was used per priority: `adminwsl@10.20.98.161`, `$HOME/NCN`, 20 logical cores, about 18Gi available memory before launch. Runs used 16 workers with `OMP_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`, `MKL_NUM_THREADS=1`, `NUMEXPR_NUM_THREADS=1`; no swap pressure observed.
+- WSL main baseline: `scripts/evaluate_mkf_post_cross_lag_target_grid.py --start-date 2021-01-01 --workers 16`; output `.runtime/ai4finance/backtests/main-mkf-target-grid-wsl-20260831.{json,csv}`. Sample: 3196 codes, 56363 parent crosses, 155038 lag events, 153497 mature events, observed cross range 2021-01-04..2026-08-26. Full-period best cell: lag6, T+20, target 11%, n=18700, hit rate 36.3209%, mean target-zero return 3.9953%.
+- WSL AI4Finance common-universe control: same main-board prefixes and 100M ADV threshold; output `.runtime/ai4finance/backtests/ai4finance-main-universe-target-grid-wsl-20260831.{json,csv}`. It matched main exactly on lag events and best cells, confirming that under identical universe/gates the current sandbox event logic is effectively the same selector outcome.
+- WSL AI4Finance default config: output `.runtime/ai4finance/backtests/ai4finance-target-grid-wsl-20260831.{json,csv}`. Sample: 4747 codes, 85388 parent crosses, 350541 lag events, 347021 mature events, observed cross range 2021-01-04..2026-08-26. Full-period best cell: lag6, T+20, target 11%, n=42939, hit rate 39.0554%, mean target-zero return 4.2961%.
+- T+20 target 5% full-period hit rate by lag: main/common lag0..7 = 61.1871%, 61.4538%, 61.9910%, 61.6792%, 62.3307%, 62.4801%, 63.3102%, 63.1098%; AI4Finance default lag0..7 = 62.9091%, 62.7686%, 63.1432%, 63.4636%, 63.8583%, 64.1612%, 65.1436%, 65.2471%.
+- Local comparison report generated: `.runtime/ai4finance/backtests/selector-comparison-report-20260831.md`; summary CSVs generated for full best and period best comparisons.
+- User challenged the main baseline because they remembered `lag2 / T+20 / target 4%` near 74%. Rechecked current WSL output and archived 2026-08-26 main target-grid outputs: exact `lag2 / T+20 / target 4%` is ~67.85%-67.95%, while `lag2 / T+20 / target 3%` is ~74.56%-74.63%. The discrepancy is a target-percent memory/label mismatch, not evidence that the 2026-08-31 WSL main baseline was uniquely miscomputed.
+- Generated direct selector hit-rate comparison from existing WSL full-grid CSVs: `.runtime/ai4finance/backtests/selector-win-rate-cell-comparison-20260831.csv`, `.runtime/ai4finance/backtests/selector-win-rate-summary-20260831.csv`, and `.runtime/ai4finance/backtests/selector-win-rate-comparison-20260831.md`. Comparison key is identical `period + lag + horizon + target_pct`; AI4Finance common-universe remains identical to main, while AI4Finance default beats main in full-period 3181/3200 cells with mean hit-rate lift +1.4022pp and weighted lift +1.3991pp. Full-period `lag2 / T+20`: target 3% main 74.6317% vs AI default 75.2721%; target 4% main 67.9456% vs AI default 69.0491%; target 5% main 61.9910% vs AI default 63.1432%.
+- Generated final full-grid comparison artifacts requested by the user: `.runtime/ai4finance/backtests/selector-grid-cell-by-cell-comparison-20260831.csv`, `.runtime/ai4finance/backtests/selector-grid-period-summary-20260831.csv`, `.runtime/ai4finance/backtests/selector-grid-best-combinations-20260831.csv`, `.runtime/ai4finance/backtests/selector-grid-best-combination-comparison-20260831.csv`, and `.runtime/ai4finance/backtests/selector-grid-final-comparison-20260831.md`. Full-period highest-hit-rate combination is lag7/T+20/target1% for both main/common/default (AI default 88.5471% vs main 87.9731%). Full-period highest target-zero-return combination is lag6/T+20/target11% for both main/common/default (AI default 39.0554% hit rate and 4.2961% mean target-zero return vs main 36.3209% and 3.9953%). Practical sweet spot judgment: for pure expected target-zero-return use AI4Finance default lag6/T+20/target11%; for higher human-review hit-rate with still meaningful target, use AI4Finance default lag6/T+20 around target6%-8% (60.0480%, 55.2784%, 50.7091% hit rates respectively).
+- User clarified the needed comparison must force AI4Finance to fully use main's rules/口径 for comparability. Generated `.runtime/ai4finance/backtests/selector-main-rules-best-by-target-20260831.csv`. Under this strict main-rules/common-universe comparison, all 28800 cells (`period + lag + horizon + target_pct`) match exactly: diff_cells=0. Therefore AI4Finance has no independent win-rate advantage when constrained to main's universe/gates/method; previous AI default advantage was not a like-for-like selector-rule advantage.
+- User then requested removing STAR/ChiNext/BSE from AI4Finance and comparing which AI condition is more effective. Ran WSL full-grid variant with `include_prefixes: [sh.60, sz.00]` and `min_adv20_cny: 50M`, output `.runtime/ai4finance/backtests/ai4finance-no-growth-target-grid-wsl-20260831.{json,csv}`. Generated `.runtime/ai4finance/backtests/selector-no-growth-cell-comparison-20260831.csv`, `selector-no-growth-period-summary-20260831.csv`, `selector-no-growth-best-combinations-20260831.csv`, and `selector-no-growth-comparison-20260831.md`. Full-period no-growth vs main: no-growth wins 15/3200 cells, main wins 3185/3200, mean hit-rate diff -0.6243pp. AI default vs no-growth: default wins 3200/3200, mean diff +2.0265pp. Full-period highest target-zero-return: no-growth lag6/T+20/11% hit 35.5862%, mean 3.9145%; main 36.3209%/3.9953%; AI default 39.0554%/4.2961%. Conclusion: removing STAR/ChiNext/BSE eliminates the prior AI default edge and makes the 50M main-board-only variant weaker than main.
+- User requested prompt A/B to assess whether AI4Finance prompt is more effective. Ran full baseline prompt replay on the same `.runtime/ai4finance/evidence-packs/evidence-20260830-231846/evidence.json` 23-candidate pack: output `.runtime/ai4finance/replay-runs/baseline-20260831-142907/reviews.json`, 23/23 schema-valid, 0 request errors, 0 forbidden-term rows. Compared with existing AI4Finance calibrated full replay `.runtime/ai4finance/replay-runs/ai4finance-20260831-080112/reviews.json`; generated `.runtime/ai4finance/comparisons/prompt-ab-comparison-20260831.{csv,json,md}`. Results: both prompts structurally stable; baseline states `standard_research=22`, `risk_attention=1`, avg confidence 0.7691; AI4Finance states `standard_research=19`, `risk_attention=4`, avg confidence 0.7013. AI4Finance changed 3 rows from standard to risk_attention (`sz.002208`, `sh.600633`, `sh.603416`) and made 0 rows more positive. Conclusion: AI4Finance prompt is more conservative/risk-calibrated on this evidence, not proven predictively superior without future outcome labels.
+- User clarified they need stock-level AI prompt analysis differences for manual review. Generated `.runtime/ai4finance/comparisons/prompt-ab-stock-detail-20260831.csv` and `.runtime/ai4finance/comparisons/prompt-ab-stock-detail-20260831.md`, containing each code's candidate facts, baseline vs AI4Finance state/confidence/risk counts, summaries, technical observations, and risk flags. Key state downgrades by AI4Finance prompt: `sz.002208`, `sh.600633`, `sh.603416` from `standard_research` to `risk_attention`; `sh.688798` remained `risk_attention` in both prompts.
+
+### Risks / Review Notes
+- Do not claim AI4Finance's core selector formula beats main under identical universe/gates; the common-universe control matched main exactly. The observed default AI4Finance lift appears driven by broader A-share coverage and lower liquidity threshold, not a distinct timing formula.
+- Do not promote the wider-universe/lower-liquidity result to production without separate risk review. It introduces ChiNext/STAR/smaller-liquidity exposure and likely different volatility, limit, and execution risk characteristics.
+- This remains target-zero-return descriptive research only, not real P&L, execution evidence, investment advice, or production rule authorization.
+- Next exact action if continuing: compare AI4Finance default vs main by board/liquidity buckets and stability gates before deciding whether wider A-share coverage is actually better for NCN's human-review A-share selector.
+
+## Current Task: Complete AI4Finance sandbox vs main MKF result comparison (2026-08-31)
+
+### Changed Files
+- `HANDOFF.md`: added this final continuation entry for the completed AI4Finance sandbox vs main MKF comparison.
+- `experiments/ai4finance/amkf.sh`: sandbox entrypoint already contains self-contained `select`, `build-evidence`, `replay-experiment`, and `compare-main` commands guarded against protected production-file diffs.
+- `experiments/ai4finance/scripts/select_candidates.py`: self-contained AI4Finance MKF selector using lag0-lag5 red/blue cross logic plus quality overlay; it does not import main package modules.
+- `experiments/ai4finance/scripts/build_evidence.py`: self-contained evidence builder reading sandbox selection rows and `PFrontStockData/`.
+- `experiments/ai4finance/scripts/replay_ai.py`: self-contained ts AI replay runner using sandbox-local provider YAML and `Key/ts.key`; failed requests are recorded per row instead of aborting the run, and `--retry-review --only-failed` can now merge prior successful rows while retrying only failed/unparsed rows.
+- `experiments/ai4finance/amkf.sh`: exposed retry/resume usage for `replay-experiment` while keeping the same protected-file guard.
+- `experiments/ai4finance/prompts/ai4finance_committee.txt`: calibrated sandbox-only review-state rules so candidates with multiple material risks are more likely to become `risk_attention` instead of defaulting to `standard_research`.
+- `experiments/ai4finance/scripts/compare_with_main.py`: result-level comparator that reads the latest main MKF selection/review outputs read-only and writes comparison reports under `.runtime/ai4finance/comparisons/`.
+- Runtime outputs generated: `.runtime/ai4finance/selections/ai4finance-select-20260830_231807/`, `.runtime/ai4finance/evidence-packs/evidence-20260830-231846/evidence.json`, original replay `.runtime/ai4finance/replay-runs/ai4finance-20260830-231921/reviews.json`, retry-merged replay `.runtime/ai4finance/replay-runs/ai4finance-20260831-075403/reviews.json`, risk-calibrated full replay `.runtime/ai4finance/replay-runs/ai4finance-20260831-080112/reviews.json`, original comparison `.runtime/ai4finance/comparisons/main-result-comparison-20260831-015052.{json,md}`, retry comparison `.runtime/ai4finance/comparisons/main-result-comparison-20260831-075835.{json,md}`, final risk-calibrated comparison `.runtime/ai4finance/comparisons/main-result-comparison-20260831-081938.{json,md}`, and detailed decision table `.runtime/ai4finance/comparisons/main-result-comparison-20260831-081938-tables.md`.
+
+### Behavior / Logic Changes
+- The AI4Finance sandbox remains isolated: implementation and corrections are under `experiments/ai4finance/`; runtime outputs are under `.runtime/ai4finance/`.
+- The sandbox run reads only `PFrontStockData/` and `Key/ts.key` as operational inputs. Main branch files/results may be read for reference/comparison only and were not modified.
+- The selector follows the user-confirmed current validation scope: MKF lag0-lag5 is implemented; T+1..T+20 mature outcome validation was not run because the user said lag0-lag5 is sufficient for this step.
+- The sandbox selector produced a materially different 23-stock list from main MKF while using the same latest signal date context.
+- No live broker login, live order submission, leverage, custody/settlement behavior, unattended real-money execution, BUY/HOLD/AVOID production prompt behavior, target price, stop-loss/take-profit, or position sizing was added.
+
+### Validation
+- Background full replay task `bmm0z40a3` completed with exit code 0.
+- AI4Finance sandbox selection output: `.runtime/ai4finance/selections/ai4finance-select-20260830_231807/candidates.json`; summary shows `candidate_count=23`, `evaluated_code_count=7369`, `signal_date=2026-08-28`, `selection_rule=ai4finance_local_mkf_red_blue_cross20_with_quality_overlay`, and `review_order=ai4finance_score_desc_amount_desc_code_asc`.
+- Evidence pack output: `.runtime/ai4finance/evidence-packs/evidence-20260830-231846/evidence.json`.
+- Original AI4Finance sandbox AI replay output: `.runtime/ai4finance/replay-runs/ai4finance-20260830-231921/reviews.json`; 23 rows, 19 schema-valid rows, 4 request timeouts/unparsed rows, 0 forbidden-term rows.
+- Added retry/resume support, then ran `experiments/ai4finance/amkf.sh replay-experiment .runtime/ai4finance/evidence-packs/evidence-20260830-231846/evidence.json --retry-review .runtime/ai4finance/replay-runs/ai4finance-20260830-231921/reviews.json --only-failed --sleep 1`.
+- Retry-merged AI4Finance sandbox replay output: `.runtime/ai4finance/replay-runs/ai4finance-20260831-075403/reviews.json`; 23 rows, 23 schema-valid rows, 0 request errors, 0 forbidden-term rows, 4 retried rows, 19 reused rows.
+- Final main comparison output: `.runtime/ai4finance/comparisons/main-result-comparison-20260831-075835.json` and `.md`.
+- Selection comparison stayed unchanged: sandbox count 23, main count 23, overlap 7/23, Top10 overlap 3/10.
+- Final AI review comparison: sandbox state counts `priority_research=3`, `standard_research=20`, average confidence `0.6735`; main state counts `standard_research=18`, `risk_attention=5`, average confidence `0.707`.
+- Main MKF review baseline was fully valid: 23 rows, 23 schema-valid rows, 0 request errors, 0 forbidden-term rows.
+- Boundary checks completed locally: `experiments/ai4finance/amkf.sh self-check` ok, `.venv/bin/python -m py_compile experiments/ai4finance/scripts/replay_ai.py experiments/ai4finance/scripts/compare_with_main.py` ok, `bash -n experiments/ai4finance/amkf.sh` ok, `git diff --check` ok, and protected production files had no diffs for `main.sh`, `mkf.sh`, `scripts/edge_scout_scan.sh`, `yaml/mkf_ai_review.yaml`, and `yaml/news_ai_review.yaml`.
+- Validation environment: local `.venv` and local `PFrontStockData/` were used for this sandbox replay/comparison; no WSL/Doris backtest was run because this was not a data-heavy target-timeout backtest.
+- After sandbox prompt risk calibration, full 23-row replay completed in background task `bodvqs8lp`: `experiments/ai4finance/amkf.sh replay-experiment .runtime/ai4finance/evidence-packs/evidence-20260830-231846/evidence.json --sleep 1`; output `.runtime/ai4finance/replay-runs/ai4finance-20260831-080112/reviews.json` has 23 rows, 23 schema-valid rows, 0 request errors, and 0 forbidden-term rows.
+- Final risk-calibrated comparison output: `.runtime/ai4finance/comparisons/main-result-comparison-20260831-081938.json` and `.md`.
+- Final risk-calibrated AI review comparison: sandbox state counts `standard_research=19`, `risk_attention=4`, average confidence `0.7013`; main state counts `standard_research=18`, `risk_attention=5`, average confidence `0.707`.
+
+### Risks / Review Notes
+- Current evidence still does not prove AI4Finance is better than main MKF. It proves the isolated branch produces a meaningfully different candidate set, and replay stability is now fixed to 23/23 schema-valid after retry/resume and full calibrated replay.
+- The original four sandbox AI review request failures were `sh.601021`, `sh.600633`, `sz.002557`, and `sh.603416`; all four were successfully retried in the merged replay run.
+- Sandbox risk calibration is now closer to main at the aggregate state-count level: sandbox `risk_attention=4` vs main `risk_attention=5`, with both runs 23/23 schema-valid and 0 request errors. This is a prompt/output stability improvement, not proof of predictive superiority.
+- Next exact action, if continuing, is to inspect which sandbox rows became `risk_attention` vs main's `risk_attention` rows and decide whether the difference is acceptable before any production-promotion discussion; keep all changes under `experiments/ai4finance/`.
+- Do not modify `main.sh`, `mkf.sh`, `scripts/edge_scout_scan.sh`, production YAML, main-flow tests, or production outputs for AI4Finance fixes. Main files/results are read-only references for this experiment.
+- Do not run or report T+1..T+20 outcome validation for the 2026-08-28 signal set unless the user explicitly asks; current step was accepted as lag0-lag5 only.
+
+## Current Task: Enforce AI4Finance folder-only correction boundary (2026-08-30)
+
+### Changed Files
+- `experiments/ai4finance/scripts/build_evidence.py`: added a self-contained sandbox evidence-pack builder that reads only `PFrontStockData/` and writes `.runtime/ai4finance/evidence-packs/.../evidence.json`.
+- `experiments/ai4finance/scripts/replay_ai.py`: added a self-contained OpenAI-compatible replay caller for the sandbox ts AI provider and `Key/ts.key`; it records per-candidate request/schema failures instead of crashing the whole run.
+- `experiments/ai4finance/scripts/compare_reviews.py`: added a sandbox-local comparator for two replay `reviews.json` files; this is not a main-vs-branch MKF comparator.
+- `experiments/ai4finance/prompts/baseline_sandbox.txt` and `experiments/ai4finance/prompts/ai4finance_committee.txt`: added sandbox-local baseline and AI4Finance-style committee prompts.
+- `experiments/ai4finance/amkf.sh`: added `build-evidence`, `replay-baseline`, `replay-experiment`, and `compare-local` commands, still guarded against protected production-file diffs.
+- `.runtime/ai4finance/evidence-packs/evidence-20260830-224651/evidence.json`: generated a 3-candidate sandbox evidence pack during a pipeline smoke test.
+- `.runtime/ai4finance/replay-runs/baseline-20260830-224719/reviews.json`: generated a 2-candidate sandbox-local baseline replay during a smoke test.
+- `.runtime/ai4finance/replay-runs/ai4finance-20260830-225052/reviews.json`: generated a 2-candidate sandbox-local AI4Finance prompt replay during a smoke test.
+- `.runtime/ai4finance/comparisons/comparison-20260830-225225.{json,md}`: generated a 2-candidate sandbox-local comparison report; user clarified this is not the desired main MKF comparison.
+- `HANDOFF.md`: added this handoff entry.
+
+### Behavior / Logic Changes
+- No production entrypoint, production YAML, scanner wrapper, output latest pointer, broker, order, leverage, or live-execution behavior changed.
+- The sandbox chain is runnable without importing `src/ashare_edge_scout`, calling `main.sh`, calling `mkf.sh`, reading production YAML, or running main-flow pytest files.
+- The only project data/key inputs used by the sandbox comparison are `PFrontStockData/` and `Key/ts.key`; sandbox configs/prompts/scripts live under `experiments/ai4finance/`.
+- `build-evidence` currently selects candidates from recent adjusted parquet bars using sandbox-local simple metrics. This is a sandbox test input builder, not the production MKF selector.
+- `replay_ai.py` catches external ts AI response interruptions such as `http.client.IncompleteRead` and records the failure per candidate so a long replay can still produce an output file.
+
+### Validation
+- Ran `experiments/ai4finance/amkf.sh build-evidence --top 3 --scan-limit 60` -> wrote `.runtime/ai4finance/evidence-packs/evidence-20260830-224651/evidence.json`.
+- Ran `experiments/ai4finance/amkf.sh replay-baseline <evidence.json> --top 2` -> 2/2 schema valid, no request errors, no forbidden-term rows.
+- First `replay-experiment <evidence.json> --top 2` hit external ts response interruption: `http.client.IncompleteRead`; updated replay script to catch this class of failure.
+- Re-ran `experiments/ai4finance/amkf.sh replay-experiment <evidence.json> --top 2` -> 2/2 schema valid, no request errors, no forbidden-term rows.
+- Ran `experiments/ai4finance/amkf.sh compare-local <baseline reviews.json> <experiment reviews.json>` -> comparison shows both runs schema_valid_count=2, request_error_count=0, forbidden_term_rows=0, forbidden_key_rows=0; avg_confidence baseline 0.75 vs experiment 0.65.
+- Ran `experiments/ai4finance/amkf.sh self-check` -> `self_check: ok`.
+- Ran `bash -n experiments/ai4finance/amkf.sh`.
+- Ran `python -m py_compile` for the three sandbox scripts.
+- Ran `git diff --check`.
+- Confirmed protected production-file diff check produced no paths for `main.sh`, `mkf.sh`, `scripts/edge_scout_scan.sh`, `yaml/mkf_ai_review.yaml`, and `yaml/news_ai_review.yaml`.
+- Validation environment: local `.venv` as the Python execution environment; no remote backtest was run and no full 23-candidate replay was run yet.
+
+### Risks / Review Notes
+- The 2-candidate replay only proves the isolated comparison pipeline runs; it does not prove AI4Finance prompt effectiveness.
+- Because `build-evidence` is sandbox-local and not the MKF selector, its smoke-test comparison is not the user-requested branch-plan vs main MKF comparison.
+- User clarified the real first step is to implement the AI4Finance correction plan inside `experiments/ai4finance/` only. Do not run larger sandbox-local A/B as if it answered the main MKF comparison question.
+- Hard boundary from the user: all corrections must stay inside `experiments/ai4finance/`; do not modify, call, or reuse main-branch files except `PFrontStockData/` and `Key/ts.key`.
+
+## Current Task: Add isolated AMKF sandbox runner (2026-08-30)
+
+### Changed Files
+- `experiments/ai4finance/amkf.sh`: added an isolated AI4Finance MKF sandbox runner with `help`, `status`, `guard`, `init-yaml`, and `self-check` commands.
+- `experiments/ai4finance/yaml/ai_providers.yaml`: added sandbox-local ts AI provider config using `http://ts.dorisw.kdns.fr:18090/v1`, model `Qwen3.8-27B-oQ4e-mtp`, and project key path `../../../Key/ts.key`.
+- `experiments/ai4finance/yaml/mkf_ai_review_sandbox.yaml`: added sandbox-local review prompt/config. It is self-contained and does not reference production YAML.
+- `experiments/ai4finance/yaml/mkf_news_context_sandbox.yaml`: added sandbox-local empty news context.
+- `experiments/ai4finance/configs/ai4finance_mkf_experiment.yaml`: updated boundaries so the only allowed external project inputs are `PFrontStockData/` and `Key/ts.key`.
+- `docs/research/ai4finance-production-integration-plan.md`, `experiments/ai4finance/README.md`, and `experiments/ai4finance/prompts/README.md`: updated sandbox documentation to remove main-flow reuse assumptions.
+- `HANDOFF.md`: added this handoff entry.
+
+### Behavior / Logic Changes
+- No production entrypoint or MKF runtime behavior changed.
+- `main.sh`, `mkf.sh`, `scripts/edge_scout_scan.sh`, `yaml/mkf_ai_review.yaml`, and `yaml/news_ai_review.yaml` were intentionally not modified.
+- Per user correction, the AI4Finance test branch must not reuse main-branch project files except stock data and `Key/ts.key`; the runner no longer includes commands that run `main.sh`, `mkf.sh`, or main-flow pytest files.
+- `amkf.sh guard` refuses to continue if protected production entry/config files have working-tree changes.
+- `amkf.sh self-check` verifies sandbox-local config files exist, `PFrontStockData/` and `Key/ts.key` exist, and sandbox config/YAML do not reference production YAML, normal entrypoints, or main tests.
+- Runtime outputs remain directed to `.runtime/ai4finance/`; no production latest pointer is written.
+
+### Validation
+- Ran `experiments/ai4finance/amkf.sh status` -> protected files clean.
+- Ran `experiments/ai4finance/amkf.sh self-check` -> `self_check: ok`.
+- Ran `bash -n experiments/ai4finance/amkf.sh`.
+- Ran `git diff --check`.
+- Confirmed `git diff --name-only -- main.sh mkf.sh scripts/edge_scout_scan.sh yaml/mkf_ai_review.yaml yaml/news_ai_review.yaml` produced no paths.
+- Confirmed `experiments/ai4finance/configs` and `experiments/ai4finance/yaml` contain no references to production YAML, normal entrypoints, or main-flow tests. Allowed external references are `PFrontStockData/` and `Key/ts.key` only.
+- Validation environment: local Mac `.venv` for shell/YAML/sandbox checks only; no backtest or AI replay was run.
+
+### Risks / Review Notes
+- This is sandbox scaffolding only; it does not yet implement evidence-pack building or AI replay.
+- Do not add commands that call `main.sh`, `mkf.sh`, production YAML, `scripts/edge_scout_scan.sh`, or main-flow tests unless the user explicitly relaxes the isolation rule.
+- If future sandbox code needs scanner/review logic, copy or implement experiment-local wrappers under `experiments/ai4finance/` instead of importing main-flow entrypoints/configs; continue allowing only `PFrontStockData/` and `Key/ts.key` as external project inputs.
+- No live broker login, live order submission, leverage, unattended real-money execution, target price, position sizing, stop-loss/take-profit, return promise, or BUY/HOLD/AVOID production prompt behavior was added.
+
+## Current Task: Compare AI4Finance sandbox branch against main (2026-08-30)
+
+### Changed Files
+- `.runtime/ai4finance/comparisons/main-vs-ai4finance-20260830-220201.md`: runtime comparison report for focused regression tests on AI4Finance branch vs `main`.
+- `.runtime/ai4finance/comparisons/main-vs-ai4finance-help-20260830-220355.md`: runtime comparison report for `main.sh`/`mkf.sh` help output.
+- `.runtime/ai4finance/logs/ai4finance-branch-tests-20260830-220201.log` and `.runtime/ai4finance/logs/main-tests-20260830-220201.log`: runtime test logs.
+- `HANDOFF.md`: added this comparison handoff entry.
+
+### Behavior / Logic Changes
+- No production entrypoint or MKF runtime behavior changed.
+- AI4Finance branch HEAD and `main` HEAD are both `37beb16 Checkpoint MKF AI review production prompt work`.
+- Current AI4Finance branch differences from `main` are only uncommitted sandbox scaffolding and `HANDOFF.md`; no diffs in `main.sh`, `mkf.sh`, `scripts/edge_scout_scan.sh`, `yaml/mkf_ai_review.yaml`, or `yaml/news_ai_review.yaml`.
+- Sandbox files remain isolated from normal `main.sh` / `mkf.sh` command paths.
+
+### Validation
+- Ran on AI4Finance branch: `.venv/bin/python -m pytest tests/test_main_script.py tests/test_mkf_ai_review.py -q` -> `47 passed in 44.80s`.
+- Temporarily stashed sandbox WIP, switched to `main`, and ran the same command -> `47 passed in 44.73s`.
+- Restored AI4Finance branch WIP after main comparison.
+- Compared `./main.sh help` output between `main` and AI4Finance branch: identical.
+- Compared `./mkf.sh help` output between `main` and AI4Finance branch: identical.
+
+### Risks / Review Notes
+- The runtime comparison reports are under `.runtime/ai4finance/` and are not intended for commit unless the user explicitly wants persisted evidence.
+- Continue keeping AI4Finance sandbox work outside `main.sh`, `mkf.sh`, formal YAML, and production output paths until a separate promotion decision.
+
+## Current Task: Create isolated AI4Finance integration sandbox skeleton (2026-08-30)
+
+### Changed Files
+- `docs/research/ai4finance-production-integration-plan.md`: added the sandbox plan, boundaries, reference value, evaluation rubric, and promotion gate.
+- `experiments/ai4finance/README.md`: added sandbox purpose, non-goals, runtime-output rules, and promotion rule.
+- `experiments/ai4finance/configs/ai4finance_mkf_experiment.yaml`: added sandbox-only config documenting inputs, runtime output roots, boundaries, and target-timeout evaluation method.
+- `experiments/ai4finance/prompts/README.md`: added prompt-sandbox rules and forbidden production-promotion content.
+- `experiments/ai4finance/reports/README.md`: added report-output guidance.
+- `HANDOFF.md`: added this handoff entry.
+
+### Behavior / Logic Changes
+- No production entrypoint or MKF runtime behavior changed.
+- `main.sh`, `mkf.sh`, `scripts/edge_scout_scan.sh`, `yaml/mkf_ai_review.yaml`, and `yaml/news_ai_review.yaml` were intentionally not modified.
+- The new sandbox is discussion/experiment scaffolding only. It is not called by the normal MKF flow and does not write production outputs.
+- The sandbox explicitly forbids live broker login, live order submission, leverage, unattended real-money execution, BUY/HOLD/AVOID production labels, target prices, position sizing, stop-loss/take-profit instructions, or return promises.
+- Recommended next exact action, if continuing implementation, is to add read-only sandbox scripts under `experiments/ai4finance/` that write only to `.runtime/ai4finance/`: evidence-pack builder, replay runner, and output evaluator.
+
+### Validation
+- Confirmed current branch before changes: `ai4finance-production-integration`.
+- Confirmed no production entrypoint diffs after skeleton creation: `git diff --name-only -- main.sh mkf.sh scripts/edge_scout_scan.sh yaml/mkf_ai_review.yaml yaml/news_ai_review.yaml` produced no paths.
+- Ran focused regression tests: `.venv/bin/python -m pytest tests/test_main_script.py tests/test_mkf_ai_review.py -q` -> `47 passed in 46.44s`.
+- Ran whitespace check after handoff update: `git diff --check`.
+
+### Risks / Review Notes
+- Keep sandbox outputs in `.runtime/ai4finance/`; do not write experimental outputs to `output/edge_scout/latest.json` or production latest pointers.
+- Do not wire sandbox commands into `main.sh` or `mkf.sh` unless the user explicitly requests a promotion step after validation.
+- Any future production promotion must be a separate change with regression tests and explicit boundary review.
+
 ## Current Task: Save main checkpoint before AI4Finance production-integration branch (2026-08-30)
 
 ### Changed Files
