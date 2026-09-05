@@ -186,7 +186,7 @@ def test_ai_json_parser_rejects_invalid_contract() -> None:
         _parse_ai_json('{"assessment":"neutral","confidence":1.2}')
 
 
-def test_repository_news_ai_config_defaults_to_doris_qwen() -> None:
+def test_repository_news_ai_config_defaults_to_local_finance() -> None:
     root = Path(__file__).parents[1]
     config = load_review_config(root / "yaml" / "news_ai_review.yaml")
     ai = config["ai"]
@@ -194,8 +194,9 @@ def test_repository_news_ai_config_defaults_to_doris_qwen() -> None:
 
     assert ai["provider"] == "local_finance"
     assert provider["base_url"] == "http://ts.dorisw.kdns.fr:18090/v1"
-    assert provider["model"] == "Qwen3.8-27B-oQ4e-mtp"
+    assert provider["model"] == "Ornith-1.0-35B-4bit"
     assert provider["api_key_env"] == "EDGE_SCOUT_LOCAL_AI_API_KEY"
+    assert provider["timeout_seconds"] == 120
     assert Path(provider["key_file"]) == root / "Key" / "ts.key"
     assert config["prompt"]["source"] == "business_yaml_prompt.system"
     assert config["prompt"]["system"]

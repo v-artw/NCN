@@ -39,17 +39,25 @@ from .research_nextday_validation import candlestick_masks
 SCHEMA_VERSION = "ncn_mkf_ai_review_v3"
 DEFAULT_MAX_CANDIDATES = 20
 VALID_REVIEW_STATES = {"priority_research", "standard_research", "risk_attention", "insufficient_evidence", "ai_unavailable"}
-FORBIDDEN_ACTION_LABELS = {"BUY", "HOLD", "AVOID", "SELL", "WAIT", "PRE-BUY", "PREBUY"}
+FORBIDDEN_EXECUTION_LABELS = {
+    "AUTO_ORDER",
+    "AUTO_TRADE",
+    "BROKER_ORDER",
+    "REAL_MONEY_TRADE",
+    "LIVE_TRADE",
+}
 FORBIDDEN_RESPONSE_KEYS = {
-    "max_position_pct",
-    "position_size",
-    "order",
-    "broker",
-    "take_profit",
-    "stop_loss",
-    "pnl",
-    "return_forecast",
-    "target_price",
+    "auto_order",
+    "auto_trade",
+    "broker_order",
+    "broker_session",
+    "execution_id",
+    "filled_order",
+    "guaranteed_return",
+    "guaranteed_win_rate",
+    "leverage",
+    "live_order",
+    "real_money_pnl",
 }
 COMMITTEE_ROLES = (
     "technical_analyst",
@@ -187,7 +195,7 @@ class OpenAICompatibleClient(SharedOpenAICompatibleClient):
             "cnstock_news_context": news_context,
             "committee_roles": list(COMMITTEE_ROLES),
             "allowed_review_states": sorted(VALID_REVIEW_STATES - {"ai_unavailable"}),
-            "forbidden_actions": sorted(FORBIDDEN_ACTION_LABELS | FORBIDDEN_RESPONSE_KEYS),
+            "forbidden_execution_claims": sorted(FORBIDDEN_EXECUTION_LABELS | FORBIDDEN_RESPONSE_KEYS),
             "boundary": {
                 "scanner_selection_is_immutable": True,
                 "post_selection_read_only_research_layer": True,
@@ -258,22 +266,45 @@ def _string_tuple(value: Any, *, maximum: int = 8) -> tuple[str, ...]:
     return tuple(str(item).strip()[:300] for item in value[:maximum] if str(item).strip())
 
 
-def _contains_forbidden_action_text(text: str) -> bool:
-    return bool(re.search(r"\b(BUY|HOLD|AVOID|SELL|WAIT|PRE\s*-?\s*BUY|PREBUY)\b", text, flags=re.IGNORECASE))
+FORBIDDEN_EXECUTION_PATTERN = re.compile(
+    r"\b(AUTO[_ -]?(?:ORDER|TRADE|REBALANCE)|BROKER[_ -]?(?:ORDER|SESSION|CONNECTIVITY)|"
+    r"REAL[_ -]?MONEY[_ -]?(?:TRADE|ORDER|PNL)|LIVE[_ -]?(?:TRADE|ORDER)|FILLED[_ -]?ORDER|"
+    r"GUARANTEED[_ -]?(?:RETURN|WIN[_ -]?RATE)|LEVERAGE)\b"
+    r"|自动下单|自动交易|自动调仓|券商下单|连接券商|已连接券商|真实下单|实盘下单|真实成交"
+    r"|保证收益|保证胜率|杠杆|真实P&L|实盘P&L|真实盈亏|实盘盈亏",
+    re.IGNORECASE,
+)
+
+NEGATED_EXECUTION_PREFIXES = (
+    "非", "不是", "不作为", "不会", "不得", "不能", "不可", "禁止", "无", "没有", "未", "并非",
+    "not ", "non-", "without ", "no ", "never ",
+)
+
+
+def _is_negated_execution_context(text: str, start: int) -> bool:
+    prefix = text[max(0, start - 8):start].lower()
+    return any(marker in prefix for marker in NEGATED_EXECUTION_PREFIXES)
+
+
+def _contains_forbidden_execution_text(text: str) -> bool:
+    for match in FORBIDDEN_EXECUTION_PATTERN.finditer(text):
+        if not _is_negated_execution_context(text, match.start()):
+            return True
+    return False
 
 
 def _scan_forbidden_payload(value: Any) -> None:
     if isinstance(value, Mapping):
         for key, child in value.items():
             key_text = str(key)
-            if key_text in FORBIDDEN_RESPONSE_KEYS or _contains_forbidden_action_text(key_text):
-                raise ValueError("AI response contains forbidden action label")
+            if key_text in FORBIDDEN_RESPONSE_KEYS or _contains_forbidden_execution_text(key_text):
+                raise ValueError("AI response contains forbidden execution claim")
             _scan_forbidden_payload(child)
     elif isinstance(value, list):
         for child in value:
             _scan_forbidden_payload(child)
-    elif isinstance(value, str) and _contains_forbidden_action_text(value):
-        raise ValueError("AI response contains forbidden action label")
+    elif isinstance(value, str) and _contains_forbidden_execution_text(value):
+        raise ValueError("AI response contains forbidden execution claim")
 
 
 def _normalise_committee(value: Any) -> dict[str, Any] | None:
@@ -291,8 +322,8 @@ def _normalise_committee(value: Any) -> dict[str, Any] | None:
 
 def parse_ai_response(content: Any) -> dict[str, Any]:
     text = str(content or "").strip()
-    if _contains_forbidden_action_text(text):
-        raise ValueError("AI response contains forbidden action label")
+    if _contains_forbidden_execution_text(text):
+        raise ValueError("AI response contains forbidden execution claim")
     if text.startswith("```"):
         text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
         text = re.sub(r"\s*```$", "", text)

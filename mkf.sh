@@ -22,6 +22,7 @@ run_menu() {
         "MKF候选源实验（自动更新数据）"
         "MKF候选源实验（仅本地数据）"
         "MKF候选源AI研究分层（最新MKF候选）"
+        "MKF候选CSV导出Web AI Markdown"
         "退出"
     )
     local actions=(
@@ -30,6 +31,7 @@ run_menu() {
         "select-mkf"
         "select-mkf-local"
         "review-mkf-ai"
+        "export-mkf-web-ai"
         "exit"
     )
     local selected=0
@@ -91,6 +93,7 @@ execute_menu_choice() {
         select-mkf) "${SCAN_CONTROL}" select-mkf ;;
         select-mkf-local) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select-mkf ;;
         review-mkf-ai) "${SCAN_CONTROL}" review-mkf-ai ;;
+        export-mkf-web-ai) "${SCAN_CONTROL}" export-mkf-web-ai --select --max-bytes 4000 ;;
         exit) printf '已退出。\n' ;;
     esac
 }
@@ -120,6 +123,10 @@ case "${ACTION}" in
         shift
         exec "${SCAN_CONTROL}" review-mkf-ai "$@"
         ;;
+    export-mkf-web-ai)
+        shift
+        exec "${SCAN_CONTROL}" export-mkf-web-ai "$@"
+        ;;
     help|-h|--help)
         printf '%s\n' \
             'NCN MKF 研究入口' \
@@ -132,6 +139,9 @@ case "${ACTION}" in
             '  ./mkf.sh select-mkf [--as-of DATE]   运行独立 MKF 候选源实验，不影响 SMC' \
             '  ./mkf.sh select-mkf-local            仅用本地数据运行独立 MKF 候选源实验' \
             '  ./mkf.sh review-mkf-ai [--selection-run DIR] [--top N]  MKF 候选源 AI 只读研究分层' \
+            '' \
+            '交互菜单功能：' \
+            '  MKF候选CSV导出Web AI Markdown：从 ./mkf.sh 方向键菜单进入，默认高亮最新 MKF CSV，可用 ↑/↓ 选择历史 CSV，回车生成 4000 bytes 以内 Markdown。' \
             '' \
             '说明：mkf.sh 不依赖 main.sh；它保留 main.sh 原 MKF 命令名和扫描参数转发行为。'
         ;;

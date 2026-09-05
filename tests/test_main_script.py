@@ -50,6 +50,24 @@ def test_main_script_help_lists_control_commands() -> None:
     assert "方向键交互菜单" in completed.stdout
 
 
+def test_mkf_script_help_lists_web_ai_export_command() -> None:
+    completed = subprocess.run(
+        ["bash", str(ROOT / "mkf.sh"), "help"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+
+    assert completed.returncode == 0
+    assert "交互菜单功能" in completed.stdout
+    assert "MKF候选CSV导出Web AI Markdown" in completed.stdout
+    assert "默认高亮最新 MKF CSV" in completed.stdout
+    assert "4000 bytes 以内 Markdown" in completed.stdout
+    assert "./mkf.sh export-mkf-web-ai" not in completed.stdout
+
+
+
 def test_main_script_delegates_scan_arguments(tmp_path: Path) -> None:
     fake = tmp_path / "fake_scan.sh"
     fake.write_text(
@@ -203,6 +221,14 @@ def test_main_script_delegates_scan_arguments(tmp_path: Path) -> None:
         text=True,
         timeout=10,
     )
+    export_mkf_web_ai = subprocess.run(
+        ["bash", str(ROOT / "mkf.sh"), "export-mkf-web-ai", "--latest", "--top", "3"],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
 
     assert market.returncode == 0
     assert market.stdout.strip() == "unset|market --as-of 2026-08-04"
@@ -240,6 +266,8 @@ def test_main_script_delegates_scan_arguments(tmp_path: Path) -> None:
     assert local_mkf.stdout.strip() == "0|select-mkf"
     assert review_mkf_ai.returncode == 0
     assert review_mkf_ai.stdout.strip() == "unset|review-mkf-ai --selection-run /tmp/mkf --top 4"
+    assert export_mkf_web_ai.returncode == 0
+    assert export_mkf_web_ai.stdout.strip() == "unset|export-mkf-web-ai --latest --top 3"
 
 
 def test_edge_scout_mkf_commands_invoke_bound_clis(tmp_path: Path) -> None:
@@ -250,6 +278,7 @@ def test_edge_scout_mkf_commands_invoke_bound_clis(tmp_path: Path) -> None:
         "case \"$script\" in\n"
         "  */select_mkf_candidates.py) printf 'mkf_args=%s\\n' \"$*\"; echo 'signal_date=2026-08-21'; echo 'candidate_count=1'; echo 'run_directory=/tmp/mkf-select'; echo 'timestamped_csv=/tmp/mkf-select/mkf.csv' ;;\n"
         "  */review_mkf_ai.py) printf 'mkf_ai_args=%s\\n' \"$*\"; echo 'priority_research_count=1'; echo 'risk_attention_count=0'; echo 'run_directory=/tmp/mkf-ai'; echo 'timestamped_csv=/tmp/mkf-ai/mkf-ai.csv'; echo 'news_contexts=/tmp/mkf-ai/news_contexts.json'; echo 'news_cache_dir=/tmp/Message'; echo 'news_cache_status_counts=refreshed:1' ;;\n"
+        "  */export_scan_csv_for_web_ai.py) printf 'web_ai_export_args=%s\\n' \"$*\"; echo 'web_ai_prompt_md=/tmp/mkf.md'; echo 'candidate_rows=1'; echo 'research_only=true' ;;\n"
         "  *) echo unknown:$script >&2; exit 7 ;;\n"
         "esac\n",
         encoding="utf-8",
@@ -303,6 +332,22 @@ def test_edge_scout_mkf_commands_invoke_bound_clis(tmp_path: Path) -> None:
         text=True,
         timeout=10,
     )
+    exported = subprocess.run(
+        ["bash", str(ROOT / "scripts/edge_scout_scan.sh"), "export-mkf-web-ai", "--latest", "--top", "3"],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    exported_select = subprocess.run(
+        ["bash", str(ROOT / "scripts/edge_scout_scan.sh"), "export-mkf-web-ai", "--select"],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
 
     assert selected.returncode == 0, selected.stdout + selected.stderr
     assert "--output-root " + str(tmp_path / "output" / "mkf_candidate_selections") in selected.stdout
@@ -332,6 +377,17 @@ def test_edge_scout_mkf_commands_invoke_bound_clis(tmp_path: Path) -> None:
     assert "mkf_news_contexts=/tmp/mkf-ai/news_contexts.json" in small_reviewed.stdout
     assert "mkf_news_cache_dir=/tmp/Message" in small_reviewed.stdout
     assert "boundary=MKF候选源和AI分层均为独立只读研究实验" in small_reviewed.stdout
+    assert exported.returncode == 0, exported.stdout + exported.stderr
+    assert "--mkf-selection-root " + str(tmp_path / "output" / "mkf_candidate_selections") in exported.stdout
+    assert "--output-root " + str(tmp_path / "output" / "mdfile") in exported.stdout
+    assert "--latest" in exported.stdout
+    assert "--top 3" in exported.stdout
+    assert "boundary=MKF CSV Web AI Markdown 导出仅转换只读研究文件" in exported.stdout
+    assert exported_select.returncode == 0, exported_select.stdout + exported_select.stderr
+    assert "--mkf-selection-root " + str(tmp_path / "output" / "mkf_candidate_selections") in exported_select.stdout
+    assert "--output-root " + str(tmp_path / "output" / "mdfile") in exported_select.stdout
+    assert "--select" in exported_select.stdout
+    assert "--latest" not in exported_select.stdout
 
 
 def test_mkf_review_small_streams_ai_output_before_summary(tmp_path: Path) -> None:
@@ -1132,7 +1188,11 @@ def test_mkf_menu_options_route_to_scan_commands(tmp_path: Path) -> None:
         'expect "按回车返回 MKF 菜单"; send "\r"; expect "NCN MKF 研究"; '
         f'send "{down}"; '
         'expect -re {> MKF候选源AI研究分层}; send "\r"; '
-        'expect "unset|review-mkf-ai"; exit 0'
+        'expect "unset|review-mkf-ai"; '
+        'expect "按回车返回 MKF 菜单"; send "\r"; expect "NCN MKF 研究"; '
+        f'send "{down}"; '
+        'expect -re {> MKF候选CSV导出Web AI Markdown}; send "\r"; '
+        'expect "unset|export-mkf-web-ai --select --max-bytes 4000"; exit 0'
     )
     completed = subprocess.run(
         [expect, "-c", script],

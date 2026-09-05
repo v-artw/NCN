@@ -377,20 +377,36 @@ def test_mkf_ai_review_orders_ai_unavailable_after_risk_attention(tmp_path: Path
 @pytest.mark.parametrize(
     "payload",
     [
-        '{"review_state":"priority_research","confidence":0.8,"research_summary":"BUY"}',
-        '{"review_state":"priority_research","confidence":0.8,"research_summary":"SELL"}',
-        '{"review_state":"priority_research","confidence":0.8,"research_summary":"WAIT"}',
-        '{"review_state":"priority_research","confidence":0.8,"research_summary":"PRE-BUY"}',
-        '{"review_state":"priority_research","confidence":0.8,"max_position_pct":10}',
-        '{"review_state":"priority_research","confidence":0.8,"stop_loss":9.8}',
-        '{"review_state":"priority_research","confidence":0.8,"target_price":12.0}',
-        '{"review_state":"priority_research","confidence":0.8,"pnl":"positive"}',
+        '{"review_state":"priority_research","confidence":0.8,"research_summary":"系统将自动下单"}',
+        '{"review_state":"priority_research","confidence":0.8,"research_summary":"已连接券商并真实成交"}',
+        '{"review_state":"priority_research","confidence":0.8,"research_summary":"保证收益"}',
+        '{"review_state":"priority_research","confidence":0.8,"research_summary":"使用杠杆执行"}',
+        '{"review_state":"priority_research","confidence":0.8,"auto_order":true}',
+        '{"review_state":"priority_research","confidence":0.8,"broker_session":"connected"}',
+        '{"review_state":"priority_research","confidence":0.8,"guaranteed_return":"positive"}',
+        '{"review_state":"priority_research","confidence":0.8,"real_money_pnl":"positive"}',
     ],
 )
-
-def test_mkf_ai_review_rejects_action_labels(payload: str) -> None:
+def test_mkf_ai_review_rejects_execution_claims(payload: str) -> None:
     with pytest.raises(ValueError, match="forbidden"):
         parse_ai_response(payload)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"review_state":"priority_research","confidence":0.8,"research_summary":"BUY watch only for human review"}',
+        '{"review_state":"priority_research","confidence":0.8,"research_summary":"SELL risk should be reviewed manually"}',
+        '{"review_state":"priority_research","confidence":0.8,"research_summary":"WAIT for confirmation"}',
+        '{"review_state":"priority_research","confidence":0.8,"research_summary":"买入观察，等待确认，参考止损和目标区间"}',
+        '{"review_state":"priority_research","confidence":0.8,"stop_loss":9.8}',
+        '{"review_state":"priority_research","confidence":0.8,"target_price":12.0}',
+        '{"review_state":"priority_research","confidence":0.8,"pnl":"paper reference only"}',
+    ],
+)
+def test_mkf_ai_review_allows_human_research_advice(payload: str) -> None:
+    parsed = parse_ai_response(payload)
+    assert parsed["review_state"] == "priority_research"
 
 
 def test_mkf_ai_config_loads_unified_provider_yaml(tmp_path: Path) -> None:
@@ -423,8 +439,9 @@ def test_repository_mkf_ai_config_loads_yaml_prompt() -> None:
     assert "未来1-10个交易日" in prompt
     assert "来源日期、发布日期" in prompt
     assert "不得给出priority_research" in prompt
-    assert "不得输出任何交易动作、价位或仓位建议" in prompt
-    assert "目标价" in prompt
+    assert "允许你给出买入/卖出/持有/等待确认等研究判断" in prompt
+    assert "参考目标区间、参考止盈止损" in prompt
+    assert "禁止输出或暗示系统已经连接券商、会自动下单" in prompt
     assert loaded["prompt"]["sha256"] == hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
 

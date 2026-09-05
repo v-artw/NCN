@@ -1,5 +1,1193 @@
 # Reviewer Handoff
 
+## Completed Task: Full local test run and diff check (2026-09-05)
+
+### User Request
+- User asked: “跑完整测试并检查 diff”.
+- User clarified environment constraints: Doris cannot access AI and WSL is closed; do not use WSL/Doris for this AI validation path.
+
+### Validation
+- WSL check was attempted first per project priority before the clarification; it failed with SSH port reachable but connection closed during banner exchange.
+- Doris Python check showed reachable `.venv-doris/bin/python`, but user clarified Doris cannot access AI, so subsequent validation stayed local.
+- First local full pytest run failed due to outdated `tests/test_mkf_ai_review.py` assertions that still required banning BUY/SELL/WAIT/stop_loss/target_price/pnl and old prompt wording.
+- Updated `tests/test_mkf_ai_review.py` to match current project rule: allow human research advice and only reject execution/live-broker/guarantee/leverage/real-money claims.
+- Re-ran full local suite: `./.venv/bin/python -m pytest -q` -> 602 passed, 3 skipped in 67.08s.
+- Ran `git diff --check` -> passed with no whitespace/conflict-marker output.
+
+### Diff / Status Notes
+- Tracked modified files now include `CLAUDE.md`, `HANDOFF.md`, `mkf.sh`, `remote-server.md`, `scripts/edge_scout_scan.sh`, `src/ashare_edge_scout/mkf_ai_review.py`, `tests/test_ai_provider_config.py`, `tests/test_main_script.py`, `tests/test_mkf_ai_review.py`, `tests/test_news_ai_review.py`, `yaml/ai_providers.yaml`, and `yaml/mkf_ai_review.yaml`.
+- Untracked files include backup artifacts under `backups/`, AI4Finance experiment files, new eval/export/smoke scripts, new tests, `yaml/mkf_ai_review.pre-20260905-backup.yaml`, and `回测策略.md`.
+- Important: `backups/modified-since-thursday-20260905_230606/` appears to be from the failed first backup attempt and should not be committed unless intentionally preserved; the successful backup is `backups/modified-since-thursday-20260905_230640/` and `.tar.gz`.
+
+### Release Prep Scope
+- Full local suite re-run for release prep: `./.venv/bin/python -m pytest -q` -> 602 passed, 3 skipped in 65.69s.
+- Focused release suite: AI provider/news/MKF review/local-finance eval/LLM rotation/Web AI export/main-script tests -> 127 passed.
+- `py_compile` passed for release candidate Python scripts, and `git diff --check` passed.
+- Release candidate should include production/near-production AI provider/prompt/parser/test changes, MKF Web AI export entrypoint and tests, local-finance eval/smoke tools after boundary alignment, LLM rotation backtest provider-default fix, and the explicitly requested pre-change MKF prompt backup.
+- Do not include `backups/` in the GitHub release commit; it is a local backup artifact.
+- Do not include `experiments/ai4finance/` or `docs/research/ai4finance-production-integration-plan.md` in this release yet; grep found early sandbox prompt wording that still bans buy/sell/hold/target/stop terms, which conflicts with the current NCN no-live-trading-but-human-advice-allowed boundary and should be fixed in a separate AI4Finance sandbox cleanup.
+
+### Next Exact Action
+- Stage only the release candidate files, commit, push branch `ai4finance-production-integration`, then create a GitHub release/tag for this production-adjacent AI review/provider checkpoint.
+
+## Completed Task: Normal AI features follow unified YAML provider default (2026-09-05)
+
+### User Request
+- User asked: “把正常功能都改成跟随统一 YAML 默认”.
+
+### Changed Behavior
+- Normal production/near-production AI paths now follow the top-level `provider` selected in `yaml/ai_providers.yaml`.
+- MKF AI review and news AI review already used `yaml/ai_providers.yaml` through their business YAML `ai_config` fields.
+- Updated `scripts/evaluate_mkf_ai_score_rotation_backtest.py` so its LLM lane no longer requires `local_finance`; it now builds the LLM client from the central YAML default provider.
+- Preserved the old lane name `ts_local_finance_llm_no_news` for compatibility with existing CLI args/results, but the provider behind it now follows `yaml/ai_providers.yaml`.
+- Updated the stage-note text to say the LLM lane uses the central YAML default instead of saying TS/local_finance only.
+
+### Intentional Exceptions
+- Left `scripts/evaluate_local_finance_models_on_mkf_candidates.py` hardcoded to `provider_override="local_finance"` because it is a local-finance model-pool comparison script, not a normal production default path.
+- Left `scripts/smoke_local_finance_models.py` defaulting to `--provider local_finance` for the same reason.
+- `scripts/smoke_ai_provider.py` remains generic and can follow YAML default when `--provider` is omitted.
+
+### Tests / Validation
+- Added `tests/test_mkf_ai_score_rotation_backtest.py::test_llm_backtest_client_follows_yaml_default_provider` to prove the LLM rotation backtest can use a non-`local_finance` YAML default provider.
+- Ran `./.venv/bin/python -m pytest tests/test_ai_provider_config.py tests/test_news_ai_review.py tests/test_local_finance_mkf_model_eval.py tests/test_mkf_ai_score_rotation_backtest.py -q` -> 61 passed.
+- Ran `./.venv/bin/python -m py_compile scripts/evaluate_mkf_ai_score_rotation_backtest.py src/ashare_edge_scout/mkf_ai_review.py scripts/evaluate_local_finance_models_on_mkf_candidates.py` -> passed.
+- Grep for hardcoded `local_finance` defaults now only reports the two intentional local-finance-specific scripts.
+
+### Remaining Notes
+- Changing `yaml/ai_providers.yaml` top-level `provider` should now affect normal MKF/news/LLM rotation AI functionality.
+- If a local-finance-specific benchmarking script should also become provider-generic later, rename or split it first to avoid confusing model-pool tests with production defaults.
+
+## Review Task: AI default provider centralization status (2026-09-05)
+
+### User Request
+- User asked whether changing one YAML can adjust the default AI for all functions: “我需要修改以yaml文件所以功能的默认AI都需要调整。现在这个功能是否实现了”.
+
+### Current Status
+- Partially implemented, not fully global.
+- Implemented for main production AI review configs: `yaml/mkf_ai_review.yaml` and `yaml/news_ai_review.yaml` both point to `yaml/ai_providers.yaml`, and `load_ai_provider_config()` selects either the YAML top-level `provider` or an explicit `provider_override`.
+- Not fully implemented for all AI-related scripts: some scripts still pass `provider_override="local_finance"` or default CLI provider to `local_finance`, so changing only the top-level `provider` in `yaml/ai_providers.yaml` will not affect every tool.
+
+### Known Exceptions
+- `scripts/evaluate_local_finance_models_on_mkf_candidates.py` loads `yaml/ai_providers.yaml` but hardcodes `provider_override="local_finance"`; intended for local-finance model comparison, not global default behavior.
+- `scripts/smoke_local_finance_models.py` defaults `--provider local_finance`; also intentionally local-finance-specific.
+- `scripts/smoke_ai_provider.py` supports `--provider` override but otherwise can use the central YAML default.
+
+### Recommendation
+- If the desired product behavior is “edit `yaml/ai_providers.yaml` once and all normal AI features use that default,” keep production MKF/news review on central YAML and change generic scripts to omit hardcoded overrides by default.
+- Keep explicitly local-finance benchmarking tools local-finance-specific, or rename/label them clearly so they are not confused with production default AI behavior.
+
+## Completed Task: Unified AI provider config tests to local_finance default (2026-09-05)
+
+### User Request
+- User asked: “统一 provider 配置和测试”.
+
+### Decision
+- Kept production/default top-level provider as `local_finance` instead of silently switching to NVIDIA.
+- Current default provider resolves to `http://ts.dorisw.kdns.fr:18090/v1`, model `Ornith-1.0-35B-4bit`, env `EDGE_SCOUT_LOCAL_AI_API_KEY`, timeout `120`.
+- Kept newly added NVIDIA provider entries as available inventory, but they are not selected by default.
+
+### Changed Files
+- Updated `tests/test_ai_provider_config.py` so repository inventory and MKF/news shared-provider tests expect `local_finance` + `Ornith-1.0-35B-4bit`.
+- Updated `tests/test_news_ai_review.py` so the repository news AI config default expectation matches `local_finance`.
+- Did not change the top-level `provider` in `yaml/ai_providers.yaml` during this step.
+
+### Validation
+- `./.venv/bin/python -m pytest tests/test_ai_provider_config.py tests/test_news_ai_review.py tests/test_local_finance_mkf_model_eval.py -q` -> 53 passed.
+- Direct config read confirmed provider/model/env/timeout: `local_finance`, `http://ts.dorisw.kdns.fr:18090/v1`, `Ornith-1.0-35B-4bit`, `EDGE_SCOUT_LOCAL_AI_API_KEY`, `120.0`.
+
+### Remaining Notes
+- If future work switches production/default provider to `nvidia_deepseek_v4_pro`, that should be a separate explicit provider migration with key/env validation and updated tests.
+
+## Completed Task: MKF AI research-advice boundary optimization replay (2026-09-05)
+
+### User Request
+- User asked to continue AI testing/optimization and reminded: “你是不是又忘了，咱们的项目没有接入实盘”.
+- Applied the standing rule: NCN is not connected to live trading, so human research advice must remain allowed; only claims of automatic execution/live broker/guaranteed return/leverage/real P&L should be blocked.
+
+### Changed Files / Outputs
+- Updated `src/ashare_edge_scout/mkf_ai_review.py`:
+  - Replaced stale forbidden-action logic with execution-claim logic.
+  - Fixed broken stale calls to `_contains_forbidden_action_text` that caused `NameError`.
+  - Added negated-context handling so disclaimers like “非自动交易” are allowed instead of flagged.
+- Updated untracked eval script `scripts/evaluate_local_finance_models_on_mkf_candidates.py` similarly:
+  - `FORBIDDEN` now means execution/live-money/guarantee/leverage claim flags, not buy/sell/hold/wait advice.
+  - Added `forbidden_matches()` with negated-context handling.
+- Updated untracked test `tests/test_local_finance_mkf_model_eval.py`:
+  - Human advice such as “买入观察，等待确认，参考止损和目标区间” is allowed.
+  - “系统将自动下单” and escaped “保证收益” remain forbidden.
+  - “非自动交易或收益承诺” disclaimer is allowed.
+- Replay output: `output/回测结果/mkf-model-eval-ornith15-oq4e-research-advice-parserfix-20260905-231300/`.
+
+### Validation
+- `./.venv/bin/python -m pytest tests/test_local_finance_mkf_model_eval.py -q` -> 14 passed.
+- `./.venv/bin/python -m py_compile src/ashare_edge_scout/mkf_ai_review.py scripts/evaluate_local_finance_models_on_mkf_candidates.py` -> passed.
+- Replay completed 10/10 for `Ornith-1.5-35B-A3B-oQ4e-mtp` with fixed candidates and unified settings.
+- Audit passed for replay: 10/10 JSON valid, 10/10 parser success, 10/10 contract pass, 0 truncation, 0 forbidden-output flags, 0 committee notes mismatches, mean 22.197s, state counts standard_research 9 / insufficient_evidence 1.
+- Additional scan found no MA20/20日均线/20-day-cross terms, no unnegated execution/live-money/guarantee/leverage claims, and 2/10 outputs containing explicit human advice terms.
+
+### MKF Selector Safety Check
+- User asked whether MKF selection/scanning program had been modified.
+- Verified current diff and Thursday-since log for `scripts/select_mkf_candidates.py`, `src/ashare_edge_scout/pmkf_mkf/candidates.py`, and `yaml/edge_scout_v1.yaml`: no changes.
+- Only outer entry scripts `mkf.sh` and `scripts/edge_scout_scan.sh` are modified, adding a read-only `export-mkf-web-ai` command; selection conditions, candidate generation, `lag0-lag5` eligibility, and original MKF candidate sorting were not changed.
+
+### Remaining Risks / Next Exact Action
+- `yaml/ai_providers.yaml` still has unresolved provider direction: top-level provider remains `local_finance`, but some tests expect `nvidia_deepseek_v4_pro`; do not merge until this is reconciled.
+- `tests/test_ai_provider_config.py` and `tests/test_news_ai_review.py` still fail due to provider expectation mismatch, unrelated to the MKF parser fix.
+- If continuing optimization, review whether 2/10 explicit advice outputs are enough; if not, refine prompt to request a structured `human_review_plan` while keeping it clearly research-only and non-execution.
+
+## Completed Task: Backup files touched since Thursday (2026-09-05)
+
+### User Request
+- User asked: “对周四之后修改的文件做一个备份。”
+
+### Changed Files / Outputs
+- Created backup directory: `backups/modified-since-thursday-20260905_230640/`.
+- Created compressed archive: `backups/modified-since-thursday-20260905_230640.tar.gz`.
+- Manifest: `backups/modified-since-thursday-20260905_230640/MANIFEST.txt`.
+- File list copied count: 37 files.
+- Backup scope: union of files touched by commits since `2026-09-03 00:00` plus current modified/untracked working-tree files.
+- Excluded sensitive/broad runtime paths: `Key/**`, `.env`, `.env.*`, `.runtime/**`, `output/**`, `backups/**`, `.git/**`.
+
+### Validation
+- Backup command completed successfully and printed the backup directory, archive, manifest, and copied file count.
+- First attempted zsh backup command failed due to zsh read-only variable name `status`; it was replaced by a bash-based command and did not produce the final backup.
+
+### Next Exact Action
+- If restoring or comparing, inspect `MANIFEST.txt`, then copy from `backups/modified-since-thursday-20260905_230640/files/` or apply `tracked-working-tree-changes.patch` selectively.
+- Do not treat the backup as a production-ready snapshot; it intentionally preserves current in-progress changes, including the known MKF parser `NameError` state and provider-test mismatch recorded below.
+
+## Review Task: Production-related diff audit (2026-09-05)
+
+### User Request
+- User asked: “审查生产相关 diff”.
+
+### Scope Reviewed
+- Production/near-production touched files: `mkf.sh`, `scripts/edge_scout_scan.sh`, `src/ashare_edge_scout/mkf_ai_review.py`, `yaml/ai_providers.yaml`, `yaml/mkf_ai_review.yaml`, plus related tests and operational docs.
+- Also noted new untracked scripts/tests that affect MKF Web AI export and local-finance model evaluation.
+
+### Findings
+- High risk: `src/ashare_edge_scout/mkf_ai_review.py` is currently broken. The function was renamed to `_contains_forbidden_execution_text`, but `_scan_forbidden_payload` and `parse_ai_response` still call `_contains_forbidden_action_text`, causing `NameError` during MKF AI parsing.
+- High risk: AI provider tests now expect `nvidia_deepseek_v4_pro`, while `yaml/ai_providers.yaml` still selects `provider: local_finance`. This creates failing repository tests and an unclear production provider direction.
+- Medium risk: `yaml/ai_providers.yaml` changes the `local_finance` model from `Qwen3.8-27B-oQ4e-mtp` to `Ornith-1.0-35B-4bit` and adds enabled NVIDIA providers. The default provider remains `local_finance`, so the added NVIDIA providers do not take effect unless the top-level provider changes or an override is used.
+- Medium risk: `yaml/mkf_ai_review.yaml` is intentionally in transition from over-restrictive trading-word bans to allowing human research advice while banning only execution/live-money/guarantee/leverage claims. It should not be treated as a final production prompt until parser/eval/tests are synchronized.
+- Lower risk: `mkf.sh` and `scripts/edge_scout_scan.sh` add `export-mkf-web-ai`, a read-only Markdown export command. It appears isolated from SMC selection/watchlist/production logic, but depends on the new untracked `scripts/export_scan_csv_for_web_ai.py` being kept.
+- Operational docs `CLAUDE.md` and `remote-server.md` changes are governance/process documentation, not runtime logic, and are directionally consistent with remote-validation rules.
+
+### Validation Run
+- Ran `./.venv/bin/python -m pytest tests/test_ai_provider_config.py tests/test_news_ai_review.py tests/test_local_finance_mkf_model_eval.py -q`.
+- Result: 10 failed, 40 passed.
+- Failure classes: provider expectation mismatch (`local_finance` vs `nvidia_deepseek_v4_pro`) and MKF parser `NameError` from stale `_contains_forbidden_action_text` call sites.
+
+### Recommendation
+- Do not run or merge current production-related diff as-is.
+- First fix or revert the broken MKF parser call sites.
+- Then choose one provider direction explicitly: keep production default on `local_finance` and revert tests to match, or intentionally switch top-level provider to `nvidia_deepseek_v4_pro` with key/env validation and user approval.
+- Keep `yaml/mkf_ai_review.pre-20260905-backup.yaml` as the preserved good pre-change prompt.
+
+## Paused Task: Backed up pre-change MKF AI prompt and paused contract rewrite (2026-09-05)
+
+### User Request
+- User asked to preserve the good AI prompt version from before today's changes: “今天修改前的AI提示词是一个很好的版本，请把那个版本备份一份出来”.
+
+### Changed Files / Outputs
+- Created `yaml/mkf_ai_review.pre-20260905-backup.yaml` from the committed baseline via `git show HEAD:yaml/mkf_ai_review.yaml`.
+- Current working `yaml/mkf_ai_review.yaml` remains modified from the ongoing research-advice boundary rewrite.
+- Current `src/ashare_edge_scout/mkf_ai_review.py` remains partially modified: forbidden constants/payload key were reframed to execution claims, and `_contains_forbidden_action_text` was replaced with `_contains_forbidden_execution_text`; downstream call sites still need cleanup.
+
+### Validation
+- Backup file creation was verified by `git status --short`, showing `?? yaml/mkf_ai_review.pre-20260905-backup.yaml`.
+- No tests were run after this backup step.
+
+### Next Exact Action
+- If continuing the boundary rewrite, update remaining `mkf_ai_review.py` call sites from `_contains_forbidden_action_text` to `_contains_forbidden_execution_text`, update error messages, then adjust `scripts/evaluate_local_finance_models_on_mkf_candidates.py` and `tests/test_local_finance_mkf_model_eval.py` to allow human research advice while only flagging execution/live-money/guarantee/leverage claims.
+- If the user wants to restore the backed-up prompt, compare `yaml/mkf_ai_review.pre-20260905-backup.yaml` with `yaml/mkf_ai_review.yaml` first, then explicitly replace only after confirmation.
+
+### Risks / Do Not Repeat
+- Do not ban useful human-review terms such as 买入观察/卖出风险/持有观察/等待确认/参考止盈止损/目标区间 merely because they resemble trading vocabulary; NCN is not connected to live trading.
+- Do not change provider YAML based only on prompt-contract tests.
+
+## Completed Task: Prompt hardening round 2 and user concern about over-restriction (2026-09-05)
+
+### Changed Files / Outputs
+- Modified `yaml/mkf_ai_review.yaml` again to hard-ban MA20/均线 terms and hard-ban `持有`/`等待`/`观望` wording.
+- New replay output: `output/回测结果/mkf-model-eval-ornith15-oq4e-promptfix2-20260905-224242/`.
+
+### Validation
+- Focused test passed: `./.venv/bin/python -m pytest tests/test_local_finance_mkf_model_eval.py -q` -> 11 passed.
+- Replay completed 10/10 for `Ornith-1.5-35B-A3B-oQ4e-mtp` with fixed candidates and unified settings.
+- `--audit-run` passed: 10/10 JSON valid, 10/10 parser success, 10/10 contract pass, 0 truncation, 0 forbidden-output flags, 0 committee notes type mismatches, mean 20.421s, states standard_research 8 / insufficient_evidence 2.
+- Additional scan found no MA20/均线/20-day-cross and no hard banned action terms in the second-hardened outputs.
+
+### Important User Feedback
+- User objected that banning terms like stop-profit/stop-loss/target/BUY/HOLD/WAIT and related advice removes the usefulness of the AI system: they want AI to provide judgmental advice to help decision-making.
+- This is valid product feedback: the current hard-ban approach optimizes contract compliance but can over-restrict research judgment.
+
+### Decision / Next Exact Action
+- Do not continue tightening by simply banning more decision words. Reframe the contract instead: allow `research_action`/`human_review_plan`/`risk_plan` fields for judgmental human-review guidance, while still forbidding automatic execution, real broker actions, direct order instructions, or promises.
+- A better prompt/schema should allow bounded research recommendations such as priority, avoid_for_now/risk_watch, confirmation conditions, invalidation risks, and review checkpoints, clearly labeled as human review guidance rather than live trading instruction.
+- Do not change provider YAML until this product-level policy is clarified and replayed.
+
+
+## Completed Task: Ornith oQ4e prompt-fix replay (2026-09-05)
+
+### Changed Files / Outputs
+- Modified `yaml/mkf_ai_review.yaml` prompt only; did not modify provider YAML.
+- Added explicit constraints: MKF `cross_up_20` threshold is not MA20/20-day cross, no-news alone must not force `insufficient_evidence`, historical return fields should use `涨跌幅/return_pct` instead of `收益`, and `committee.*.notes` must be arrays.
+- New replay output: `output/回测结果/mkf-model-eval-ornith15-oq4e-promptfix-20260905-223611/`.
+
+### Validation
+- Focused test `./.venv/bin/python -m pytest tests/test_local_finance_mkf_model_eval.py -q` passed: 11 passed.
+- Broader focused run `tests/test_local_finance_mkf_model_eval.py tests/test_news_ai_review.py -q` had 1 existing config expectation failure: `news_ai_review.yaml` provider is `local_finance` while test expects `nvidia_deepseek_v4_pro`; unrelated to this `mkf_ai_review.yaml` prompt change.
+- Replay completed 10/10 for `Ornith-1.5-35B-A3B-oQ4e-mtp` with same fixed candidates and unified settings. `--audit-run` passed, verifying manifest, prompt hashes, and decoded forbidden-term checks.
+- Metrics after prompt fix: 10/10 JSON valid, 10/10 parser success, 7/10 contract pass, 0 truncation, 3 forbidden-output flags, 0 committee notes type mismatches, mean 21.574s, state counts: standard_research 7, insufficient_evidence 2, risk_attention 1.
+
+### Findings
+- Major improvement: notes mismatch fixed from 10/10 to 0/10; state distribution improved from all `insufficient_evidence` to useful split (`standard`/`insufficient`/`risk`).
+- Regression/remaining issue: contract pass declined from 9/10 to 7/10 due to remaining forbidden terms. Key scan found forbidden terms in responses 03 (`持有`), 06 (`等待`), and 10 (`持有`).
+- Prompt still leaks MA20/均线 terms: scan found `20日均线`/`均线` in most outputs despite the new threshold instruction. Need stronger user-message/schema-level constraints or postprocessor tests before switching provider.
+- Do not treat prompt-fixed replay as final model-selection proof; it is a prompt contract iteration result, not accuracy/win-rate/return evidence.
+
+### Next Exact Action
+- Strengthen prompt again: ban the exact substrings `20日均线`, `均线`, `20-day cross`, `moving average`, and replace with `MKF指标阈值20`; ban `持有`/`等待` even in generic phrasing and require `继续人工复核` wording instead.
+- Add a small regression test that frozen prompt includes these constraints and that contract scan catches MA20/均线 if desired.
+- Replay the same 10 candidates for `Ornith-1.5-35B-A3B-oQ4e-mtp` after the second prompt hardening before considering provider YAML changes.
+
+
+## Recommendation: MKF AI review adjustment after unified model evals (2026-09-05)
+
+### Recommendation
+- Do not tune temperature first; keep `temperature=0`, `seed=42`, `max_tokens=2048`, thinking disabled, and JSON response format for reproducible production-style replay.
+- Prioritize prompt/schema fixes before provider YAML changes: explicitly state MKF `cross_up_20` is an indicator threshold crossing (not MA20/20-day cross), require `committee.*.notes` as arrays, and instruct models to use `涨跌幅/return_pct` wording instead of forbidden `收益` for historical return fields.
+- Calibrate review-state rules so no-news alone does not collapse every technically reviewable candidate to `insufficient_evidence`; reserve `insufficient_evidence` for missing/conflicting/weak technical evidence, use `standard_research` for technically reviewable but no-news cases, and only allow `priority_research` if strict technical confirmation gates are met.
+- Current best candidate for prompt/schema replay remains `Ornith-1.5-35B-A3B-oQ4e-mtp`; compare against `Qwen3.6` only after the same factual review and replay.
+
+### Validation Target
+- After changes, replay the exact same 10 frozen candidates first. Success target: 10/10 parser success, 0 truncation, 0 committee notes type mismatches, no MA20/20-day-cross semantic errors, lower forbidden-keyword noise, and a more informative state distribution without treating confidence as accuracy.
+
+
+## Completed Task: Ornith oQ4e bounded factual review and latency-agnostic choice (2026-09-05)
+
+### Scope
+- Reviewed `Ornith-1.5-35B-A3B-oQ4e-mtp` outputs from `output/回测结果/mkf-model-eval-11-unified-20260905-204827/response-03-01..10.json` against frozen `inputs.json`.
+- Checked MKF threshold wording, cross_date/signal_date, signal-day OHLC/shadow/volume/breakout claims, no-news context, and forbidden keyword source.
+
+### Findings
+- Strong mostly-correct pattern: all 10 responses correctly recognized MKF red/blue cross-up-20 eligibility, post_cross_lag within range, no-news/evidence unavailable context, and generally matched signal-day candle/volume/range indicators.
+- Confirmed factual/semantic issues:
+  - `response-03-01` (`sh.600025`) says “red/blue 20-day cross”; input means MKF indicator crossing threshold value 20, not a 20-day/MA20 cross.
+  - `response-03-06` (`sh.603858`) says “equal 0.5 upper and 0.3889 lower shadows”; quoted values are not equal.
+- Checked possible scanner flags: `sh.603665` correctly says long lower shadow and upper_shadow 0.17 with no long-upper flag; no contradiction. `sh.605377` mentions recent K-lines with long upper shadows, which is broadly supported by recent bars, but its single forbidden keyword hit is `收益` in a historical return description, requiring manual context review rather than automatic investment-advice conclusion.
+- Shared contract issue remains: all 10 committee notes are strings, so production parser normalizes notes to empty arrays.
+
+### Latency-Agnostic Choice
+- If ignoring latency/wait time and using current completed evidence only, `Ornith-1.5-35B-A3B-oQ4e-mtp` remains the best practical candidate overall: 9/10 contract pass, 10/10 parser success, 1 forbidden-output flag, mostly correct facts, and only two bounded factual/semantic issues found in the 10-response review.
+- `Qwen3.6` ties 9/10 contract pass but had 1 parser/forbidden-label failure and has not yet received the same factual review; it is a second candidate, not clearly superior.
+- Do not treat this as accuracy/win-rate/return proof. No provider YAML change should be made before prompt/schema fixes and replay.
+
+
+## Completed Task: Completed-model comparison after partial all-model evals (2026-09-05)
+
+### Scope
+- Compared only models with a full 10/10 response set from the fixed MKF candidate replay. Excluded unavailable/incomplete models: `Gemma-4-31B-JANG_4M-CRACK` and `Qwen3.8-27B-MTP-4bit`.
+- Avoided double-counting repeated `Qwen3.8-27B-4bit` by using its standalone audited run (`output/回测结果/mkf-model-eval-qwen38-4bit-unified-20260905-220431/`).
+- Used audited Qwen3.8 standalone/remaining directories where available; Ornith/Qwen3.6 metrics came from completed model blocks inside partial directory `output/回测结果/mkf-model-eval-11-unified-20260905-204827/`, which aborted before final manifest, so those blocks are usable as saved evidence but not final-manifest audited.
+
+### Comparison Result
+- Full 10/10 completed models compared: `Ornith-1.0-35B-4bit`, `Ornith-1.5-35B-A3B-MLX-4bit`, `Ornith-1.5-35B-A3B-oQ4e-mtp`, `Ornith-1.5-35B-A3B-oQ6e-mtp`, `Qwen3.6-27B-Claude-Opus-Reasoning-Distill-v2-abliterated-8bit-mlx`, `Qwen3.8-27B-4bit`, `Qwen3.8-27B-MTPLX-Optimized-Speed`, `Qwen3.8-27B-oQ4e-mtp`.
+- Contract-pass leaders: `Ornith-1.5-35B-A3B-oQ4e-mtp` 9/10 and `Qwen3.6-27B-Claude-Opus-Reasoning-Distill-v2-abliterated-8bit-mlx` 9/10. `Qwen3.6` had 1 parser/forbidden-label failure; Ornith oQ4e had 1 forbidden-output flag and all 10 parsed.
+- Next tier: `Ornith-1.5-35B-A3B-MLX-4bit` 5/10 and `Qwen3.8-27B-oQ4e-mtp` 5/10. Qwen3.8-oQ4e is the best among completed audited Qwen3.8 variants, but not best overall by contract pass.
+- Slower models: Qwen3.6 mean ~71.756s; Qwen3.8 variants mean ~49-55s. Ornith variants mean ~16.6-19.4s.
+- Shared issue: every completed model had 10/10 committee notes type mismatches; production parser drops string notes to empty arrays.
+
+### Decision / Next Exact Action
+- Do not change `yaml/ai_providers.yaml` from this table alone; metrics are contract/output compliance on one no-news 10-candidate replay, not accuracy/win-rate/return evidence.
+- If choosing a next candidate for deeper manual factual review: review `Ornith-1.5-35B-A3B-oQ4e-mtp` first for speed + contract pass, then `Qwen3.6` for high contract pass but slower and one parser failure, then `Qwen3.8-oQ4e` as best audited Qwen3.8 variant.
+- Next validation should be raw-response factual review: forbidden keyword context, threshold-20 vs MA20 semantics, cross_date vs signal_date, candle/shadow/volume claims, and notes schema.
+
+
+## Completed Task: Qwen3.8 series unified retest (2026-09-05)
+
+### Changed Files / Outputs
+- `HANDOFF.md`: prepended this completion note.
+- New completed output directories:
+  - `output/回测结果/mkf-model-eval-qwen38-4bit-unified-20260905-220431/` for `Qwen3.8-27B-4bit` (10/10, manifest and audit complete).
+  - `output/回测结果/mkf-model-eval-qwen38-remaining-unified-20260905-214617/` for `Qwen3.8-27B-MTPLX-Optimized-Speed` and `Qwen3.8-27B-oQ4e-mtp` (20/20, manifest and audit complete).
+- Partial/failed evidence preserved:
+  - `output/回测结果/mkf-model-eval-qwen38-unified-20260905-213214/` completed `Qwen3.8-27B-4bit` 10/10 then aborted at `Qwen3.8-27B-MTP-4bit` first candidate.
+  - Prior 11-model partial run `output/回测结果/mkf-model-eval-11-unified-20260905-204827/` also aborted at `Qwen3.8-27B-MTP-4bit` first candidate.
+
+### Validation
+- All completed runs used the same 10 frozen MKF candidates from `output/edge_scout/mkf_candidate_selections/mkf-select-20260904_091715`, no-news context, production prompt construction, model-major sequential order, and unified settings: `temperature=0`, `seed=42`, `max_tokens=2048`, `enable_thinking=false`, `response_format={"type":"json_object"}`.
+- `--audit-run` passed for both completed Qwen3.8 output directories; audit verified manifest hashes, prompt identity hashes, and decoded Chinese forbidden-term checks.
+- Completed audited Qwen3.8 metrics:
+  - `Qwen3.8-27B-4bit`: 10/10 JSON valid, 10/10 project parser success, 3/10 contract pass, 0 truncation, 7 forbidden-output flags, 10 committee-notes type mismatches, mean 50.352s, states standard2/insufficient8.
+  - `Qwen3.8-27B-MTPLX-Optimized-Speed`: 10/10 JSON valid, 10/10 parser success, 4/10 contract pass, 0 truncation, 6 forbidden-output flags, 10 notes mismatches, mean 54.516s, states standard2/insufficient8.
+  - `Qwen3.8-27B-oQ4e-mtp`: 10/10 JSON valid, 10/10 parser success, 5/10 contract pass, 0 truncation, 5 forbidden-output flags, 10 notes mismatches, mean 49.198s, states standard5/insufficient5.
+- `Qwen3.8-27B-MTP-4bit` failed twice at first candidate (`sh.600025`) with `AIRequestError` before any content/finish_reason; treat as current service availability/load problem, not a model-quality score.
+
+### Decision / Next Exact Action
+- Do not call this a complete four-model Qwen3.8 comparison because `Qwen3.8-27B-MTP-4bit` is unavailable.
+- Among the three completed Qwen3.8 variants, contract metrics are best for `Qwen3.8-27B-oQ4e-mtp` in this no-news 10-candidate replay, but this is still contract compliance only, not accuracy/win-rate/return evidence.
+- Do not modify `yaml/ai_providers.yaml` or start portfolio/live trading actions from these metrics alone. Next useful action is bounded factual-evidence review of the completed raw responses, especially forbidden keyword context, threshold-20 vs MA20 semantics, and committee notes schema mismatch.
+
+
+## Current Task: 11-model unified eval aborted after 61 responses (2026-09-05)
+
+### Status
+- User authorized skipping unavailable `Gemma-4-31B-JANG_4M-CRACK`; remaining 11-model run started with the same 10 frozen candidates and unified generation settings.
+- Run directory: `output/回测结果/mkf-model-eval-11-unified-20260905-204827/`.
+- The run completed 61/110 requests before transport failure. It is incomplete and must not be presented as a complete 11-model comparison.
+
+### Completed Evidence
+- Fully completed models: `Ornith-1.0-35B-4bit` (10), `Ornith-1.5-35B-A3B-MLX-4bit` (10), `Ornith-1.5-35B-A3B-oQ4e-mtp` (10), `Ornith-1.5-35B-A3B-oQ6e-mtp` (10), `Qwen3.6-27B-Claude-Opus-Reasoning-Distill-v2-abliterated-8bit-mlx` (10), and `Qwen3.8-27B-4bit` (10). `Qwen3.8-27B-MTP-4bit` has only its first request, which failed.
+- Transport failure occurred at `Qwen3.8-27B-MTP-4bit` candidate 1 (`sh.600025`); saved row is `response-07-01.json` with `AIRequestError`, no server body persisted.
+- Interim contract metrics are not final quality metrics. Completed model contract-pass counts in order: 4/10, 5/10, 9/10, 4/10, 9/10, 3/10. The first Qwen3.6 response failed project parsing because of a forbidden action label; its raw response remains saved.
+- No manifest or audit result exists because the script aborted before finalization. Do not run `--audit-run` until a complete immutable run is available; the current directory is partial evidence only.
+
+### Decision / Next Exact Action
+- Preserve this partial directory and the earlier Gemma failure directory; do not overwrite either.
+- Do not infer model ranking from this partial batch. A retry needs service recovery/clearance for the Qwen3.8 MTP model or a separately documented continuation design that preserves the exact model/case identity and does not falsely claim 110 fresh responses.
+- No provider YAML change, live trading action, portfolio backtest, or destructive remote operation was performed.
+
+
+## Current Task: 11-model unified eval excluding unavailable Gemma (2026-09-05)
+
+### Status
+- Per user instruction, skipped `Gemma-4-31B-JANG_4M-CRACK` after its server-side VLM load failure and started the remaining 11 models.
+- New run: `output/回测结果/mkf-model-eval-11-unified-20260905-204827/`.
+- Fixed inputs remain the same 10 MKF candidates from `mkf-select-20260904_091715`, with no-news context and frozen production prompts.
+- Unified settings remain `temperature=0`, `seed=42`, `max_tokens=2048`, `enable_thinking=false`, JSON response format; model-major sequential order with no sleeps.
+
+### Validation / Current State
+- Background task `bkkjzzna3` is running. It reached `START model=Ornith-1.0-35B-4bit candidate=1/10 code=sh.600025`.
+- No result or model-comparison conclusion is available yet. Preserve the prior failed Gemma directory and the old 40-response directory; do not overwrite either.
+
+### Next Exact Action
+- Await task completion. Then run `--audit-run` on the new 11-model directory, verify 110 response files, manifest/input hashes, and inspect summary/audit metrics before drawing any model conclusion.
+- Do not change provider YAML or start portfolio/live trading actions from this eval.
+
+
+## Current Task: Complete 12-model unified eval blocked by server-side Gemma load failure (2026-09-05)
+
+### Status
+- Started the requested complete 12-model unified replay with 10 frozen MKF candidates, model-major sequential order, no sleeps, `temperature=0`, `seed=42`, `max_tokens=2048`, JSON response format, and thinking disabled.
+- New output directory: `output/回测结果/mkf-model-eval-all12-unified-20260905-204147/`.
+- The first request only (`Gemma-4-31B-JANG_4M-CRACK`, `sh.600025`) failed with HTTP 409; no subsequent model was requested.
+
+### Verified Cause / Evidence
+- Direct diagnostic against `http://ts.dorisw.kdns.fr:18090/v1` reproduced the failure: server says the Gemma model is unavailable after a previous load failure, `VLM load failed`, with 2010 parameter mismatches including vision/language model tensors.
+- `/v1/models` remains reachable and lists all 12 requested general models plus `MarkItDown`; endpoint availability does not prove every model can load.
+- Saved run metadata confirms 12 models, 10 cases, and unified generation settings. The run contains one `response-01-01.json`, `summary.json`, and `inputs.json`; it has no complete manifest or audit result.
+
+### Decision / Next Exact Action
+- Do not report a 12-model comparison and do not rank models from this aborted run. Do not silently omit Gemma while claiming completion.
+- Before retrying the full 12-model batch, confirm the service operator has cleared/reloaded the failed Gemma model or explicitly authorize a documented partial run excluding unavailable models. Preserve this failed directory as evidence; do not overwrite it.
+- No YAML/provider change, live trading action, portfolio backtest, or destructive remote operation was performed.
+
+
+## Completed Task: Ten-candidate four-model eval (2026-09-05)
+
+### Changed Files
+- `scripts/evaluate_local_finance_models_on_mkf_candidates.py`, `tests/test_local_finance_mkf_model_eval.py`, and `HANDOFF.md`.
+- Results: `output/回测结果/mkf-model-eval-20260905-181415/` with frozen inputs, 40 raw responses, original manifest, corrected `audit-summary.json/csv`, and `evidence-review.json`.
+- Production YAML, parser, prompts, scanner logic, and unrelated user changes intentionally unchanged. No broker/order/return simulation.
+
+### Behavior / Logic Changes
+- User's 10-20 candidate eval is complete: latest 10 candidates, signal date 2026-09-03, four models, 2048 max tokens, temperature 0, seed 42, thinking disabled, sequential model-major with no sleeps. No online/current news; frozen unavailable-news context.
+- Original inference used raw-string keyword checks; Unicode escapes caused missed Chinese hits. Added decoded inspection and offline `--audit-run`, regraded all 40 without repeat inference or overwriting raw evidence. Use audit-summary, not original summary, for keyword/contract metrics.
+
+### Validation
+- Task `bhzq3117r` completed exit 0; monitor `bd8uymdev` stopped. 40/40 JSON objects parsed by project, all finish_reason=stop, zero truncations/errors. Original manifest hashes and all candidate/model/message-hash identities verified.
+- Per model (Qwen / Ornith1.0 / Ornith1.5-Q6 / Ornith1.5-Q4): mean seconds 54.380 / 16.768 / 20.463 / 17.681; decoded keyword-hit outputs 4 / 6 / 6 / 1; string-notes mismatch outputs 10 / 10 / 10 / 10.
+- State counts: Qwen standard5/insufficient5; Ornith1.0 standard7/insufficient2/risk1; Q6 standard1/insufficient9; Q4 insufficient10. No priority_research. Confidence is descriptive only.
+- Local focused tests: 32 passed (11 eval + 21 production); git diff --check passed. Remote priority attempted: WSL SSH closed; Doris lacked pytest and exact selection snapshot; local orchestration with inference on Doris endpoint.
+
+### Risks / Review Notes
+- Decision: keep current configuration, no validated winning model. Qwen misclassified sh.603665 as long upper shadow despite flag=false/ratio0.17; Ornith1.0 repeatedly calls threshold20 a 20-day moving average; Q6 assigns signal-day volume ratio to prior day; Q4 contains a contradictory equal-shadow comparison.
+- All 40 raw committee notes are strings and production parser drops them to empty lists. This is a shared prompt/parser compatibility issue, not evidence of empty model reasoning.
+- Keyword hits include historical-return descriptions/non-action waiting; Q4 mostly English also biases Chinese keyword counts. They are NOT proven advice rates or accuracy scores. Latency includes model loading.
+- Next exact action: separately fix/clarify MKF threshold20 vs MA20, cross_date vs signal_date, notes-array schema; validate against the same fixed input set before model-switch decisions. Do not launch LLM portfolio backtests or rerun this completed batch without a new task.
+
+
+## Current Task: Read-only simplification review for local_finance MKF eval (2026-09-05)
+
+### Changed Files
+- `HANDOFF.md`: prepended this review entry per project handoff rule.
+- No code or test files were modified; user requested read-only cleanup review only.
+
+### Behavior / Logic Changes
+- Reviewed only `scripts/evaluate_local_finance_models_on_mkf_candidates.py` and `tests/test_local_finance_mkf_model_eval.py` for simplification/cleanup candidates.
+- Searched adjacent/shared utilities for duplicate functionality newly reimplemented in the target script.
+- No tests, remote commands, model calls, backtests, or artifact retrieval were run.
+
+### Validation
+- Read-only inspection of the two scoped files plus adjacent utilities in `src/ashare_edge_scout/mkf_ai_review.py`, `src/ashare_edge_scout/ai_providers.py`, `src/ashare_edge_scout/operations.py`, `scripts/smoke_local_finance_models.py`, `scripts/evaluate_mkf_ai_score_rotation_backtest.py`, and `scripts/export_scan_csv_for_web_ai.py`.
+
+### Risks / Review Notes
+- Findings focus on actionable reuse/duplicate-maintenance costs around production prompt construction, no-news context construction, forbidden-action scanning, atomic JSON writing, checksum helpers, and response-content extraction.
+
+## Current Task: Ten-candidate local_finance eval (2026-09-05)
+
+### Changed Files
+- `scripts/evaluate_local_finance_models_on_mkf_candidates.py`: freezes production-built prompts once, replays model-major sequentially without sleeps, applies 2048 tokens, saves every raw response/finish reason and summary, aborts on transport failure.
+- `tests/test_local_finance_mkf_model_eval.py`: eight focused tests. Production code/YAML and unrelated user edits intentionally unchanged.
+
+### Behavior / Logic Changes
+- Fixed sample: all 10 candidates in `mkf-select-20260904_091715`, signal date 2026-09-03; same technical context through signal day and explicit unavailable news for all four models. No current news fetch.
+- Models: Qwen3.8-27B-oQ4e-mtp, Ornith-1.0-35B-4bit, Ornith-1.5-35B-A3B-oQ6e-mtp, Ornith-1.5-35B-A3B-oQ4e-mtp. 40 logical reviews, one active request; transport may retry once on HTTP 400/422 without seed/response_format.
+- Contract gate: raw JSON object + project parser + normal stop + no prohibited keyword hits. Keyword hits require manual review. Self-confidence/priority counts are NOT accuracy; no automatic recommended_model.
+
+### Validation
+- WSL check failed (SSH connected then closed). Doris Python 3.13.15 works, but pytest and the exact selection snapshot are absent. Local orchestration/tests fallback; actual inference remains Doris local_finance endpoint. No credential/output folder sync.
+- Local focused pytest: 29 passed (8 new + 21 production). Initial test fixture used incorrect AIRequestError constructor, corrected and rerun. git diff --check passed.
+- Prepare-only succeeded for all 10 technical contexts, zero model calls: `output/回测结果/mkf-model-eval-20260905-181301/inputs.json`.
+- Full inference running as local background task `bhzq3117r`; output `output/回测结果/mkf-model-eval-20260905-181415/`; log `/private/tmp/claude-501/-Users-artx-Local-Git-Stock-NCN/5817cd11-6a67-4421-97cd-9d121ab6ef2a/tasks/bhzq3117r.output`. First request START verified (Qwen, sh.600025). Per-candidate log monitor `bd8uymdev` active. Next: await completion, verify manifest and 40 responses, inspect evidence. No live trading/return backtest/config change authorized by this eval.
+
+### Risks / Review Notes
+- Run launched with initial raw-text keyword detector. Inspection found Unicode-escaped Chinese bypasses it; script now includes decoded-JSON inspection and `--audit-run` to regrade saved immutable responses WITHOUT model calls. Do not trust original summary contract/keyword counts; use audit-summary.json after completion.
+- Production parser silently drops string committee notes (expects arrays); report diagnostic count without changing production parser/prompt in this eval. All first 30 outputs have this mismatch.
+- Current local validation: 32 passed (11 eval + 21 production); git diff --check passed. Next exact action after task completes: `./.venv/bin/python scripts/evaluate_local_finance_models_on_mkf_candidates.py --audit-run output/回测结果/mkf-model-eval-20260905-181415`, inspect fourth model, report verified evidence issues and keep config unchanged.
+- Earlier one-case smoke ranking by self-confidence cannot establish Qwen superiority. All four passed corrected smoke, contrary to older stale only-Ornith claims.
+- apply_patch is unavailable in this shell; used dedicated Write/Edit tools instead.
+
+## Prior Task: Read-only MKF AI review API/fairness inspection (2026-09-05)
+
+### Changed Files
+- `HANDOFF.md`: prepended this read-only inspection entry only.
+- No code, configs, tests, scripts, result CSVs, remote processes, broker/login/order paths, or LLM requests were modified or run.
+
+### Behavior / Logic Changes
+- User requested read-only inspection of `src/ashare_edge_scout/mkf_ai_review.py`, `src/ashare_edge_scout/ai_providers.py`, news context helpers, and `scripts/evaluate_local_finance_models_on_mkf_candidates.py`.
+- Read `AGENTS.md` and newest `HANDOFF.md` first. Did not read `remote-server.md` because no remote sync/test/backtest/artifact retrieval was performed.
+- Confirmed reusable production prompt construction is currently embedded in `mkf_ai_review.OpenAICompatibleClient.analyze`; there is no exported pure helper that builds the exact system/user messages without sending a request.
+- Confirmed `run_mkf_ai_review` builds technical/news contexts inside each run and therefore model-comparison scripts rerunning it per model do not freeze context once across models.
+
+### Validation
+- Read-only file inspection only; no local tests, remote commands, or LLM/provider requests were run.
+- Key interfaces inspected: `parse_ai_response`, `load_mkf_ai_config`, `build_ai_client`, `run_mkf_ai_review`, `build_mkf_news_context`, `load_ai_provider_config`, shared `build_ai_client`, and model-eval script functions.
+
+### Risks / Review Notes
+- `scripts/evaluate_local_finance_models_on_mkf_candidates.py` bypasses shared credential precedence (`api_key_env`, `api_key_file_env`, `key_file`) by requiring and directly reading `key_file`; this can disagree with production config behavior.
+- Injected per-model clients cause `run_mkf_ai_review` summary fields such as `ai_model` to come from YAML provider config rather than the injected model, so per-model eval metadata can be misleading even when rows contain the actual model.
+- Fairness risk: per-model runs can have different freshly fetched/cache-hit news contexts, time-dependent cache statuses, and repeated output directories; a fair benchmark should pre-freeze selection, technical contexts, news contexts, prompt hash, candidate order, and generation parameters once, then replay identical messages per model.
+
+## Current Task: TS/local_finance model catalog checked (2026-09-05)
+
+### Changed Files
+- `HANDOFF.md`: prepended this model-catalog analysis entry only.
+- No code, YAML config, tests, scanner logic, result CSVs, remote processes, broker/login/order paths, or live-trading behavior were modified.
+
+### Behavior / Logic Changes
+- User asked to access `http://ts.dorisw.kdns.fr:18080` using `Key/ts.key`, search available models, and analyze which model best fits NCN.
+- Read `AGENTS.md`, latest `HANDOFF.md`, and `remote-server.md` first per project rules.
+- Used the key only inside local commands and did not print or expose it.
+- `http://ts.dorisw.kdns.fr:18080` returned HTTP 503 for common model endpoints; repository config points local_finance to `http://ts.dorisw.kdns.fr:18090/v1`, where `/models` succeeded.
+
+### Validation
+- Queried `http://ts.dorisw.kdns.fr:18090/v1/models`; available model IDs included `Ornith-1.0-35B-4bit`, `Ornith-1.5-35B-A3B-oQ4e-mtp`, `Ornith-1.5-35B-A3B-oQ6e-mtp`, `Qwen3.8-27B-oQ4e-mtp`, `Qwen3.8-27B-MTP-4bit`, `Qwen3.8-27B-MTPLX-Optimized-Speed`, `Qwen3.6-27B-Claude-Opus-Reasoning-Distill-v2-abliterated-8bit-mlx`, Gemma/gpt-oss variants, and `MarkItDown`.
+- Read `yaml/ai_providers.yaml`; current YAML selects `local_finance` with model `Ornith-1.0-35B-4bit` at `http://ts.dorisw.kdns.fr:18090/v1`.
+- Read `tests/test_ai_provider_config.py`; current tests still expect selected provider `nvidia_deepseek_v4_pro` and local model `Qwen3.8-27B-oQ4e-mtp`, so tests and YAML appear out of sync.
+- Added `scripts/smoke_local_finance_models.py`, a bounded local_finance multi-model JSON smoke/eval script using the existing `OpenAICompatibleClient` and `mkf_ai_review.parse_ai_response`.
+- Validation passed: `./.venv/bin/python -m py_compile scripts/smoke_local_finance_models.py`.
+- Ran the smoke/eval against `Ornith-1.5-35B-A3B-oQ6e-mtp`, `Ornith-1.5-35B-A3B-oQ4e-mtp`, `Ornith-1.0-35B-4bit`, and `Qwen3.8-27B-oQ4e-mtp`; result JSON was saved under `output/回测结果/model-smoke-eval-*/local_finance_model_smoke.json`.
+- First smoke/eval outcome: only `Ornith-1.0-35B-4bit` returned project-parseable JSON (`standard_research`, confidence `0.78`, no forbidden terms); the other three failed with `AI response contains no JSON object`.
+- User clarified resources are limited and each model run needs a 5-minute interval. Updated `scripts/smoke_local_finance_models.py` with `--delay-between-models-seconds` and incremental result writing after each model.
+- Validation passed again: `./.venv/bin/python -m py_compile scripts/smoke_local_finance_models.py`.
+- User requested stopping the 5-minute interval task because the visible model panel looked idle. Stopped background task `bu73pajy9`.
+- Restarted background sequential smoke/eval task `bxbpkh5y8` with models `Ornith-1.5-35B-A3B-oQ6e-mtp`, `Ornith-1.5-35B-A3B-oQ4e-mtp`, `Ornith-1.0-35B-4bit`, `Qwen3.8-27B-oQ4e-mtp`, `--delay-between-models-seconds 180`; output path is `output/回测结果/model-smoke-eval-sequential-*/local_finance_model_smoke.json`.
+- Task `bxbpkh5y8` was stopped before completion after the user said to restart again. New background task `b3favx01t` ran the same four-model sequential smoke/eval with `--delay-between-models-seconds 180`.
+- User provided omlx logs showing `Ornith-1.5-35B-A3B-oQ6e-mtp` was active but finished with `finish_reason=length`, `max_tokens=512`; the earlier parse failure was likely output truncation rather than an idle model.
+- Stopped task `b3favx01t` and restarted as task `bumjqwwxz` with the same model order, `--delay-between-models-seconds 180`, and larger `--max-tokens 2048`.
+- Task `bumjqwwxz` was stopped before completion after the user said to restart again. New task `by2lx4ljy` ran the same sequential smoke/eval with `--delay-between-models-seconds 180` and `--max-tokens 2048`.
+- Interim result from `by2lx4ljy`: `Ornith-1.5-35B-A3B-oQ6e-mtp` completed successfully with `finish_reason=stop` behavior, project-parseable JSON, `standard_research`, confidence `0.58`, no forbidden terms. User then requested fixing the truncation issue and restarting; task `by2lx4ljy` was stopped.
+- Fixed the truncation-prone default by changing `scripts/smoke_local_finance_models.py` default `--max-tokens` from `512` to `2048`.
+- Validation passed: `./.venv/bin/python -m py_compile scripts/smoke_local_finance_models.py`.
+- New background task `b5kinaapf` ran the same four-model sequential smoke/eval with `--delay-between-models-seconds 180`; it relied on the corrected `2048` default output limit.
+- User changed the flow: no waiting is needed between models; run one model, then immediately test the next model sequentially. Stopped task `b5kinaapf`.
+- New background task `bgvxl7a3i` ran the same four-model sequential smoke/eval without `--delay-between-models-seconds`, so the default delay was `0` and models ran back-to-back.
+- Task `bgvxl7a3i` completed with exit code `0`. Final ranked result: `Qwen3.8-27B-oQ4e-mtp` passed JSON/parser checks with no forbidden terms, `priority_research`, confidence `0.85`, elapsed `75.421s`; `Ornith-1.0-35B-4bit` passed with `standard_research`, confidence `0.78`, elapsed `12.933s`; `Ornith-1.5-35B-A3B-oQ6e-mtp` passed with `standard_research`, confidence `0.58`, elapsed `8.797s`; `Ornith-1.5-35B-A3B-oQ4e-mtp` passed with `standard_research`, confidence `0.58`, elapsed `13.524s`.
+- Recommendation after this one-case smoke/eval: do not treat it as final model selection; `Qwen3.8-27B-oQ4e-mtp` is now the best candidate to test next because it produced the strongest structured review, but it is slow and needs a multi-case eval before changing `yaml/ai_providers.yaml`.
+
+### Risks / Review Notes
+- Updated recommendation after smoke/eval: do not switch from `Ornith-1.0-35B-4bit` yet; it is the only tested local_finance candidate that passed the current MKF AI JSON parser contract.
+- The higher-quality-looking catalog candidates may need model-specific thinking/template options before they can satisfy strict JSON output; evaluate that separately before any config change.
+- Do not change `yaml/ai_providers.yaml` or tests until deciding whether to keep current local model, align tests to current YAML, or add per-model compatibility options.
+- Do not start TS/local_finance LLM backtests or live trading actions from this model smoke alone.
+
+## Current Task: Explain MKF AI review workflow (2026-09-05)
+
+### Changed Files
+- `HANDOFF.md`: prepended this explanatory-task entry only.
+- No code, configs, result CSVs, scanner logic, remote processes, broker/login/order paths, or live-trading behavior were modified.
+
+### Behavior / Logic Changes
+- User asked to continue explaining the MKF AI review workflow after clarifying OHLCV, local_score, confidence, and review_state ordering.
+- Explanation should stay in research/paper-simulation terms and avoid presenting AI output as buy/sell/hold, return probability, or live-trading instruction.
+
+### Validation
+- Existing inspected files for this explanation: `futu.md`, `yaml/edge_scout_v1.yaml`, `src/ashare_edge_scout/pmkf_mkf/candidates.py`, and `src/ashare_edge_scout/mkf_ai_review.py`.
+- No new validation command was required for the explanation.
+
+### Risks / Review Notes
+- Keep emphasizing that AI confidence is a model self-assessed review confidence, not a win-rate/profit probability.
+- Keep distinguishing raw MKF candidate ordering from AI-reviewed ordering.
+
+## Current Task: MKF AI-score overall coordination scheme analysis (2026-09-05)
+
+### Changed Files
+- `HANDOFF.md`: updated this methodology/readout entry.
+- No code, result CSV, scanner logic, YAML config, remote process, broker/login/order path, or live-trading behavior was modified.
+
+### Behavior / Logic Changes
+- User clarified they want the overall coordination scheme: how MKF scanning, AI score, threshold entry/hold logic, dynamic replacement, cost-aware paper simulation, and validation should fit together.
+- Analysis should describe the scheme as a staged offline research/paper-simulation workflow, not a final profitable strategy or live trading rule.
+
+### Validation
+- No new backtest or data extraction was run for this analysis request.
+- Latest validated result available locally: `output/回测结果/mkf-ai-score-threshold-grid-proc-det-doris-20260904-16w-1/`, with `grid_summary.csv` verified at `15498` rows and manifest hashes matched after Doris sync.
+
+### Risks / Review Notes
+- Current validated grid used deterministic no-news/no-LLM lane `deterministic_local_score_x10`; do not overstate it as proof that real LLM review improves outcomes.
+- Best `ashare` result had positive sample total return but low closed-trade win rate and small trade count, so it is a research lead requiring stability/tail-risk review.
+- If continuing, next exact action is to turn the overall scheme into a pre-registered validation ladder: deterministic baseline, LLM no-news overlay, archived point-in-time news overlay if available, then paper-forward monitoring.
+
+## Current Task: Doris MKF AI-score threshold-grid result validated and synced (2026-09-05)
+
+### Changed Files
+- `HANDOFF.md`: updated the Doris continuation entry with completed validation/sync status.
+- `output/回测结果/mkf-ai-score-threshold-grid-proc-det-doris-20260904-16w-1/`: synced from Doris to local after remote validation.
+- No code, tests, scanner logic, YAML config, remote process, broker/login/order path, or live-trading behavior was modified.
+
+### Behavior / Logic Changes
+- User asked to continue after checking whether `simulated` progress appeared for the Doris deterministic MKF AI-score threshold-grid run.
+- Read `AGENTS.md`, latest `HANDOFF.md`, and `remote-server.md` before remote validation, per project instructions.
+- Validated Doris run `mkf-ai-score-threshold-grid-proc-det-doris-20260904-16w-1`; original PID `56062` was no longer active, but final result files were present.
+- Method remains deterministic no-news/no-LLM lane `deterministic_local_score_x10`, start `2025-09-01`, `initial_capital=10000`, entry/hold threshold grids `60..100` with `hold<=entry`, `max_positions=1,2,3`, `replacement_gap=0,3,5`, `cost_modes=none,ashare`, `workers=16`.
+
+### Validation
+- Remote log `/Users/chinaadmin/NCN/.runtime/mkf-ai-score-threshold-grid-proc-det-doris-20260904-16w-1.log` contains `simulated` progress through `simulated 15250/15498 combos`.
+- Remote output directory contained `manifest.json`, `summary.json`, `grid_summary.csv`, `trades.csv`, `daily_equity.csv`, `daily_scores_top.csv`, and `阶段项目说明.md`.
+- Remote `grid_summary.csv` row count was `15498`, matching expected `861 threshold pairs × 3 max_positions × 3 replacement_gap × 2 cost_modes`.
+- Remote key hashes: `grid_summary.csv` SHA-256 `53cf2a07a49d029b08a974bf525147c36ad2258c0dbe13d5d75f4ec0888410f4`, `summary.json` SHA-256 `f919b05e727e915f5a16fa0155c1987067debb006484d6353c2fe7780a28eb42`; `manifest.json` local file hash was `0ca8eea6599284faca769974078de8b640de85aa2c1c991fe1827b398cff2908`.
+- Local rsync of only this result directory completed; local manifest validation passed for every listed file size and SHA-256, and local `grid_summary.csv` still had `15498` rows.
+- Best `ashare` row by total return: `deterministic_local_score_x10|entry84|hold64|pos1|gap0|ashare`, final equity `11232.8178362`, total return `12.32817836%`, max drawdown `-4.92111282%`, trade_count `32`, closed_trade_win_rate `37.5%`, cost_paid `235.2881578`, avg_hold_days `1.1875`, turnover_ratio `28.81581973`.
+- Best no-cost row by total return: `deterministic_local_score_x10|entry80|hold63|pos1|gap0|none`, final equity `11575.854184`, total return `15.75854184%`, max drawdown `-13.86632392%`, trade_count `120`, closed_trade_win_rate `43.333333%`, cost_paid `0`, avg_hold_days `1.98333333`, turnover_ratio `107.56784844`.
+
+### Risks / Review Notes
+- These are offline deterministic paper/simulation results only; do not present them as real-money profitability, live execution evidence, investment advice, or a production trading rule.
+- Best rows have low closed-trade win rates despite positive total return over this sample; they should be treated as research leads requiring stability/tail-risk review, not as final scanner logic.
+- TS/local_finance `Ornith-1.0-35B-4bit` no-news LLM lane remains not run; do not start it until the user explicitly confirms the next methodology step.
+
+## Current Task: MKF AI-score threshold-grid deterministic Doris migration (2026-09-04)
+
+### Changed Files
+- `scripts/evaluate_mkf_ai_score_rotation_backtest.py`: current working version uses threshold grids (`entry_threshold_grid=60..100`, `hold_threshold_grid=60..100`, filtered `hold<=entry`) and `ProcessPoolExecutor` (with `_init_sim_worker` initializer) for deterministic combo simulation. Combo simulation was switched from `ThreadPoolExecutor` to processes because threads were GIL-bound to ~1 core; candidate construction still uses `ProcessPoolExecutor`.
+- `tests/test_mkf_ai_score_rotation_backtest.py`: focused tests cover next tradable open, LLM score mapping, A-share fees, next-day exits, lot-size cash skip, replacement-gap boundary, and threshold summary fields.
+- `HANDOFF.md`: updated this active Doris continuation entry with the process-based full run.
+
+### Behavior / Logic Changes
+- User requested migrating the latest stable thread-mode deterministic full-grid run to Doris because the session was about to close.
+- Historical replay remains no-news: do not fetch or use current/7-day news caches for 2025 dates; deterministic lane is `deterministic_local_score_x10` only.
+- WSL full grid using multiprocessing initializer failed with `_pickle.UnpicklingError: pickle data was truncated`; combo simulation was switched to threads while candidate construction still uses processes.
+- First Doris run `mkf-ai-score-threshold-grid-thread-det-doris-20260904-1` (PID `54166`) was intentionally stopped by the user at `simulated 250/15498 combos`; no manifest or result files were produced.
+- Second Doris run `mkf-ai-score-threshold-grid-thread-det-doris-20260904-2` (PID `54883`) was left running but was effectively single-core: the combo simulation used `ThreadPoolExecutor`, which is GIL-bound (~116% CPU). The user asked to restart with 4 processes.
+- User requested stopping prior progress and restarting using all Doris resources. All active NCN `evaluate_mkf_ai_score_rotation_backtest.py` main processes were stopped before relaunch; `$HOME/NCN/.venv-doris` multiprocessing child leftovers from the prior process run were also cleared.
+- Current Doris run: `mkf-ai-score-threshold-grid-proc-det-doris-20260904-16w-1`, PID `56062`, detached (PPID `1`), log `/Users/chinaadmin/NCN/.runtime/mkf-ai-score-threshold-grid-proc-det-doris-20260904-16w-1.log`, output `/Users/chinaadmin/NCN/output/回测结果/mkf-ai-score-threshold-grid-proc-det-doris-20260904-16w-1`.
+- Run parameters: `deterministic_local_score_x10`, no news, no LLM, start `2025-09-01`, `initial_capital=10000`, entry/hold threshold grids `60..100` (861 valid pairs), `max_positions=1,2,3`, `replacement_gap=0,3,5`, `cost_modes=none,ashare`, `workers=16`.
+
+### Validation
+- Local validation after combo-process change passed: `./.venv/bin/python -m py_compile scripts/evaluate_mkf_ai_score_rotation_backtest.py` and focused pytest with `7 passed`.
+- WSL thread smoke passed for the earlier mode: manifest present, 12 rows, `combo_tasks=12`, `combo_parallel=True`, `combo_workers_used=4`.
+- Doris pre-launch check passed: host `chinaadmins-Mac-Studio.local`, `.venv-doris/bin/python` Python `3.13.15`, `PFrontStockData` count `7375`, memory free `59%` at launch.
+- Doris script md5 `756fc08bf25bfef5781ba5fa1065200c` matches local updated version.
+- Current 16-worker run verified alive at elapsed `00:16`: main PID `56062`, PPID `1`, STAT `RN`, about `%CPU 100.2`, `%MEM 2.2`; log had not emitted progress yet and combo worker children had not appeared at that early check.
+- Doris focused pytest did not run because `.venv-doris` lacks pytest (`No module named pytest`). Do not use system `python3` as a substitute.
+
+### Risks / Review Notes
+- Do not copy `Key/`, `.env*`, `.runtime/`, broad `output/`, or `config/research_watchlist.json` between machines. Sync back only the completed Doris run directory after manifest validation.
+- Expected deterministic full-grid rows: 861 valid threshold pairs × 3 max_positions × 3 replacement_gap × 2 cost_modes = 15498 rows.
+- Prior Doris run reached `250/15498 combos` shortly after candidate construction; full combo phase ETA is expected to be several hours.
+- Next exact action: monitor PID `56062` / log / manifest for `mkf-ai-score-threshold-grid-proc-det-doris-20260904-16w-1`; on completion validate `summary.json`, `grid_summary.csv`, `manifest.json` hashes and row count, extract best `ashare` and `none` rows, then rsync only that result directory to local `output/回测结果/`.
+- WSL thread full run `mkf-ai-score-threshold-grid-thread-det-wsl-20260904-1` may still be running; check later if needed, but do not kill remote work unless explicitly authorized or clearly necessary.
+- TS/local_finance `Ornith-1.0-35B-4bit` no-news LLM lane has not been run; do not start it until deterministic Doris result is complete and the user confirms the next step.
+
+## Current Task: MKF AI-score threshold-grid parallel deterministic WSL run (2026-09-04)
+
+### Changed Files
+- `scripts/evaluate_mkf_ai_score_rotation_backtest.py`: added `--entry-threshold-grid` and `--hold-threshold-grid`; combo IDs and `grid_summary.csv`/`trades.csv`/`daily_equity.csv` include entry/hold thresholds; deterministic combo simulation now uses `ProcessPoolExecutor` across threshold/position/gap/cost combos.
+- `tests/test_mkf_ai_score_rotation_backtest.py`: updated `ComboState` construction for threshold fields and added coverage that summaries preserve entry/hold thresholds.
+- `HANDOFF.md`: updated this active-run entry.
+
+### Behavior / Logic Changes
+- Deterministic threshold search is grid-capable: entry thresholds and hold thresholds can be scanned independently, with invalid `hold_threshold > entry_threshold` combinations filtered out.
+- The earlier full WSL run `mkf-ai-score-threshold-grid-det-wsl-20260904-1` was stopped after user approved the recommendation because its combo simulation phase was serial and used only about one CPU core on a 20-core WSL host.
+- New full WSL run is deterministic only: `deterministic_local_score_x10`, no news, no LLM, start `2025-09-01`, `initial_capital=10000`, `entry_threshold_grid=60..100`, `hold_threshold_grid=60..100 filtered to hold<=entry`, `max_positions=1,2,3`, `replacement_gap=0,3,5`, `cost_modes=none,ashare`, `workers=16`.
+- New run id: `mkf-ai-score-threshold-grid-parallel-det-wsl-20260904-1`; remote log: `/home/adminwsl/NCN/.runtime/mkf-ai-score-threshold-grid-parallel-det-wsl-20260904-1.log`; remote output: `/home/adminwsl/NCN/output/回测结果/mkf-ai-score-threshold-grid-parallel-det-wsl-20260904-1/`.
+
+### Validation
+- Local validation passed after parallelization: `./.venv/bin/python -m py_compile scripts/evaluate_mkf_ai_score_rotation_backtest.py` and `./.venv/bin/python -m pytest tests/test_mkf_ai_score_rotation_backtest.py -q` with 7 tests passed.
+- WSL validation passed after sync: `./scripts/remote_test_env.sh check`, `./scripts/remote_test_env.sh sync-code`, WSL focused pytest with 7 tests passed.
+- WSL parallel smoke run passed for short range `2025-09-01..2025-09-10`; it emitted `simulated 5/40 combos` through `simulated 40/40 combos` and wrote output to `mkf-ai-score-threshold-parallel-smoke-wsl-20260904-1`.
+- New full WSL run was verified actually running as PID `15204`; `.runtime/mkf-ai-score-threshold-grid-parallel-det-wsl-20260904-1.log` exists. A completion waiter is active for manifest generation or PID exit.
+
+### Risks / Review Notes
+- The latest SSH/nohup wrapper still did not write the pid file, but remote process PID `15204` was verified separately; do not rely on the pid file.
+- Expected summary rows if completed: 861 valid threshold pairs × 3 max_positions × 3 replacement_gap × 2 cost_modes = 15498 rows for the deterministic lane.
+- Next exact action: check WSL process/log, wait for completion, validate `summary.json`/`manifest.json`, extract best `ashare` and `none` rows, sync only this result directory locally, then report results. TS/Ornith LLM no-news lane remains not run.
+
+
+## Current Task: MKF AI-score dynamic rotation deterministic WSL result (2026-09-04)
+
+### Changed Files
+- `scripts/evaluate_mkf_ai_score_rotation_backtest.py`: added the research/paper dynamic AI-score portfolio rotation backtest script.
+- `tests/test_mkf_ai_score_rotation_backtest.py`: added focused tests for next-tradable-open execution, LLM state score mapping, fees, pending exits, lot constraints, and replacement-gap behavior.
+- `yaml/ai_providers.yaml`: final local_finance/TS model is `Ornith-1.0-35B-4bit`; nvidia is not the active provider.
+- `output/回测结果/mkf-ai-score-rotation-det-wsl-20260904-1053/`: synced deterministic WSL result folder locally.
+- `HANDOFF.md`: prepended this continuation entry.
+
+### Behavior / Logic Changes
+- User-confirmed protocol: start `2025-09-01`, ignore news because historical message context is not point-in-time verifiable, and run a dynamic portfolio rule with entry threshold 65 and hold threshold 60.
+- Completed only the deterministic lane: `deterministic_local_score_x10`, where `ai_score = local_score * 10`; no LLM/news was used for this result.
+- WSL full run used `.venv/bin/python`, `--workers 16`, `max_positions=1,2,3`, `replacement_gap=0,3,5`, `cost_modes=none,ashare`, `initial_capital=10000`, run id `mkf-ai-score-rotation-det-wsl-20260904-1053`.
+
+### Validation
+- Local focused validation passed earlier: `./.venv/bin/python -m py_compile scripts/evaluate_mkf_ai_score_rotation_backtest.py` and `./.venv/bin/python -m pytest tests/test_mkf_ai_score_rotation_backtest.py -q` with 6 tests passed.
+- WSL focused tests also passed earlier with 6 tests passed.
+- WSL process has ended and output files exist: `summary.json`, `grid_summary.csv`, `trades.csv`, `daily_equity.csv`, `daily_scores_top.csv`, `manifest.json`, and `阶段项目说明.md`.
+- Remote and local manifest validation passed for the synced result folder; local `grid_summary.csv` has 18 rows.
+- Best `ashare` cost-mode row by total return is `deterministic_local_score_x10|pos1|gap0|ashare`: final equity 6328.48311112, total return -36.71516889%, max drawdown -47.74984969%, trade_count 419, cost_paid 2800.18428088.
+- Best no-cost row by total return is `deterministic_local_score_x10|pos1|gap3|none`: final equity 9562.701136, total return -4.37298864%, max drawdown -33.86298864%, trade_count 417.
+
+### Risks / Review Notes
+- The deterministic local-score lane is negative across the best reported cost/no-cost cases; with A-share costs, turnover and 5 CNY commission floor dominate a 10,000 CNY account.
+- Do not report this as a profitable rule, real-money recommendation, or live trading signal; it is offline research/paper simulation only.
+- TS/local_finance LLM no-news lane has not been fully run yet. If continuing, first run a capped full-period `--llm-top-per-day 1` estimate using `Ornith-1.0-35B-4bit`, then decide whether to expand to top 3 or 5.
+- Avoid reusing the earlier faulty nohup wrapper pattern that produced `${pid}: ambiguous redirect`; use a simpler quoted SSH/nohup command for the next detached WSL run.
+
+
+## Current Task: WSL AI-score portfolio backtest news-context decision (2026-09-04)
+
+### Changed Files
+- `HANDOFF.md`: prepended this methodology note.
+- No script, production code, scanner logic, YAML config, prompt, watchlist, broker/login/order path, or live-trading behavior was changed.
+
+### Behavior / Logic Changes
+- User asked whether a WSL backtest of the AI-score dynamic replacement portfolio should ignore news context and whether historical news can still be fetched.
+- Current project news context config/code was checked: `yaml/mkf_news_context.yaml` uses `NEWS_DAYS: 7`, `CACHE_RETENTION_DAYS: 7`, and sources Google News RSS / Eastmoney stock news / Eastmoney announcements; `src/ashare_edge_scout/mkf_news_context.py` names cache files by current `today` and validates cache payload date against that same day.
+
+### Validation
+- Read `remote-server.md` before discussing WSL backtest work.
+- Read `yaml/mkf_news_context.yaml` and `src/ashare_edge_scout/mkf_news_context.py` news-context implementation.
+- No WSL command or backtest was launched yet.
+
+### Risks / Review Notes
+- For historical replay from 2025-09-01, current online news fetch is not a reliable point-in-time historical news source; using today's fetched news for past dates would introduce look-ahead/time-travel bias.
+- Unless timestamped historical daily news/AI-review artifacts exist for each scan date, the first WSL backtest should use price/indicator/scanner/available saved AI-score data only and treat news as missing or run a separate live-forward/paper overlay.
+- If news must be included, next exact action is to inventory whether daily `news_contexts.json`/`reviews.json` scan artifacts were archived since 2025-09-01 before defining the final backtest protocol.
+
+## Current Task: AI-score dynamic replacement portfolio question (2026-09-04)
+
+### Changed Files
+- `HANDOFF.md`: prepended this clarification/readout entry.
+- No script, production code, scanner logic, YAML config, prompt, watchlist, broker/login/order path, or live-trading behavior was changed.
+
+### Behavior / Logic Changes
+- User corrected the prior fixed single-combination interpretation and described a dynamic daily workflow from 2025-09-01: scan each day, select stocks whose AI recommendation value is above 65%, start with 10,000 capital, automatically replace based on AI analysis score, keep held stocks above 60%, exit held stocks below 60%.
+- This is a strategy/backtest-methodology question and should be treated as a portfolio-style paper/simulation design, not live trading or guaranteed return guidance.
+
+### Validation
+- No new backtest was run for this question yet.
+- Existing prior first-touch and low-stop result tables do not directly answer this dynamic AI-score replacement workflow because they evaluate fixed MKF entry/exit combinations, not daily AI-score calibrated portfolio replacement.
+
+### Risks / Review Notes
+- Key unresolved specification: how many concurrent positions / allocation rule should 10,000 capital use when multiple stocks pass AI >=65%, and how replacement is ranked.
+- Main methodological risk is treating AI score percentages as calibrated return probabilities without validating calibration, turnover, transaction costs, and out-of-sample behavior.
+- Next exact action should be to define a fixed paper-backtest protocol for the dynamic AI-score portfolio before implementing or judging profitability.
+
+## Current Task: MKF highest-return mechanical combination readout (2026-09-04)
+
+### Changed Files
+- `HANDOFF.md`: prepended this read-only readout entry.
+- No script, production code, scanner logic, YAML config, prompt, watchlist, broker/login/order path, or live-trading behavior was changed.
+
+### Behavior / Logic Changes
+- User asked for the highest-return “无脑操作” combination.
+- Readout used existing Doris result tables only: main-board/`production_gate_mask` low-stop feature-filter v3 summary and all-A fixed-candidate pressure-test full-period table.
+- Definition used for this answer: fixed mechanical entry/exit rule, no manual judgement, no new post-hoc filter mining, ranked by historical `mean_realized_return` under the timeout-open first-touch口径.
+- Exit method remains: buy at next tradable open after lag signal close; scan `T+1..T+N-1`; same-day stop+target counts stop first; unresolved exits at `T+N open`.
+
+### Validation
+- Re-read `AGENTS.md` and latest `HANDOFF.md` before the readout.
+- Used local project virtualenv `./.venv/bin/python` to sort `output/回测结果/20260903_215942/mkf_low_stop_feature_filters_summary_fast_20210101_20260902_doris_v3.csv` and `output/回测结果/20260904_082341/mkf_all_a_low_stop_fixed_candidates_full_period.csv` by `mean_realized_return`.
+- Main-board highest historical realized mean: `4% target / 12% stop / lag7 / T+19 / entry_gap_le_0pct&range20_pos_35_to_85`, n=4114, target hit 68.8867%, Wilson lower 67.4550%, stop hit 13.1988%, timeout 17.9144%, timeout-open mean -3.7873%, mean realized return 0.4931%.
+- All-A fixed-candidate highest historical realized mean: same rule `4% target / 12% stop / lag7 / T+19 / entry_gap_le_0pct&range20_pos_35_to_85`, n=14591, target hit 66.5479%, Wilson lower 65.7780%, stop hit 13.1794%, timeout 20.2728%, timeout-open mean -3.4787%, mean realized return 0.3752%.
+- More conservative mechanical alternative remains `3% target / 12% stop / lag7 / T+19 / entry_gap_le_0pct&range20_pos_35_to_85`: main-board mean 0.3027%, all-A mean 0.1541%, with higher hit rate but weak annual stability.
+
+### Risks / Review Notes
+- The highest-return mechanical row is not a 70% hit-rate/stability winner and stop-hit rate is slightly above 12%; it is a sample-period return maximum, not the most robust rule.
+- Annual stability remains the main blocker: prior diagnostics showed weak years and negative mean-return years, so the rule is offline research/paper-only and must not be presented as a real-money execution rule, investment advice, or return promise.
+- Do not write this into scanner or production logic without fixed-rule board/liquidity/year/tail-risk validation.
+
+## Current Task: MKF T+10 low-stop combination readout (2026-09-04)
+
+### Changed Files
+- `HANDOFF.md`: prepended this read-only T+10 extraction entry.
+- No script, production code, scanner logic, YAML config, prompt, watchlist, broker/login/order path, or live-trading behavior was changed.
+
+### Behavior / Logic Changes
+- User asked which combination is most suitable if timeout horizon is fixed to `T+10`.
+- Readout used existing Doris v3 low-stop feature-filter summary at `output/回测结果/20260903_215942/mkf_low_stop_feature_filters_summary_fast_20210101_20260902_doris_v3.csv`.
+- Important boundary: this is the prior main-board/`production_gate_mask` low-stop feature-filter grid, not the later all-A fixed-candidate pressure test. The all-A pressure test only covered fixed `T+13/T+19` candidates and does not answer all-A `T+10`.
+- Exit method remains timeout-open first-touch: scan `T+1..T+N-1`; same-day stop+target counts stop first; unresolved exits at `T+N open`.
+
+### Validation
+- Used local project virtualenv `./.venv/bin/python` to extract `horizon == T+10` rows from the existing 99900-row v3 summary CSV.
+- For `T+10`, no combination reached target hit >=70% or Wilson lower >=70% while also keeping stop hit <=12% and mean realized return positive.
+- Best high-confidence/low-shakeout tradeoff: `3% target / 12% stop / lag7 / T+10 / entry_gap_le_0pct&range20_pos_35_to_85`, n=4142, target hit 66.5620%, Wilson lower 65.1105%, stop hit 7.0256%, timeout 26.4124%, timeout-open mean -3.5551%, mean realized return 0.2148%.
+- Closest `10%` stop alternative: `3% target / 10% stop / lag2 / T+10 / volume_ratio_1p0_to_2p5&range20_pos_35_to_85`, n=2157, target hit 67.3621%, Wilson lower 65.3539%, stop hit 11.7756%, timeout 20.8623%, timeout-open mean -3.1256%, mean realized return 0.1912%.
+- Mean-return maximum at T+10 is `4% target / 12% stop / lag7 / T+10 / entry_gap_le_0pct&range20_pos_35_to_85`, n=4142, target hit 58.2327%, Wilson lower 56.7238%, stop hit 7.4843%, timeout 34.2830%, timeout-open mean -3.0782%, mean realized return 0.3759%; this is lower-win-rate and not suitable if the priority is hit rate.
+
+### Risks / Review Notes
+- Direct recommendation for `T+10` under low-stop/high-hit preference: use `3% target / 12% stop / lag7 / entry_gap_le_0pct&range20_pos_35_to_85`; do not call it a 70% strategy because it only reaches 66.56% hit rate.
+- If the user wants the all-A universe answer for `T+10`, run a separate all-A fixed-candidate pressure test that includes `T+10`; do not infer it from the all-A `T+13/T+19` result.
+- These outputs are offline research only, not live trading, real fill evidence, investment advice, or a real-money execution rule.
+
+
+## Current Task: MKF all-A low-stop fixed-candidate pressure test (2026-09-04)
+
+### Changed Files
+- `HANDOFF.md`: updated the pending all-A pressure-test entry to completed.
+- `.runtime/evaluate_mkf_all_a_low_stop_fixed_candidates.py`: temporary ignored research script for fixed-rule pressure testing across all `PFrontStockData/*.parquet` files.
+- `output/回测结果/20260904_082341/`: final user-facing deliverable folder with fetched Doris JSON/CSV, derived full-period CSV, derived annual-stability CSV, and `阶段项目说明.md`.
+- No production code, scanner logic, YAML config, prompt, watchlist, production flag, broker/login/order path, or live-trading behavior was changed.
+
+### Behavior / Logic Changes
+- User asked to run the all-A pressure test with ST/untradable/low-liquidity exclusions and annual layering.
+- Universe: all `PFrontStockData/*.parquet` files, not just main-board `PREFIXES`; signal row must be non-ST, `tradestatus == 1`, close > 0, and signal-date ADV20 >= 50,000,000 CNY.
+- This is a fixed-candidate pressure test, not a new filter search. It evaluates prior candidates: primary `3% target / 12% stop / lag7 / T+19 / entry_gap_le_0pct&range20_pos_35_to_85`, shorter `3% target / 12% stop / lag6 / T+13 / close_above_ma60&volume_ratio_0p8_to_2p0`, plus liquid-gate-only baselines for the same lags/horizons.
+- Exit method remains timeout-open first-touch: scan `T+1..T+N-1`; same-day stop+target counts stop first; unresolved exits at `T+N open`.
+- Targets/stops evaluated: 3%/4% targets and 10%/12% stops; full-period min_n=1000 and annual_min_n=80.
+
+### Validation
+- Read `AGENTS.md`, latest `HANDOFF.md`, `回测策略.md`, and `remote-server.md` before fetching Doris results.
+- Local syntax validation used project virtualenv before the run: `./.venv/bin/python -m py_compile .runtime/evaluate_mkf_all_a_low_stop_fixed_candidates.py`.
+- Synced only `.runtime/evaluate_mkf_all_a_low_stop_fixed_candidates.py` to Doris `NCN/.runtime/` and ran detached with run_id `mkf-all-a-low-stop-fixed-20210101-20260902-doris-20260903-224135`, workers=12, `.venv-doris/bin/python`, min_adv20=50000000.
+- Doris run completed: log showed `processed 7375/7375 codes`; remote JSON/CSV were fetched into `output/回测结果/20260904_082341/`.
+- Validation with local `./.venv/bin/python`: schema `ncn_mkf_all_a_low_stop_fixed_candidates_v1`; sample has 7375 files, 102169 parent crosses, 134971 lag events, 134046 mature and 925 partial events; summary CSV has 112 rows, including 16 full-period rows and 96 annual rows.
+- Main full-period result: primary `entry_gap_le_0pct&range20_pos_35_to_85 / lag7 / T+19`, 3% target and 12% stop, n=14591, target hit 72.9422%, Wilson lower 72.2154%, stop hit 11.8361%, timeout 15.2217%, timeout-open mean -4.0324%, realized mean 0.1541%.
+- Same primary row with 10% stop: target hit 71.4756%, Wilson lower 70.7373%, but stop hit 16.1401%, so it fails the low-stop shakeout requirement.
+- 4% target remains unsupported for 10%/12% stops: primary 4%/12% has target hit 66.5479%, Wilson lower 65.7780%, stop hit 13.1794%.
+- Annual stability failed for primary 3%/12%: min yearly target hit 66.0434%, min yearly Wilson 64.2266%, max yearly stop hit 17.5019%, min yearly realized mean -1.0234%, and 4 negative mean-return years.
+
+### Risks / Review Notes
+- Direct answer: all-A pressure testing preserves a full-period 3%/12% signal for the primary filtered candidate, but it does not pass annual stability; keep it as research candidate only, not a scanner/production rule.
+- 10% stop still appears too tight for the 70% version because the 3% primary row has stop hit 16.14%; lowering stop further would likely increase shakeouts.
+- Do not add more post-hoc filters merely to fix the weak annual years. If continuing, pre-register board/prefix and ADV20-tier diagnostics, then reject the rule if weak-year instability remains.
+- These outputs are offline research only, not live trading, real fill evidence, investment advice, or a real-money execution rule.
+
+
+## Current Task: MKF low-stop pre-entry feature subset search (2026-09-03)
+
+### Changed Files
+- `HANDOFF.md`: prepended this completed Doris result entry.
+- `.runtime/evaluate_mkf_low_stop_feature_filters_fast.py`: temporary ignored research script; optimizes low-stop feature-filter study by precomputing each target/stop/lag/horizon exit outcome once, then vector-aggregating pre-entry filter masks.
+- `output/回测结果/20260903_215942/`: final v3 user-facing deliverable folder with JSON, full summary CSV, candidate CSV, annual diagnostic CSV, derived key-point CSVs, and `阶段项目说明.md`.
+- Earlier intermediate output folders `output/回测结果/20260903_214516/` and `output/回测结果/20260903_215250/` were created during v1/v2 debugging; final answer should use `20260903_215942`.
+- No production code, scanner logic, YAML config, prompt, watchlist, production flag, broker/login/order path, or live-trading behavior was changed.
+
+### Behavior / Logic Changes
+- User asked to find MKF subsets where `10%~12%` stops are less likely to shake out positions, while still counting timeout exits at `T+N open`.
+- Scope: 2021-01-01 through 2026-09-02, targets 3%/4%, stops 10%/12%, lag0..lag7, T+2..T+20, MKF parent signal plus `production_gate_mask`.
+- Entry/exit method: buy at next stock-tradable open after lag signal close; scan only `T+1..T+N-1` for first-touch stop/target; same-day stop+target counts as stop first; unresolved samples exit at `T+N open`.
+- Filter search uses only pre-entry/signal-date/entry-open features such as entry gap, lag runup, MA context, volume ratio, liquidity, volatility, range position, upper shadow, and signal-day return. It does not use future drawdown, future highs/lows, or realized future outcomes for filtering.
+- Full-sample candidate threshold is `n >= 1000`; annual diagnostic threshold is `annual_min_n = 80`.
+
+### Validation
+- Read `AGENTS.md`, latest `HANDOFF.md`, and `remote-server.md`; WSL check failed with TCP connect then SSH banner close, so Doris was used per priority. Doris check passed: host `chinaadmins-Mac-Studio.local`, 16 logical CPUs, memory free 94%, `.venv-doris/bin/python` Python 3.13.15.
+- Local syntax validation used project virtualenv: `./.venv/bin/python -m py_compile .runtime/evaluate_mkf_low_stop_feature_filters_fast.py`.
+- Doris v3 command: `cd "$HOME/NCN" && OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 PYTHONPATH=src .venv-doris/bin/python .runtime/evaluate_mkf_low_stop_feature_filters_fast.py --data-root PFrontStockData --config yaml/edge_scout_v1.yaml --start-date 2021-01-01 --end-date 2026-09-02 --workers 12 --min-n 1000 --annual-min-n 80 --output .runtime/mkf-low-stop-feature-filters-fast-20210101-20260902-doris-v3.json --summary-csv .runtime/mkf-low-stop-feature-filters-fast-20210101-20260902-doris-v3.csv --candidates-csv .runtime/mkf-low-stop-feature-filter-candidates-fast-20210101-20260902-doris-v3.csv --annual-csv .runtime/mkf-low-stop-feature-filter-annual-fast-20210101-20260902-doris-v3.csv` -> processed 3197/3197 codes and evaluated 608/608 exit combos.
+- Final v3 JSON schema is `ncn_mkf_low_stop_pre_entry_filters_fast_v1`; sample: 3197 codes, 56379 parent crosses, 155234 lag events, 154223 mature and 1011 partial events. Row counts: 99900 summary rows, 14 candidate rows, 66 annual rows.
+- Strict gate result: no 10% stop combination met target hit >=70%, stop hit <=12%, and positive mean realized return; no 4% target combination met the same gate for 10% or 12% stops.
+- 3% target with 12% stop did meet the full-sample strict gate. Best full-sample row: `entry_gap_le_0pct&range20_pos_35_to_85`, lag7, T+19, n=4114, target hit 75.3038%, Wilson lower 73.9628%, stop hit 11.7647%, timeout 12.9315%, timeout-open mean -4.2121%, mean realized return 0.3027%.
+- Shortest Wilson-lower-70 full-sample row for 3%/12%: `close_above_ma60&volume_ratio_0p8_to_2p0`, lag6, T+13, n=1613, target hit 72.3497%, Wilson lower 70.1157%, stop hit 10.6014%, timeout 17.0490%, timeout-open mean -4.3784%, mean realized return 0.1518%.
+- Annual diagnostics are weak: the best 3%/12% row has min yearly hit 68.3702%, min yearly Wilson 64.8934%, max yearly stop hit 18.2708%, min yearly realized mean -0.3396%, and 4 negative mean-return years; the shortest Wilson row has min yearly hit 64.7651%, max yearly stop hit 20.4651%, min yearly realized mean -0.8697%, and 4 negative years.
+
+### Risks / Review Notes
+- Direct answer: `10%` stop is not supported for a 70% high-confidence version; `12%` stop has a promising full-sample 3% target subset but fails annual stability, so it is a research candidate only, not a scanner/production rule.
+- Recommended candidate to carry forward for fixed-rule validation: `3% target / 12% stop / lag7 / T+19 / entry_gap_le_0pct&range20_pos_35_to_85`. Secondary shorter-hold candidate: `3% target / 12% stop / lag6 / T+13 / close_above_ma60&volume_ratio_0p8_to_2p0`.
+- Do not add more post-hoc filters to force a positive conclusion. Next exact action, if continuing, is fixed-rule annual/sample-out/tail-risk confirmation and reject the rule if weak years remain unacceptable.
+- These outputs are offline research only, not live trading, real fill evidence, investment advice, or a real-money execution rule.
+
+
+## Current Task: MKF first-touch timeout-open stop5..20 backtest (2026-09-03)
+
+### Changed Files
+- `HANDOFF.md`: replaced the prior clarification entry with this completed WSL result entry.
+- `.runtime/evaluate_mkf_first_touch_timeout_open.py`: temporary ignored research script; adds future `open` columns and evaluates first-touch exits with timeout sold at `T+N open`.
+- `output/回测结果/20260903_145805/`: user-facing deliverable folder with detailed CSV/JSON, key point CSV, best-by-stop CSV, top20 CSV, and `阶段项目说明.md`.
+- Memory updated outside the repo: `feedback_project_virtualenv.md` and `MEMORY.md` now record that local NCN Python commands must use `./.venv/bin/python`, not system `python3`.
+- No production code, scanner logic, YAML config, prompt, watchlist, production flag, broker/login/order path, or live-trading behavior was changed.
+
+### Behavior / Logic Changes
+- User confirmed timeout-open口径: for horizon `T+N`, scan first-touch stop/target only from `T+1..T+N-1`; unresolved samples sell at `T+N open`.
+- Same prior daily OHLC tie rule remains: if a scan-day bar touches both stop and target, count stop-loss first.
+- Scope: 2021-01-01 through 2026-09-02, target 3%/4%, stop thresholds 5%..20%, lag0..lag7, T+1..T+20, MKF parent signal and production gate from `回测策略.md`.
+- Return model changed from timeout `0` to realized timeout-open return: target first `+target_pct`, stop first `-stop_pct`, timeout `T+N open / entry_open - 1`.
+- `T+1` is a strict-boundary row with no pre-timeout high/low scan; all samples exit at `T+1 open`. Reports therefore also include a practical “排除 T+1 后” best-first-touch view.
+
+### Validation
+- Read `AGENTS.md`, latest `HANDOFF.md`, and `remote-server.md` before WSL work. WSL check passed; memory/Python check showed 19Gi total, 18Gi available, `.venv/bin/python` Python 3.14.4.
+- Synced only `.runtime/evaluate_mkf_first_touch_timeout_open.py` to WSL and ran: `cd /home/adminwsl/NCN && OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 PYTHONPATH=src .venv/bin/python .runtime/evaluate_mkf_first_touch_timeout_open.py --data-root PFrontStockData --config yaml/edge_scout_v1.yaml --start-date 2021-01-01 --end-date 2026-09-02 --workers 8 --output .runtime/mkf-first-touch-timeout-open-stop5-20-target-20210101-20260902-wsl.json --summary-csv .runtime/mkf-first-touch-timeout-open-stop5-20-target-20210101-20260902-wsl.csv --sweet-csv .runtime/mkf-first-touch-timeout-open-stop5-20-target-sweet-spots-20210101-20260902-wsl.csv` -> processed 3197/3197 codes.
+- First WSL run completed computation but failed JSON write because `avg_first_touch_day` carried NaN in T+1 rows; fixed by converting non-finite floats to JSON `null`, then reran successfully.
+- Copied WSL outputs directly into `output/回测结果/20260903_145805/` and used local project virtualenv `./.venv/bin/python` for validation/derived tables; detailed CSV has 5120 data rows, JSON schema is `ncn_mkf_first_touch_timeout_open_v1`, sample has 3197 codes, 56379 parent crosses, 155234 lag events.
+- Key result, strict global best realized mean: 3% target -> `stop=5%, lag1, T+1`, n=19962, all samples timeout at `T+1 open`, mean return 0.1492%; this is a boundary open-to-open row, not a first-touch sweet spot.
+- Key result, excluding T+1 pure-open-exit rows: 3% target -> `stop=20%, lag7, T+18`, n=18624, target hit 73.8348%, Wilson lower 73.1987%, stop hit 3.5492%, timeout 22.6160%, timeout-open mean -6.4866%, realized mean 0.0382%; 4% target -> `stop=20%, lag7, T+18`, n=18624, target hit 66.9351%, Wilson lower 66.2560%, stop hit 3.9948%, timeout 29.0700%, timeout-open mean -5.8242%, realized mean 0.1853%.
+- 3% target reaches point-estimate 70% at `stop=20%, lag7, T+14`, hit 70.2001%, Wilson lower 69.5403%, realized mean -0.0464%; Wilson lower 70% at `stop=20%, lag7, T+15`, hit 71.1831%, Wilson lower 70.5293%, realized mean 0.0126%.
+- 4% target still has no `stop5..20%` timeout-open first-touch combination reaching point-estimate or Wilson-lower 70% target-hit rate.
+
+### Risks / Review Notes
+- Follow-up combination analysis from the completed CSV favors two explicit choices: conservative/high-confidence 3% target -> `target=3%, stop=20%, lag7, T+15` because Wilson lower is above 70% and realized mean is slightly positive; return-max within tested grid -> `target=4%, stop=20%, lag7, T+18` because realized mean is highest, but target hit rate is only 66.9351% and does not meet 70%.
+- Timeout-open materially lowers the earlier timeout=0 simplified return for long windows because unresolved samples often have negative `T+N open` returns; do not compare those two mean-return columns as the same metric.
+- The 3% global `T+1` best is a boundary artifact of the confirmed strict timing, not evidence that a stop/target rule works; prefer the “排除 T+1 后” table for practical first-touch interpretation.
+- `stop=20%` remains the grid boundary. Do not infer it is the true optimal stop without pre-registering a wider grid plus annual/out-of-sample/tail-risk checks.
+- These outputs are offline research only, not live trading, real fill evidence, investment advice, or a real-money execution rule.
+
+
+## Current Task: MKF first-touch stop5..20 backtest (2026-09-03)
+
+### Changed Files
+- `HANDOFF.md`: prepended this completed WSL result entry.
+- `.runtime/evaluate_mkf_first_touch_stop_target.py`: temporary ignored research script updated so `STOP_PCTS = range(5, 21)` for this run.
+- `.runtime/mkf-first-touch-stop5-20-target-20210101-20260902-wsl.json`: copied WSL JSON output back locally; runtime artifact is ignored.
+- `output/回测结果/20260903_144315/`: user-facing deliverable folder with detailed CSV/JSON, sweet-spot CSVs, and `阶段项目说明.md`.
+- Local duplicate `.runtime` CSV copies for this run were removed after copying into the timestamped output folder.
+- No production code, scanner logic, YAML config, prompt, watchlist, production flag, broker/login/order path, or live-trading behavior was changed.
+
+### Behavior / Logic Changes
+- User asked to rerun first-touch stop/target backtest with stop thresholds 5% through 20%.
+- Same confirmed first-touch口径 as the previous run: if a sellable daily bar has both `low <= stop_price` and `high >= target_price`, count stop-loss first.
+- Scope: 2021-01-01 through 2026-09-02, target 3%/4%, stop thresholds 5%..20%, lag0..lag7, T+1..T+20, MKF parent signal and production gate from `回测策略.md`.
+- Return model remains `+target_pct` if target first, `-stop_pct` if stop first, `0` if timeout by horizon.
+
+### Validation
+- Read latest `HANDOFF.md`, `AGENTS.md`, `remote-server.md`, and reused the already-read `回测策略.md` first-touch context before running.
+- WSL memory/Python check before run: 19Gi total, 18Gi available, `.venv/bin/python` Python 3.14.4.
+- Synced `.runtime/evaluate_mkf_first_touch_stop_target.py` to WSL and ran: `cd /home/adminwsl/NCN && OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 PYTHONPATH=src .venv/bin/python .runtime/evaluate_mkf_first_touch_stop_target.py --data-root PFrontStockData --config yaml/edge_scout_v1.yaml --start-date 2021-01-01 --end-date 2026-09-02 --workers 8 --output .runtime/mkf-first-touch-stop5-20-target-20210101-20260902-wsl.json --summary-csv .runtime/mkf-first-touch-stop5-20-target-20210101-20260902-wsl.csv --sweet-csv .runtime/mkf-first-touch-stop5-20-target-sweet-spots-20210101-20260902-wsl.csv` -> processed 3197/3197 codes.
+- Copied WSL outputs locally, generated `output/回测结果/20260903_144315/`, validated complete detailed CSV has 5120 data rows plus header, and JSON parses with `python -m json.tool`.
+- Key result, best mean first-touch simplified return: 3% target -> `stop=20%, lag7, T+11`, n=18727, target hit 67.8806%, Wilson lower 67.2082%, stop hit 1.9918%, timeout 30.1276%, mean return 1.6381%; 4% target -> `stop=20%, lag7, T+12`, n=18727, target hit 61.4300%, Wilson lower 60.7306%, stop hit 2.4777%, timeout 36.0923%, mean return 1.9617%.
+- 3% target reaches point-estimate 70% at `stop=20%, lag7, T+13`, hit 70.2553%, Wilson lower 69.5964%, mean return 1.6014%; Wilson lower 70% at `stop=20%, lag7, T+14`, hit 71.1901%, Wilson lower 70.5365%, mean return 1.5878%.
+- 4% target still has no `stop5..20%` first-touch combination reaching point-estimate or Wilson-lower 70% target-hit rate.
+
+### Risks / Review Notes
+- `stop=20%` is the edge of the requested wider grid; do not infer the true optimum is exactly 20% without pre-registering a further wider grid and adding tail-risk/stability analysis.
+- Wider stops improve simplified mean return in this grid mainly by avoiding stop-outs and allowing target hits, but they create larger single-trade loss exposure that this mean-only summary can understate.
+- If using these results for candidate filtering, next exact action is not to widen indefinitely; choose practical stops for annual/out-of-sample stability and drawdown/tail-risk review before any scanner behavior change.
+
+
+## Current Task: MKF first-touch stop/target backtest (2026-09-03)
+
+### Changed Files
+- `HANDOFF.md`: replaced the prior clarification entry with this completed WSL result entry.
+- `.runtime/evaluate_mkf_first_touch_stop_target.py`: temporary ignored research script; recomputes MKF lag events with future high/low and evaluates first-touch stop/target outcomes.
+- `.runtime/mkf-first-touch-stop-target-20210101-20260902-wsl.json`: copied WSL JSON output back locally; runtime artifact is ignored.
+- `output/回测结果/20260903_142654/`: user-facing deliverable folder with detailed CSV/JSON, sweet-spot CSVs, and `阶段项目说明.md`.
+- Local duplicate `.runtime` CSV copies for this run were removed after copying into the timestamped output folder.
+- No production code, scanner logic, YAML config, prompt, watchlist, production flag, broker/login/order path, or live-trading behavior was changed.
+
+### Behavior / Logic Changes
+- User confirmed same-day target+stop tie handling: if a sellable daily bar has both `low <= stop_price` and `high >= target_price`, count stop-loss first.
+- Scope: 2021-01-01 through 2026-09-02, target 3%/4%, stop thresholds 0%..10%, lag0..lag7, T+1..T+20, MKF parent signal and production gate from `回测策略.md`.
+- First-touch definition: scan T+1..T+N stock-tradable days after entry; target price is `entry_open*(1+target_pct/100)`, stop price is `entry_open*(1-stop_pct/100)`; return model is `+target_pct` if target first, `-stop_pct` if stop first, `0` if timeout by horizon.
+- This is offline daily-OHLC first-touch research; no fees, slippage, tax, sizing, fillability, limit-up/down execution constraints, or real P&L is modeled.
+
+### Validation
+- Read latest `HANDOFF.md`, `AGENTS.md`, `回测策略.md`, and `remote-server.md` before running.
+- WSL memory/Python check before run: 19Gi total, 18Gi available, `.venv/bin/python` Python 3.14.4.
+- Synced `.runtime/evaluate_mkf_first_touch_stop_target.py` to WSL and ran: `cd /home/adminwsl/NCN && OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 PYTHONPATH=src .venv/bin/python .runtime/evaluate_mkf_first_touch_stop_target.py --data-root PFrontStockData --config yaml/edge_scout_v1.yaml --start-date 2021-01-01 --end-date 2026-09-02 --workers 8 --output .runtime/mkf-first-touch-stop-target-20210101-20260902-wsl.json --summary-csv .runtime/mkf-first-touch-stop-target-20210101-20260902-wsl.csv --sweet-csv .runtime/mkf-first-touch-stop-target-sweet-spots-20210101-20260902-wsl.csv` -> processed 3197/3197 codes.
+- Copied WSL outputs locally, generated `output/回测结果/20260903_142654/`, validated complete detailed CSV has 3520 data rows plus header, and JSON parses with `python -m json.tool`.
+- Key result, best mean first-touch simplified return: 3% target -> `stop=10%, lag0, T+3`, n=20163, target hit 44.1998%, Wilson lower 43.5154%, stop hit 3.8834%, timeout 51.9169%, mean return 0.9377%; 4% target -> `stop=10%, lag7, T+4`, n=18734, target hit 41.1231%, Wilson lower 40.4204%, stop hit 6.4268%, timeout 52.4501%, mean return 1.0022%.
+- 3% target can reach point-estimate 70% only at longer horizon: `stop=10%, lag7, T+17`, hit 70.4231%, Wilson lower 69.7635%, mean return 0.2578%; Wilson lower 70% requires `stop=10%, lag7, T+18`, hit 70.8494%, Wilson lower 70.1925%, mean return 0.2333%.
+- 4% target has no `stop0..10%` first-touch combination reaching point-estimate or Wilson-lower 70% target-hit rate.
+
+### Risks / Review Notes
+- `stop=10%` is the edge of the requested grid; do not infer the true optimum is exactly 10% without testing wider stops and out-of-sample stability.
+- Tight stops increase same-day/touch stop-outs under daily bars; same-day stop-first is conservative but may understate target-first cases in real intraday paths.
+- The first-touch results show the prior conditional MAE table should not be used directly as a stop-loss rule; conditioning on paths with low realized MAE is materially different from executing a stop.
+- If these results are used for candidate filtering, next exact action is to pre-register one or two practical stop/target/horizon candidates and run annual/stability plus sample-out checks before changing scanner behavior.
+
+
+## Current Task: MKF drawdown-threshold conditional target-hit table (2026-09-03)
+
+### Changed Files
+- `HANDOFF.md`: replaced the prior clarification entry with this completed WSL result entry.
+- `.runtime/evaluate_mkf_drawdown_threshold_hit_rate.py`: temporary ignored research script; recomputes MKF lag events with future high/low to evaluate drawdown-threshold conditional target-hit rates.
+- `.runtime/mkf-drawdown-threshold-conditional-hit-20210101-20260902-wsl.json`, `.runtime/mkf-drawdown-threshold-conditional-hit-20210101-20260902-wsl.csv`, `.runtime/mkf-drawdown-threshold-sweet-spots-20210101-20260902-wsl.csv`: copied WSL outputs back locally; runtime artifacts are ignored.
+- `output/回测结果/20260903_141232/`: user-facing deliverable folder with detailed CSV/JSON, sweet-spot CSVs, and `阶段项目说明.md`.
+- No production code, scanner logic, YAML config, prompt, watchlist, production flag, broker/login/order path, or live-trading behavior was changed.
+
+### Behavior / Logic Changes
+- User confirmed drawdown threshold grid `0%..10%` for the same MKF period/result scope as the previous `3%/4% × lag0..lag7 × T+1..T+20` study.
+- Confirmed drawdown definition: `max_drawdown = max(0, 1 - min(low_T1..low_TN) / entry_open)`, using T+1..T+N stock-tradable days after entry; entry day excluded.
+- Confirmed table interpretation: keep events where `max_drawdown <= threshold`, then report target-hit rate within that subset for target 3%/4%.
+- This is a threshold-conditioned descriptive MAE study, not stop-loss first-touch P&L; no fees, slippage, tax, sizing, same-day ordering, fillability, or real P&L is modeled.
+
+### Validation
+- Read `AGENTS.md`, latest `HANDOFF.md`, `回测策略.md`, `remote-server.md`, and existing MKF lag-target implementation before running.
+- WSL was reachable and used per priority: `./scripts/remote_test_env.sh check` passed; memory check showed 19Gi total, 18Gi available; `.venv/bin/python` was Python 3.14.4.
+- Synced source code and temporary script to WSL, then ran: `cd /home/adminwsl/NCN && OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 PYTHONPATH=src .venv/bin/python .runtime/evaluate_mkf_drawdown_threshold_hit_rate.py --data-root PFrontStockData --config yaml/edge_scout_v1.yaml --start-date 2021-01-01 --end-date 2026-09-02 --workers 8 --output .runtime/mkf-drawdown-threshold-conditional-hit-20210101-20260902-wsl.json --summary-csv .runtime/mkf-drawdown-threshold-conditional-hit-20210101-20260902-wsl.csv --sweet-csv .runtime/mkf-drawdown-threshold-sweet-spots-20210101-20260902-wsl.csv` -> processed 3197/3197 codes.
+- Copied WSL results back locally and validated: complete CSV has 3520 data rows plus header; JSON parses with `python -m json.tool`.
+- User-facing outputs copied to `output/回测结果/20260903_141232/`; `阶段项目说明.md` summarizes method, files, key tables, and boundaries.
+- Practical max-threshold frontier with both point estimate and Wilson lower `>=70%`: 3% target `drawdown<=10%, lag7, T+9, n=15520, hits=11055, hit rate=71.2307%, Wilson lower=70.5133%, mean target-zero=2.1369%`; 4% target `drawdown<=10%, lag7, T+13, n=14290, hits=10274, hit rate=71.8964%, Wilson lower=71.1536%, mean target-zero=2.8759%`.
+
+### Risks / Review Notes
+- Do not interpret `drawdown<=10%` as a recommended stop loss or proof that a 10% stop improves P&L; this study conditions on realized path drawdown and target hit, not first-touch stop execution.
+- Conditional rows can show very high hit rates at long horizons/tight thresholds because they filter to paths that never suffered larger MAE; use them as descriptive risk tolerance evidence only.
+- If the next step is to design an actual stop-loss rule, run a separate first-touch stop/target ordering backtest with explicit same-day high/low tie handling before drawing any trading-rule conclusion.
+
+
+## Current Task: Compare MKF A/C shortest-hold sweet spots (2026-09-03)
+
+### Changed Files
+- `HANDOFF.md`: replaced the clarification entry with this completed read-only comparison entry.
+- No backtest, script, scanner logic, YAML config, prompt, watchlist, production flag, broker/login/order path, or result artifact was changed.
+
+### Behavior / Logic Changes
+- User chose A and C comparison for MKF shortest-hold/profit sweet spot.
+- A definition used: first require point-estimate target-hit rate `>=70%`, choose the shortest horizon; same horizon choose higher `mean_target_zero_return`. Robust variant also checked Wilson lower `>=70%`.
+- C definition used: Pareto frontier between shorter horizon and higher `mean_target_zero_return`, with near-70 hit-rate floors checked at `>=68%` and `>=69%`.
+- Analysis remains under confirmed `回测策略.md` target-hit-only / target-zero口径; no timeout exit, stop loss, fees, slippage, real P&L, or positive-return-rate was mixed in.
+
+### Validation
+- Read existing WSL artifact `.runtime/mkf-confirmed-strategy-lag0-lag7-target1-20-t1-t20-20210101-20260902-wsl.csv`; no new回测 was run.
+- A point-estimate `>=70%` earliest sweet spot: `target=3%, lag7, T+13`, n=18726, hits=13198, hit rate 70.4795%, Wilson lower 69.8221%, mean target-zero return 2.1144%, per-horizon simple rate 0.1626%/T.
+- A robust Wilson-lower `>=70%` earliest sweet spot: `target=3%, lag7, T+14`, n=18688, hits=13350, hit rate 71.4362%, Wilson lower 70.7842%, mean target-zero return 2.1431%, per-horizon simple rate 0.1531%/T.
+- C Pareto with hit-rate `>=68%`: frontier starts `3% lag7 T+11` through `3% lag7 T+17`, then switches to `4% lag7 T+18..T+20`; 4% has higher absolute target-zero return but only at longer holding windows and sub-70 point hit rate.
+- C Pareto with hit-rate `>=69%`: earliest frontier is `3% lag7 T+12`; final max absolute return is `4% lag7 T+20` with hit rate 69.6333%, Wilson lower 68.9680%, mean target-zero return 2.7853%.
+- Generated detailed full-period output tables for target 3%/4%, `T+1..T+20 × lag0..lag7`:触达率表、target-zero 简化收益表、and key candidate rows with `n/hits/Wilson` details.
+- Exported CSV files under `.runtime/`: `mkf_3_4pct_lag0_lag7_t1_t20_detailed_comparison.csv`, `mkf_3pct_hit_rate_lag0_lag7_t1_t20_wide.csv`, `mkf_3pct_target_zero_return_lag0_lag7_t1_t20_wide.csv`, `mkf_4pct_hit_rate_lag0_lag7_t1_t20_wide.csv`, `mkf_4pct_target_zero_return_lag0_lag7_t1_t20_wide.csv`, and `mkf_3_4pct_sweet_spot_key_points.csv`.
+- Copied those six CSV exports to timestamped user-facing folder `output/回测结果/20260903_135409/`.
+- User set future preference: generated backtest/strategy-analysis CSV deliverables should be stored in timestamped folders under `output/回测结果/`; this was saved to memory `feedback_csv_backtest_output_folder.md`.
+- User clarified `.runtime` should not retain duplicate CSV copies; memory was updated accordingly. The six generated `.runtime/mkf_*.csv` export copies were already absent when checked, and the six CSV deliverables remain under `output/回测结果/20260903_135409/`.
+- Generated stage project file `output/回测结果/20260903_135409/阶段项目说明.md` summarizing status, source,口径, conclusions, file list, and boundaries.
+
+### Risks / Review Notes
+- Practical conclusion: if enforcing 70% hit-rate and shortest hold, prefer `3% lag7 T+13` (point estimate) or `3% lag7 T+14` (Wilson-lower robust). If allowing near-70 and prioritizing absolute simplified expected target-zero return, `4% lag7 T+20` is the high-return edge but occupies capital longer and is not a confirmed 70%+ point estimate.
+- Do not present these as real-money profit, execution evidence, or investment advice; they are historical adjusted-bar target-touch research results only.
+- Future new MKF backtests must again read `回测策略.md`, restate the口径, and get user confirmation before execution.
+
+
+## Current Task: Read existing MKF 3%/4% lag0-lag7 T+1..T+20 results (2026-09-03)
+
+### Changed Files
+- `HANDOFF.md`: prepended this read-only analysis handoff entry.
+- No backtest script, scanner logic, YAML config, prompt, watchlist, production flag, broker/login/order path, or runtime result file was changed.
+
+### Behavior / Logic Changes
+- User asked to read existing records and analyze about-70% 3%/4% profit-target results across `T+1..T+20` and `lag0..lag7`.
+- This step used the confirmed `回测策略.md` target-hit-only / target-zero口径: next tradable open entry after lag signal close; target hit is cumulative `T+1..T+N` high touch; buy-day high excluded; misses contribute 0 to `mean_target_zero_return`; no timeout exit, stop loss, fees, slippage, real P&L, or positive-return-rate was mixed in.
+- No new backtest was run; analysis read existing WSL artifacts `.runtime/mkf-confirmed-strategy-lag0-lag7-target1-20-t1-t20-20210101-20260902-wsl.{csv,json}`.
+
+### Validation
+- Read `AGENTS.md`, latest `HANDOFF.md`, `回测策略.md`, and the existing WSL CSV/JSON artifacts.
+- Extracted full-period rows for target `3%` and `4%`, `lag0..lag7`, `T+1..T+20` from the existing WSL CSV.
+- Existing WSL result summary: 3% best full-period cell is `lag7/T+20`, n=18573, hits=14117, hit rate 76.0082%, Wilson lower 75.3887%, mean target-zero return 2.2802%. 4% best full-period cell is `lag7/T+20`, n=18573, hits=12933, hit rate 69.6333%, Wilson lower 68.9680%, mean target-zero return 2.7853%.
+
+### Risks / Review Notes
+- Treat “盈利 3%/4%” here as historical adjusted-bar target-touch research, not real-money profit, true P&L, execution evidence, or investment advice.
+- 3% reaches 70%+ across all lags only at longer windows around T+13..T+16 through T+20; 4% remains near but generally below 70%, with only `lag7/T+20` Wilson upper slightly above 70% while point estimate is 69.6333%.
+- Future new MKF backtests must again read `回测策略.md`, restate the口径, and get user confirmation before execution.
+
+
+## Current Task: Document remote server rules and capacity (2026-09-03)
+
+### Changed Files
+- `remote-server.md`: added mandatory pre-read rule for every WSL/Doris/remote operation, Doris permission/startup recovery steps, WSL/Doris hardware profiles, and worker/resource guidance.
+- `CLAUDE.md`: startup continuity now explicitly requires reading `remote-server.md` before remote tests, sync, setup, backtests, or artifact retrieval.
+- `HANDOFF.md`: prepended this remote-server documentation entry.
+
+### Behavior / Logic Changes
+- Future remote work must read `remote-server.md` first instead of rediscovering Doris/WSL connection, Python, permission, and resource rules.
+- Doris guidance now says to use simple foreground SSH with `.venv-doris/bin/python`, split blocked commands into phases, avoid system `python3`, reuse verified larger-grid outputs for subgrid extraction, and stop retrying near-identical blocked commands.
+- WSL guidance now records ThinkPad P16V / WSL2, 20 logical CPUs observed, 32 GB documented RAM with current WSL allocation possibly lower, and 4-8 worker guidance.
+- Doris guidance now records Maxstudio / M4 Max, 64 GB RAM, about 34 GB NCN headroom after `omlx`, required `$HOME/NCN/.venv-doris/bin/python`, and 12-worker conservative / 16-worker high-confidence CPU-bound guidance.
+
+### Validation
+- Read back `remote-server.md` after edit; content includes the new mandatory pre-read, Doris recovery, and capacity sections.
+- `git diff --check -- remote-server.md HANDOFF.md` passed before this handoff update.
+- Synced updated `remote-server.md` to WSL `/home/adminwsl/NCN/remote-server.md`.
+- Synced updated `remote-server.md` to Doris `$HOME/NCN/remote-server.md` via base64 SSH write.
+
+### Risks / Review Notes
+- Do not put credentials, private keys, API keys, passwords, or account identifiers into `remote-server.md`.
+- Continue to follow `回测策略.md` confirmation rules before any MKF backtest; `remote-server.md` governs remote execution mechanics, not strategy methodology.
+
+
+## Current Task: Run confirmed MKF 3%/4% lag0-lag5 T+1..T+20 reproduction on WSL (2026-09-03)
+
+### Changed Files
+- `HANDOFF.md`: prepended this confirmed-run handoff entry.
+- `.runtime/mkf-confirmed-strategy-lag0-lag7-target1-20-t1-t20-20210101-20260902-wsl.json/.csv`: copied WSL output artifacts back locally; runtime artifacts are ignored and should not be committed.
+- No scanner ranking, watchlist, AI provider, broker/login/order, production flag, or live-trading path was changed.
+
+### Behavior / Logic Changes
+- User explicitly confirmed: run according to `回测策略.md`.
+- Confirmed method: target-hit-only / target-zero target-touch rate; entry is next stock-tradable open after lag signal close; target hit is cumulative `T+1..T+N` high-touch; entry-day high excluded; `target_hit_rate = target_hits / n`; `mean_target_zero_return = target_pct / 100 * target_hit_rate`; no timeout open/close, stop-loss P&L, fees/slippage/tax, positive-return-rate, or real P&L.
+- WSL script default ran full grid lag0..lag7, target1..20, T+1..T+20; reported results below are filtered to user-requested full-period lag0..lag5, target 3%/4%, T+1..T+20.
+
+### Validation
+- WSL run completed: `PYTHONPATH=src .venv/bin/python scripts/evaluate_mkf_post_cross_lag_target_grid.py --data-root PFrontStockData --config yaml/edge_scout_v1.yaml --start-date 2021-01-01 --end-date 2026-09-02 --workers 8 --output .runtime/mkf-confirmed-strategy-lag0-lag7-target1-20-t1-t20-20210101-20260902-wsl.json --summary-csv .runtime/mkf-confirmed-strategy-lag0-lag7-target1-20-t1-t20-20210101-20260902-wsl.csv` -> processed 3197/3197 codes.
+- Output validation passed: `schema_version=ncn_mkf_post_cross_lag_target_grid_v3`, `study=mkf_post_cross_lag0_to_lag7_target_zero_return_grid`, CSV includes `mean_target_zero_return`, and metrics/CSV exclude timeout/sample/realized-return fields.
+- Full-period lag0..lag5 best target-hit rates: 3% best is `lag=2,T+20,n=19604,target_hits=14644,target_hit_rate=74.699%,Wilson lower=74.086%,mean_target_zero_return=2.2410%`; 4% best is `lag=5,T+20,n=18903,target_hits=12960,target_hit_rate=68.5605%,Wilson lower=67.895%,mean_target_zero_return=2.7424%`.
+
+### Risks / Review Notes
+- These are offline adjusted-bar target-touch rates only, not real P&L, return promises, buy/sell advice, live execution evidence, or broker/order authorization.
+- The 70%-around reproduction under lag0..lag5 appears at T+20: 3% is above 70%; 4% is around but below 70% full-period, with Wilson upper below 70% in this run.
+- Future MKF backtests must again read `回测策略.md`, restate the method, and obtain user confirmation before execution.
+
+
+## Current Task: Clear unconfirmed MKF backtest outputs and restore strategy document (2026-09-03)
+
+### Changed Files
+- `回测策略.md`: restored after accidental deletion; this is a user-confirmed strategy document and must be preserved, not treated as an unconfirmed runtime artifact.
+- `HANDOFF.md`: removed prior handoff entries that asserted unconfirmed MKF target-zero / target-timeout-open run results as continuation state, then added this corrected cleanup/restoration entry.
+- `scripts/evaluate_mkf_post_cross_lag_target_grid.py`, `src/ashare_edge_scout/pmkf_mkf/mkf_post_cross_lag_comparison.py`, and `tests/test_mkf_post_cross_lag_target_grid.py`: restored to git-tracked state, clearing the unconfirmed method code/test changes from this session.
+- Memory `feedback_mkf_backtest_method.md` and `MEMORY.md`: updated to protect `回测策略.md` and require method confirmation before any new MKF backtest execution or conclusion.
+
+### Behavior / Logic Changes
+- `回测策略.md` is confirmed strategy material. Do not delete, overwrite, or classify it as an unconfirmed artifact.
+- Removed local unconfirmed `.runtime` MKF target-zero / target-timeout-open outputs matching `*mkf*target*zero*`, `*mkf-post-cross-lag0-lag5-t1-t10-target3-4*`, and `*target-timeout-open*`.
+- Removed corresponding WSL and Doris `.runtime` artifacts that matched the same unconfirmed MKF output patterns.
+- Future MKF backtest runs must first read `回测策略.md`, restate the method, and get user confirmation before execution or reporting.
+
+### Validation
+- Local cleanup verification found no matching unconfirmed MKF `.runtime` artifacts; `回测策略.md` was restored locally.
+- WSL cleanup verification found no matching unconfirmed MKF `.runtime` artifacts; `回测策略.md` was restored on WSL.
+- Doris cleanup verification found no matching unconfirmed MKF `.runtime` artifacts; `回测策略.md` was restored on Doris via base64 transfer after `scp` path/encoding failed.
+- `git status --short` before restoring `回测策略.md` showed the MKF core script, core implementation, and focused test file were no longer modified; remaining modified/untracked files are from other tasks and were not intentionally changed except this corrected handoff/strategy restoration.
+
+### Risks / Review Notes
+- Do not rerun, summarize, or cite the deleted WSL/local/Doris outputs; they were generated or retained under methods not confirmed for the interrupted run.
+- Do not infer an MKF回测口径 from old artifacts, schema names, previous summaries, or memory. Ask for explicit confirmation before running any new MKF backtest.
+- Never delete `回测策略.md`; it is a confirmed strategy document the user wants kept.
+- Remaining working-tree changes include unrelated files such as `HANDOFF.md`, AI provider tests/config, `mkf.sh`, `scripts/edge_scout_scan.sh`, AI4Finance docs/experiments, and Web AI export files; they were intentionally left intact.
+
+
+## Current Task: Backtest historical MKF selection lag/target/stop sweet spot (2026-09-02)
+
+### Changed Files
+- `.runtime/mkf_lag_target_stop_sweet_spot.py`: temporary ignored research script for the requested historical MKF selection-run grid; it reads existing `output/edge_scout/mkf_candidate_selections/*/candidates.json` and local adjusted daily bars, with no scanner/watchlist/production mutation.
+- `.runtime/mkf_lag_target_stop_sweet_spot/`: temporary ignored outputs `event_outcomes.csv`, `grid_summary.csv`, `best_stop_by_lag_target_horizon.csv`, `top10_by_target.csv`, and `summary.json`.
+- `HANDOFF.md`: prepended this handoff entry.
+
+### Behavior / Logic Changes
+- No production code, scanner rules, ranking logic, prompts, provider config, watchlists, broker/login/order path, or live-trading behavior was changed.
+- User selected candidate-set option A: all historical MKF selection runs. The actual available selection-run archive currently covers 44 `candidates.json` files, de-duplicated to 132 unique `(code, signal_date, cross_date, post_cross_lag)` events across 29 codes.
+- Fixed backtest grid: lag `0..5`, take-profit `3%` and `4%`, stop-loss `1%..8%`, horizons `T+1..T+10`, entry price = signal-date close from `PFrontStockData`; exit scans `T+1..T+horizon`; same-day target+stop touch is conservatively counted as stop first.
+- Because available selection runs are recent (`2026-08-24` through `2026-09-01`), mature outcomes exist only through `T+7`; `T+8..T+10` are currently immature and must not be interpreted.
+
+### Validation
+- WSL was skipped after the user said WSL is closed.
+- Doris was attempted per priority. `$HOME/NCN`, `PFrontStockData`, and `.runtime` existed, but `output/edge_scout/mkf_candidate_selections` was missing; selection runs and the temporary script were synced. Doris `.venv-doris/bin/python` did not exist and system `python3` lacked pandas/pyarrow. Creating/installing the Doris venv was blocked by Claude Code auto-mode classifier, so Doris could not run the backtest.
+- Local fallback completed with `.venv/bin/python .runtime/mkf_lag_target_stop_sweet_spot.py --selection-root output/edge_scout/mkf_candidate_selections --data-root PFrontStockData --output-dir .runtime/mkf_lag_target_stop_sweet_spot` -> 132 unique events, 29 codes, 7664 mature grid records.
+- Main result with sample-size filter `n>=18`: best robust region is `lag=1`, target `4%`, horizon `T+4` or `T+5`, stop `5%` as the first max-return plateau stop. `lag=1,target=4%,stop=5%,T+4`: n=21, target hit 71.43%, Wilson lower 50.04%, stop 0%, mean +2.8057%, median +4.0%. `lag=1,target=4%,stop=5%,T+5`: n=19, target hit 78.95%, Wilson lower 56.67%, stop 0%, mean +3.0427%, median +4.0%.
+- 3% target comparison: `lag=1,target=3%,stop=5%,T+4`: n=21, target hit 76.19%, Wilson lower 54.91%, stop 0%, mean +2.3351%, median +3.0%. `lag=2,target=3%,stop=4%,T+4`: n=19, target hit 73.68%, Wilson lower 51.21%, stop 5.26%, mean +1.8944%.
+
+### Risks / Review Notes
+- Do not overstate this as full historical validation: the archive of historical selection runs is recent and small, with only 132 unique events and mature data no later than T+7.
+- The strongest practical recommendation from this limited archive is `lag1 + 4% take-profit + T+4/T+5 + 5% stop`; use `T+4` as the more mature/stable setting and `T+5` as the higher-return but smaller-sample variant.
+- Stops tighter than 3% materially increase stop-outs in the lag1 sweet spot; 4% is a stricter alternative, but 5% is the first stop level where the best lag1 target4 T+4/T+5 rows hit the max-return plateau with zero stops in this sample.
+- Next exact action, if higher confidence is needed, is to run the same target-timeout grid from regenerated historical MKF signals instead of only archived selection runs, so T+8..T+10 and older market regimes have enough mature samples.
+
+
+## Current Task: Switch default local AI provider to NVIDIA DeepSeek V4 Pro (2026-09-02)
+
+### Changed Files
+- `yaml/ai_providers.yaml`: changed default provider from `nvidia_kimi` to `nvidia_deepseek_v4_pro`; added enabled NVIDIA OpenAI-compatible provider using base URL `https://integrate.api.nvidia.com/v1`, model `deepseek-ai/deepseek-v4-pro-0813`, key file `Key/nvidia.key`, env fallback `EDGE_SCOUT_NVIDIA_API_KEY`, and timeout `240` seconds. Existing `nvidia_kimi` remains enabled as a non-default fallback.
+- `tests/test_ai_provider_config.py`: updated repository inventory and shared MKF/news client assertions for default `nvidia_deepseek_v4_pro`, while preserving assertions that `nvidia_kimi` remains available.
+- `tests/test_news_ai_review.py`: renamed and updated repository news AI default-provider assertions to NVIDIA DeepSeek V4 Pro.
+- `HANDOFF.md`: prepended this handoff entry.
+
+### Behavior / Logic Changes
+- Local/news/MKF AI workflows loading `yaml/ai_providers.yaml` now default to NVIDIA-hosted `deepseek-ai/deepseek-v4-pro-0813` instead of NVIDIA Kimi K3.
+- Credential handling remains secret-safe: `EDGE_SCOUT_NVIDIA_API_KEY` is preferred when set, otherwise ignored local file `Key/nvidia.key` is used. No API key contents were read or printed.
+- No scanner selection/ranking logic, MKF/Web prompt text, watchlist, production flags, broker/login/order path, or live-trading behavior was changed.
+
+### Validation
+- Local focused validation passed: `.venv/bin/python -m pytest tests/test_ai_provider_config.py tests/test_news_ai_review.py::test_repository_news_ai_config_defaults_to_nvidia_deepseek_v4_pro tests/test_mkf_ai_review.py -q` -> `35 passed in 0.56s`.
+- Local whitespace check passed: `git diff --check`.
+- WSL priority used: `./scripts/remote_test_env.sh check` passed on `10.20.98.161`; `./scripts/remote_test_env.sh sync-code && ./scripts/remote_test_env.sh test tests/test_ai_provider_config.py tests/test_news_ai_review.py::test_repository_news_ai_config_defaults_to_nvidia_deepseek_v4_pro tests/test_mkf_ai_review.py -q` -> `35 passed in 0.53s`.
+
+### Risks / Review Notes
+- This default switch follows the user's explicit request after real replay evidence favored DeepSeek Pro quality, but NVIDIA DeepSeek Pro has known serving instability under full MKF prompt/context: previous real Top 2 replay saw 240s timeout/partial results and 480s replay returned `http_504:Gateway Timeout` for both actual calls.
+- Do not claim this proves better win rate or production profitability; it only changes the default review model for read-only local/news/MKF AI workflows.
+- If routine MKF AI review remains slow or 504-prone, next smallest action is to reduce prompt/context size for the DeepSeek Pro path and rerun Top 2/Top 5 replay before broader use.
+- Preserve `Key/nvidia.key` secrecy; never read or print key contents.
+
+
+## Current Task: Continue NVIDIA model real MKF replay comparison (2026-09-02)
+
+### Changed Files
+- `.runtime/nvidia_model_eval/*-ai-providers.yaml`: temporary ignored evaluation configs now include `extra_options.max_tokens: 1200` to bound OpenAI-compatible chat output during replay; production `yaml/ai_providers.yaml` was not changed by this replay step.
+- `.runtime/nvidia_model_eval/nvidia-deepseek-v4-pro-480-ai-providers.yaml` and `.runtime/nvidia_model_eval/nvidia-deepseek-v4-pro-480-mkf-ai-review.yaml`: temporary ignored DeepSeek Pro configs for distinguishing 240s timeout limits from model/provider instability.
+- `.runtime/nvidia_model_eval/runs/*`: temporary ignored replay outputs for the model comparison.
+- `HANDOFF.md`: prepended this continuation entry.
+
+### Behavior / Logic Changes
+- No scanner selection/ranking logic, MKF prompt production config, Web AI exporter, watchlist, production flags, broker/login/order path, or live-trading behavior was changed.
+- Real replay uses latest MKF candidate run `output/edge_scout/mkf_candidate_selections/mkf-select-20260901_210147` and remains read-only/offline research.
+- Temporary replay configs use absolute `ai_config` and `key_file` paths because `resolve_ai_config_path()` resolves relative business `ai_config` against `business_config_path.resolve().parents[1]`, which previously caused `.runtime/.runtime/...` path failures.
+
+### Validation
+- Old background replay tasks failed only because of stale relative/duplicated provider paths; do not reuse those outputs as model-quality evidence.
+- With corrected absolute paths and `max_tokens: 1200`, Top 1 real replay results on first candidate `sh.601136`:
+  - `deepseek-ai/deepseek-v4-pro-0813`: success, `standard_research`, confidence `0.58`, conservative risk-aware summary; run `.runtime/nvidia_model_eval/runs/nvidia-deepseek-v4-pro-top1-20260902-r4`.
+  - `minimaxai/minimax-m3`: failed `JSONDecodeError`; run `.runtime/nvidia_model_eval/runs/nvidia-minimax-m3-top1-20260902-r4`.
+  - `moonshotai/kimi-k3`: failed `JSONDecodeError`; run `.runtime/nvidia_model_eval/runs/nvidia-kimi-k3-top1-20260902-r4`.
+  - `deepseek-ai/deepseek-v4-flash-0731`: failed `connection_error:TimeoutError`; run `.runtime/nvidia_model_eval/runs/nvidia-deepseek-v4-flash-top1-20260902-r4`.
+- DeepSeek Pro Top 2 at 240s was partial: first candidate timed out, second candidate `sh.605020` succeeded as `standard_research` confidence `0.42`; run `.runtime/nvidia_model_eval/runs/nvidia-deepseek-v4-pro-top2-20260902-r5`.
+- DeepSeek Pro Top 2 with temporary 480s timeout still failed: both actual AI calls returned `http_504:Gateway Timeout`; run `.runtime/nvidia_model_eval/runs/nvidia-deepseek-v4-pro-top2-480s-20260902-r6`. This points to NVIDIA gateway/model-serving instability or prompt size/latency pressure, not only the local 240s client timeout.
+
+### Risks / Review Notes
+- Current evidence favors `deepseek-ai/deepseek-v4-pro-0813` for quality/precision because it is the only tested model that produced valid, conservative, schema-compliant real MKF analysis; however NVIDIA-side latency/stability is still a blocker for routine use at 240s.
+- Do not switch the production default model away from `moonshotai/kimi-k3` yet without either a completed 480s DeepSeek Pro replay or a smaller/optimized prompt validation plan.
+- If background task `brtd26qzb` completes, next exact action is to read its output and `.runtime/nvidia_model_eval/runs/nvidia-deepseek-v4-pro-top2-480s-20260902-r6/summary.json`, then decide whether DeepSeek Pro needs a prompt-size reduction or only a higher timeout budget.
+- Continue preserving `Key/nvidia.key` secrecy; never read or print key contents.
+
+
+## Current Task: Make NVIDIA Kimi the default local AI provider (2026-09-02)
+
+### Changed Files
+- `yaml/ai_providers.yaml`: added enabled OpenAI-compatible provider `nvidia_kimi` and changed the default provider from `local_finance` to `nvidia_kimi`; configured base URL `https://integrate.api.nvidia.com/v1`, model `moonshotai/kimi-k3`, key file `Key/nvidia.key`, env fallback `EDGE_SCOUT_NVIDIA_API_KEY`, and provider timeout `240` seconds.
+- `tests/test_ai_provider_config.py`: updated repository inventory and shared MKF/news client assertions for default `nvidia_kimi`, while preserving `local_finance` as an enabled non-default provider; added timeout assertion for 240 seconds.
+- `tests/test_news_ai_review.py`: updated repository news AI default-provider assertions to `nvidia_kimi` and timeout 240 seconds.
+- `HANDOFF.md`: prepended this handoff entry.
+
+### Behavior / Logic Changes
+- Local/news/MKF AI workflows that use `yaml/ai_providers.yaml` now default to NVIDIA Kimi instead of Doris local finance AI.
+- Credential resolution remains secret-safe and fail-closed: runtime first uses `EDGE_SCOUT_NVIDIA_API_KEY` if set, otherwise reads ignored local file `Key/nvidia.key`.
+- No API key content was read, printed, or committed. `Key/` remains ignored by `.gitignore`; local existence of `Key/nvidia.key` was checked only with `test -f`.
+- No prompt text, scanner selection/ranking logic, Web AI Markdown exporter, watchlist behavior, production flags, broker/login/order paths, or live-trading behavior changed.
+
+### Validation
+- Local focused validation passed after timeout update: `.venv/bin/python -m pytest tests/test_ai_provider_config.py tests/test_mkf_ai_review.py tests/test_news_ai_review.py::test_repository_news_ai_config_defaults_to_nvidia_kimi -q` -> `35 passed in 0.54s`.
+- Local whitespace check passed: `git diff --check`.
+- WSL priority used: earlier `./scripts/remote_test_env.sh check` passed on `10.20.98.161`; WSL test initially failed because ignored `Key/nvidia.key` was absent remotely, so `EDGE_SCOUT_NVIDIA_API_KEY` fallback was added and tests now inject a fake env key.
+- WSL focused validation passed after timeout update and sync: `./scripts/remote_test_env.sh test tests/test_ai_provider_config.py tests/test_mkf_ai_review.py tests/test_news_ai_review.py::test_repository_news_ai_config_defaults_to_nvidia_kimi -q` -> `35 passed in 0.54s`.
+- Local NVIDIA provider smoke: `.venv/bin/python scripts/smoke_ai_provider.py --config yaml/ai_providers.yaml --provider nvidia_kimi --chat` listed models and confirmed `moonshotai/kimi-k3` exists, but chat timed out at the default 30s smoke limit.
+- Local NVIDIA provider smoke passed after raising smoke timeout: `.venv/bin/python scripts/smoke_ai_provider.py --config yaml/ai_providers.yaml --provider nvidia_kimi --chat --timeout-seconds 90` -> models listed, configured model listed, `chat_status=ok`, `response_model=moonshotai/kimi-k3`, `json_object=true`, elapsed `79.109s`.
+- Local NVIDIA provider smoke passed with configured 240s timeout budget: `.venv/bin/python scripts/smoke_ai_provider.py --config yaml/ai_providers.yaml --provider nvidia_kimi --chat --timeout-seconds 240` -> models listed, configured model listed, `chat_status=ok`, `response_model=moonshotai/kimi-k3`, `json_object=true`, elapsed `32.452s`.
+- NVIDIA `/v1/models` inventory was fetched with local `Key/nvidia.key` without printing the key; 82 model IDs were returned. Shortlist for NCN local AI review comparison: `moonshotai/kimi-k3`, `deepseek-ai/deepseek-v4-pro-0813`, `deepseek-ai/deepseek-v4-flash-0731`, `writer/palmyra-fin-70b-32k`, `nvidia/llama-3.1-nemotron-70b-instruct`, `nvidia/nemotron-3-super-120b-a12b`, `nvidia/nemotron-3-ultra-550b-a55b`, and `mistralai/mistral-large-2-instruct`.
+- First NVIDIA shortlist smoke used a light JSON prompt. `moonshotai/kimi-k3`, `deepseek-ai/deepseek-v4-pro-0813`, `deepseek-ai/deepseek-v4-flash-0731`, and `nvidia/nemotron-3-ultra-550b-a55b` returned; `writer/palmyra-fin-70b-32k`, `nvidia/llama-3.1-nemotron-70b-instruct`, and `mistralai/mistral-large-2-instruct` returned account-scoped 404s; `nvidia/nemotron-3-super-120b-a12b` returned 503 overload. Some returned outputs violated NCN forbidden-action/schema expectations.
+- Strict NCN `parse_ai_response()` contract smoke results: valid rows were `deepseek-ai/deepseek-v4-pro-0813` (227.806s, `insufficient_evidence`, confidence 0.4), `deepseek-ai/deepseek-v4-flash-0731` (30.977s, `standard_research`, confidence 0.4), `minimaxai/minimax-m3` (47.809s, `insufficient_evidence`, confidence 0.35), and `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` (16.704s, `insufficient_evidence`, confidence 0.35). Invalid/failed rows included `moonshotai/kimi-k3` (116.965s, no JSON object in strict test), `nvidia/nemotron-3.5-lightning-30b-a3b` and `nvidia/nemotron-3-ultra-550b-a55b` (forbidden action labels), plus account-scoped 404/503 rows above.
+
+### Risks / Review Notes
+- User clarified model selection should prioritize precision/high-quality review over speed; long latency is acceptable if quality is materially better. Under this preference, `deepseek-ai/deepseek-v4-pro-0813` becomes the strongest current high-quality candidate from the strict contract pass, but it needs realistic MKF/news replay before becoming default because the smoke sample only proves schema compliance and conservative output, not forward predictive accuracy.
+- NVIDIA Kimi connectivity works locally with `Key/nvidia.key`, but strict NCN contract smoke was unstable for `moonshotai/kimi-k3`; do not assume Kimi is best merely because it is currently configured as default.
+- Current provider config timeout is 240s per user request.
+- Default-provider change affects both news and MKF local AI review paths that load the shared provider YAML.
+- Existing unrelated working-tree changes remain present and were not modified as part of this provider/default change.
+
+
 ## Current Task: Tighten local MKF AI analysis template boundaries (2026-09-02)
 
 ### Changed Files

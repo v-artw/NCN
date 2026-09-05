@@ -51,8 +51,17 @@ def test_repository_ai_provider_inventory() -> None:
     assert config.provider == "local_finance"
     selected = config.providers[config.provider]
     assert selected["base_url"] == "http://ts.dorisw.kdns.fr:18090/v1"
-    assert selected["model"] == "Qwen3.8-27B-oQ4e-mtp"
+    assert selected["model"] == "Ornith-1.0-35B-4bit"
+    assert selected["key_file"] == str(ROOT / "Key" / "ts.key")
+    assert selected["api_key_env"] == "EDGE_SCOUT_LOCAL_AI_API_KEY"
+    assert selected["timeout_seconds"] == 120
     assert selected["enabled"] is True
+    assert config.providers["nvidia_kimi"]["enabled"] is True
+    assert config.providers["nvidia_kimi"]["model"] == "moonshotai/kimi-k3"
+    nvidia_deepseek = config.providers["nvidia_deepseek_v4_pro"]
+    assert nvidia_deepseek["enabled"] is True
+    assert nvidia_deepseek["base_url"] == "https://integrate.api.nvidia.com/v1"
+    assert nvidia_deepseek["model"] == "deepseek-ai/deepseek-v4-pro-0813"
     assert config.providers["deepseek"]["enabled"] is True
     for name in ("deepseek_chat", "deepseek_pro", "lmstudio_finance_8b", "tongyi", "kimi", "zhipu"):
         assert config.providers[name]["enabled"] is False
@@ -142,10 +151,11 @@ def test_chat_400_retries_without_response_format_and_seed(monkeypatch: pytest.M
     assert "response_format" not in calls[1] and "seed" not in calls[1]
 
 
-def test_mkf_and_news_resolve_same_repository_provider() -> None:
+def test_mkf_and_news_resolve_same_repository_provider(monkeypatch: pytest.MonkeyPatch) -> None:
     from ashare_edge_scout.mkf_ai_review import load_mkf_ai_config, build_ai_client as build_mkf_client
     from ashare_edge_scout.news_ai_review import load_review_config, build_ai_client as build_news_client
 
+    monkeypatch.setenv("EDGE_SCOUT_LOCAL_AI_API_KEY", "test-secret")
     mkf = load_mkf_ai_config(ROOT / "yaml" / "mkf_ai_review.yaml")
     news = load_review_config(ROOT / "yaml" / "news_ai_review.yaml")
     mkf_client = build_mkf_client(mkf)
@@ -154,9 +164,9 @@ def test_mkf_and_news_resolve_same_repository_provider() -> None:
     assert mkf["ai_config_sha256"] == news["ai_config_sha256"]
     assert mkf["ai"]["provider"] == news["ai"]["provider"] == "local_finance"
     assert mkf_client is not None and news_client is not None
-    assert mkf_client.base_url == news_client.base_url
-    assert mkf_client.model == news_client.model == "Qwen3.8-27B-oQ4e-mtp"
-    assert mkf_client.timeout_seconds == news_client.timeout_seconds
+    assert mkf_client.base_url == news_client.base_url == "http://ts.dorisw.kdns.fr:18090/v1"
+    assert mkf_client.model == news_client.model == "Ornith-1.0-35B-4bit"
+    assert mkf_client.timeout_seconds == news_client.timeout_seconds == 120
 
 
 def test_smoke_stops_before_chat_when_models_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

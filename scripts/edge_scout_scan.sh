@@ -538,6 +538,96 @@ cmd_select_mkf() {
         "${VENV}" -B "${PROJECT_ROOT}/scripts/select_mkf_candidates.py" "${args[@]}"
 }
 
+cmd_export_mkf_web_ai() {
+    local csv_path=""
+    local latest="0"
+    local select_csv="0"
+    local top=""
+    local max_bytes="4000"
+    local title=""
+    local as_of=""
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --csv)
+                shift
+                csv_path="${1:?--csv requires a CSV path}"
+                shift
+                ;;
+            --latest)
+                latest="1"
+                shift
+                ;;
+            --select)
+                select_csv="1"
+                shift
+                ;;
+            --top)
+                shift
+                top="${1:?--top requires an integer}"
+                shift
+                ;;
+            --max-bytes)
+                shift
+                max_bytes="${1:?--max-bytes requires an integer}"
+                shift
+                ;;
+            --title)
+                shift
+                title="${1:?--title requires text}"
+                shift
+                ;;
+            --as-of)
+                shift
+                as_of="${1:?--as-of requires a label}"
+                shift
+                ;;
+            *)
+                echo "ERROR: unknown export-mkf-web-ai argument: $1" >&2
+                exit 2
+                ;;
+        esac
+    done
+
+    if [ "${latest}" = "1" ] && [ "${select_csv}" = "1" ]; then
+        echo "ERROR: export-mkf-web-ai 不能同时使用 --latest 和 --select" >&2
+        exit 2
+    fi
+    if [ -n "${csv_path}" ] && { [ "${latest}" = "1" ] || [ "${select_csv}" = "1" ]; }; then
+        echo "ERROR: export-mkf-web-ai 使用 --csv 时不能同时使用 --latest 或 --select" >&2
+        exit 2
+    fi
+
+    local args=(
+        --output-root "${DEFAULT_OUTPUT_ROOT}/mdfile"
+        --max-bytes "${max_bytes}"
+    )
+    if [ -n "${csv_path}" ]; then
+        args+=("${csv_path}")
+    else
+        args+=(--mkf-selection-root "${DEFAULT_OUTPUT_ROOT}/mkf_candidate_selections")
+        if [ "${select_csv}" = "1" ]; then
+            args+=(--select)
+        elif [ "${latest}" = "1" ] || [ ! -t 0 ] || [ ! -t 1 ]; then
+            args+=(--latest)
+        else
+            args+=(--select)
+        fi
+    fi
+    if [ -n "${top}" ]; then
+        args+=(--top "${top}")
+    fi
+    if [ -n "${title}" ]; then
+        args+=(--title "${title}")
+    fi
+    if [ -n "${as_of}" ]; then
+        args+=(--as-of "${as_of}")
+    fi
+
+    PYTHONPATH="${SRC_ROOT}" PYTHONNOUSERSITE=1 PYTHONSAFEPATH=1 \
+        "${VENV}" -B "${PROJECT_ROOT}/scripts/export_scan_csv_for_web_ai.py" "${args[@]}"
+    echo "boundary=MKF CSV Web AI Markdown 导出仅转换只读研究文件；不改变 SMC 入选、排序、watchlist、前瞻归档或生产逻辑。"
+}
+
 cmd_review_news() {
     local selection_run=""
     local top=""
@@ -1096,6 +1186,9 @@ A 股多因子 + 15 日蜡烛图短线研究系统
   edge_scout_scan.sh review-mkf-ai [--selection-run DIR] [--top N]
       对指定或最新 MKF 候选源实验做只读 AI 研究分层，不写入 SMC 流程
 
+  edge_scout_scan.sh export-mkf-web-ai [--latest|--csv PATH] [--top N]
+      将 MKF 候选源 CSV 转换为 Web AI Markdown；默认输出到 output/edge_scout/mdfile/
+
   edge_scout_scan.sh review-news [--selection-run DIR] [--top N]
       复核指定或最新 SMC 结果；--top 仅限制终端展示，JSON/CSV 保存完整候选复核
 
@@ -1144,6 +1237,7 @@ A 股多因子 + 15 日蜡烛图短线研究系统
   edge_scout_scan.sh mkf-review-small --top 10              # MKF 小资金候选源 + AI 分层一键流程
   edge_scout_scan.sh select-mkf --top 10                    # 独立 MKF 候选源实验
   edge_scout_scan.sh review-mkf-ai --selection-run <DIR>    # MKF 候选源 AI 研究分层
+  edge_scout_scan.sh export-mkf-web-ai --latest --top 10    # MKF 候选 CSV 转 Web AI Markdown
   edge_scout_scan.sh test
   edge_scout_scan.sh archive-smc-news
   edge_scout_scan.sh audit-smc-news
@@ -1232,6 +1326,11 @@ main() {
             check_data_root
             shift
             cmd_review_mkf_ai "$@"
+            ;;
+        export-mkf-web-ai)
+            check_runtime_prereqs
+            shift
+            cmd_export_mkf_web_ai "$@"
             ;;
         review-news)
             check_runtime_prereqs

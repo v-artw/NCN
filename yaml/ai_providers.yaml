@@ -12,7 +12,7 @@ providers:
     enabled: true
     name: Doris Local Finance AI
     base_url: http://ts.dorisw.kdns.fr:18090/v1
-    model: Qwen3.8-27B-oQ4e-mtp
+    model: Ornith-1.0-35B-4bit
     key_file: Key/ts.key
     api_key_env: EDGE_SCOUT_LOCAL_AI_API_KEY
     timeout_seconds: 120
@@ -35,6 +35,24 @@ providers:
     model: deepseek-chat
     key_file: Key/deepseek.key
     timeout_seconds: 120
+
+  nvidia_kimi:
+    enabled: true
+    name: NVIDIA Kimi K3
+    base_url: https://integrate.api.nvidia.com/v1
+    model: moonshotai/kimi-k3
+    key_file: Key/nvidia.key
+    api_key_env: EDGE_SCOUT_NVIDIA_API_KEY
+    timeout_seconds: 240
+
+  nvidia_deepseek_v4_pro:
+    enabled: true
+    name: NVIDIA DeepSeek V4 Pro 0813
+    base_url: https://integrate.api.nvidia.com/v1
+    model: deepseek-ai/deepseek-v4-pro-0813
+    key_file: Key/nvidia.key
+    api_key_env: EDGE_SCOUT_NVIDIA_API_KEY
+    timeout_seconds: 240
 
   deepseek_pro:
     enabled: false

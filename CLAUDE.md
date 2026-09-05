@@ -3,6 +3,7 @@
 ## Startup Continuity
 
 - Before starting any substantive work, read `AGENTS.md` and the newest relevant entry in `HANDOFF.md`.
+- Before any WSL/Doris/remote test, sync, setup, backtest, or artifact retrieval, read `remote-server.md` first.
 - Treat `HANDOFF.md` as the continuation state from prior sessions and other agents.
 - Do not assume prior chat context is available after restart.
 - If the user asks to continue, first summarize the current state from `HANDOFF.md` in one or two sentences, then proceed.
