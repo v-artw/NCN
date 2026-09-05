@@ -1,5 +1,32 @@
 # Reviewer Handoff
 
+## Completed Task: GitHub release for MKF AI provider integration (2026-09-05)
+
+### Task
+- User asked to organize the current production-adjacent AI work into a GitHub commit and release.
+
+### Changed Files
+- Release commit `4ae62a2` includes production/near-production AI provider/prompt/parser/test changes, MKF Web AI Markdown export entrypoint and tests, local-finance eval/smoke tools, MKF AI score rotation backtest provider-default fix, and `yaml/mkf_ai_review.pre-20260905-backup.yaml`.
+- Explicitly not staged/committed: `backups/`, `experiments/ai4finance/`, `docs/research/ai4finance-production-integration-plan.md`, and `回测策略.md`.
+
+### Behavior / Logic Changes
+- GitHub branch pushed: `ai4finance-production-integration`.
+- GitHub release created: `mkf-ai-provider-integration-20260905` / “MKF AI Provider Integration 2026-09-05”.
+- Release URL: https://github.com/v-artw/NCN/releases/tag/mkf-ai-provider-integration-20260905
+- AI4Finance sandbox files were intentionally excluded because grep found early sandbox wording that still bans buy/sell/hold/target/stop terms, conflicting with current NCN boundary that allows human research advice while blocking only live execution/broker/guarantee/leverage/real-money claims.
+
+### Validation
+- Full local release prep test before commit: `./.venv/bin/python -m pytest -q` -> 602 passed, 3 skipped in 65.69s.
+- Focused release suite -> 127 passed.
+- `py_compile` passed for release candidate Python scripts.
+- `git diff --check` and `git diff --cached --check` passed.
+- GitHub release metadata verified with `gh release view` after creation.
+
+### Risks / Review Notes
+- Local working tree still has untracked excluded files: `backups/`, `experiments/ai4finance/`, `docs/research/ai4finance-production-integration-plan.md`, and `回测策略.md`.
+- The functional release tag points at `4ae62a2`; this handoff-only entry may be committed after the release commit if preserved in Git.
+- Do not include AI4Finance sandbox files in a future release until their prompt/parser/eval boundary is updated to match the current no-live-trading but human-advice-allowed rule.
+
 ## Completed Task: Full local test run and diff check (2026-09-05)
 
 ### User Request
