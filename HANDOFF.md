@@ -12,6 +12,8 @@
 - `.claude-ai-providers-abs-key.tmp.yaml`: temporary local provider config with absolute key paths.
 - `HANDOFF.md`: updated this entry.
 - Output created: `output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260907_news_fallback_rerun/`.
+- Git commit created and pushed: `6b825c8` (`Fix MKF Eastmoney news fallback`) on branch `ai4finance-production-integration`.
+- GitHub release created: `mkf-news-fetch-fix-20260907` / `MKF News Fetch Fix 2026-09-07`, URL `https://github.com/v-artw/NCN/releases/tag/mkf-news-fetch-fix-20260907`.
 
 ### Behavior / Logic Changes
 - Eastmoney stock-news fallback restored `eastmoney_stock_news` under local Python 3.14 / pandas 3.0.5 / pyarrow string backend by disabling pandas future string inference only for the retry.
