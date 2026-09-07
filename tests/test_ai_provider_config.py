@@ -51,7 +51,7 @@ def test_repository_ai_provider_inventory() -> None:
     assert config.provider == "local_finance"
     selected = config.providers[config.provider]
     assert selected["base_url"] == "http://ts.dorisw.kdns.fr:18090/v1"
-    assert selected["model"] == "Ornith-1.0-35B-4bit"
+    assert selected["model"] == "Ornith-1.5-35B-A3B-oQ4e-mtp"
     assert selected["key_file"] == str(ROOT / "Key" / "ts.key")
     assert selected["api_key_env"] == "EDGE_SCOUT_LOCAL_AI_API_KEY"
     assert selected["timeout_seconds"] == 120
@@ -62,6 +62,12 @@ def test_repository_ai_provider_inventory() -> None:
     assert nvidia_deepseek["enabled"] is True
     assert nvidia_deepseek["base_url"] == "https://integrate.api.nvidia.com/v1"
     assert nvidia_deepseek["model"] == "deepseek-ai/deepseek-v4-pro-0813"
+    gsykj_gpt6 = config.providers["gsykj_gpt6"]
+    assert gsykj_gpt6["enabled"] is True
+    assert gsykj_gpt6["base_url"] == "https://ai.gsykj.com/v1"
+    assert gsykj_gpt6["model"] == "gpt-6-astra"
+    assert gsykj_gpt6["key_file"] == str(ROOT / "Key" / "aisky.key")
+    assert gsykj_gpt6["timeout_seconds"] == 240
     assert config.providers["deepseek"]["enabled"] is True
     for name in ("deepseek_chat", "deepseek_pro", "lmstudio_finance_8b", "tongyi", "kimi", "zhipu"):
         assert config.providers[name]["enabled"] is False
@@ -165,8 +171,22 @@ def test_mkf_and_news_resolve_same_repository_provider(monkeypatch: pytest.Monke
     assert mkf["ai"]["provider"] == news["ai"]["provider"] == "local_finance"
     assert mkf_client is not None and news_client is not None
     assert mkf_client.base_url == news_client.base_url == "http://ts.dorisw.kdns.fr:18090/v1"
-    assert mkf_client.model == news_client.model == "Ornith-1.0-35B-4bit"
+    assert mkf_client.model == news_client.model == "Ornith-1.5-35B-A3B-oQ4e-mtp"
     assert mkf_client.timeout_seconds == news_client.timeout_seconds == 120
+
+
+def test_provider_override_selects_gsykj_gpt6_without_changing_default() -> None:
+    default_config = load_ai_provider_config(ROOT / "yaml" / "ai_providers.yaml")
+    gpt6_config = load_ai_provider_config(
+        ROOT / "yaml" / "ai_providers.yaml", provider_override="gsykj_gpt6"
+    )
+
+    assert default_config.provider == "local_finance"
+    assert gpt6_config.provider == "gsykj_gpt6"
+    selected = gpt6_config.providers[gpt6_config.provider]
+    assert selected["base_url"] == "https://ai.gsykj.com/v1"
+    assert selected["model"] == "gpt-6-astra"
+    assert selected["key_file"] == str(ROOT / "Key" / "aisky.key")
 
 
 def test_smoke_stops_before_chat_when_models_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

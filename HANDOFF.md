@@ -1,5 +1,188 @@
 # Reviewer Handoff
 
+## Completed Task: Rerun 17-candidate MKF AI review after Eastmoney stock-news fallback (2026-09-07)
+
+### Task
+- User asked to rerun current 17-stock MKF AI review after adding the Eastmoney stock-news compatibility fallback, with `sz.001289` and `sz.002867` previously listed as AI-unscored.
+
+### Changed Files
+- `src/ashare_edge_scout/mkf_news_context.py`: added local AkShare fallback that retries `stock_news_em` inside `pandas.option_context("future.infer_string", False)` if the first call fails.
+- `.claude-mkf-news-no-cache.tmp.yaml`: temporary local no-cache news config for this rerun.
+- `.claude-mkf-ai-review-no-cache-news.tmp.yaml`: temporary local MKF AI config pointing to absolute provider/news config paths.
+- `.claude-ai-providers-abs-key.tmp.yaml`: temporary local provider config with absolute key paths.
+- `HANDOFF.md`: updated this entry.
+- Output created: `output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260907_news_fallback_rerun/`.
+
+### Behavior / Logic Changes
+- Eastmoney stock-news fallback restored `eastmoney_stock_news` under local Python 3.14 / pandas 3.0.5 / pyarrow string backend by disabling pandas future string inference only for the retry.
+- No MKF selection, AI prompt, parser, SMC ranking/admission, watchlist, production flag, or live-trading behavior changed.
+- Rerun used no-cache online news refresh for all 17 candidates.
+
+### Validation
+- Pre-rerun direct probe after fallback: `google_news_rss=success:0`, `eastmoney_stock_news=success:5`, `eastmoney_announcement=success:5` for `sz.000400`.
+- `./.venv/bin/python -m pytest tests/test_mkf_news_context.py -q` -> 7 passed.
+- `./.venv/bin/python -m py_compile src/ashare_edge_scout/mkf_news_context.py` -> passed.
+- Final rerun command used local `.venv`, selection run `output/edge_scout/mkf_candidate_selections/mkf-select-20260907_073453`, data root `PFrontStockData`, run id `mkf-ai-review-20260907_news_fallback_rerun`.
+- Rerun summary: `status=success`, `candidate_count=17`, `ai_attempt_count=17`, `ai_success_count=17`, `ai_error_counts={}`, `news_cache_status_counts={"refreshed_no_cache":17}`.
+- State counts: `priority_research=0`, `standard_research=16`, `risk_attention=1`, `insufficient_evidence=0`, `ai_unavailable=0`.
+- `sz.001289` and `sz.002867` are no longer unscored; both completed as `standard_research`.
+
+### Risks / Review Notes
+- This is a read-only MKF AI research-layer rerun and not a buy/sell/order/return recommendation.
+- Top effective AI ranking after rerun: `sh.600757`, `sh.600197`, `sz.001289`, `sz.000400`, `sh.601019`, `sh.600085`, `sh.603013`, `sz.002946`, `sz.002705`, `sh.600025`, `sz.002867`, `sh.603486`, `sh.601089`, `sh.603858`, `sh.603279`, `sh.605377`, then risk-attention `sh.603665`.
+- `sz.000400` changed from news-unavailable wording to explicit negative news context: 2026 interim net profit down 34.40% and cautious IR/earnings-meeting context.
+- Do not repeat the failed relative-path rerun attempts; this script path flow resolved relative config/key paths from the parent `/Users/artx/Local/Git/Stock`, so temporary configs used absolute paths.
+
+## Historical Task: Monitor MKF AI review run progress (2026-09-07)
+
+### Task
+- User pasted live MKF AI review progress for a 17-candidate run and needed continuation context preserved.
+
+### Changed Files
+- `HANDOFF.md`: added this historical in-progress entry only.
+
+### Behavior / Logic Changes
+- None; monitoring/interpretation only.
+
+### Validation
+- Latest observed progress: `1/17 sz.000400` completed as `state=标准研究`, `conf=0.52`, `local=6.70`.
+- Observed context status for `sz.000400`: `ctx=ok`, `news=refreshed`, `cache=refreshed`, `fatal=0`, `attention=0`, `candle=9.00`.
+- Live local probe on 2026-09-07 before installing AkShare with `./.venv/bin/python`: `google_news_rss` returned `success:0` for `sz.000400`, `eastmoney_announcement` returned `success:5`, and `eastmoney_stock_news` returned `error:ModuleNotFoundError` because local `.venv` lacked `akshare`.
+- User requested installing AkShare in the virtualenv and retesting. Ran `./.venv/bin/python -m pip install 'akshare>=1.10.0'`; installed `akshare==1.18.94` plus dependencies.
+- Post-install no-cache probe for `sz.000400` initially showed `google_news_rss=success:0`, `eastmoney_announcement=success:5`, `eastmoney_stock_news=error:ArrowInvalid`; combined context returned only 5 Eastmoney announcements.
+- Full traceback showed `ak.stock_news_em(symbol='000400')` failed in AkShare `news_stock.py` at `temp_df["新闻内容"].str.replace(r"　", "", regex=True)` with `pyarrow.lib.ArrowInvalid: Invalid regular expression: invalid escape sequence: \u` under local Python 3.14 / pandas 3.0.5 / pyarrow string backend environment.
+- Added a local compatibility fallback in `src/ashare_edge_scout/mkf_news_context.py`: if the first AkShare `stock_news_em` call fails, retry inside `pandas.option_context("future.infer_string", False)` and only return the original error if the retry also fails.
+- Post-fallback no-cache probe for `sz.000400`: `google_news_rss=success:0`, `eastmoney_stock_news=success:5`, `eastmoney_announcement=success:5`; combined context now includes 5 Eastmoney stock-news titles plus 5 announcements.
+- Validation after fallback: `./.venv/bin/python -m pytest tests/test_mkf_news_context.py -q` -> 7 passed; `./.venv/bin/python -m py_compile src/ashare_edge_scout/mkf_news_context.py` -> passed.
+
+### Risks / Review Notes
+- Do not treat this as a final 17-stock review result; only the first candidate is complete in the pasted progress.
+- `sz.000400` risk text from the earlier run was based on a degraded Eastmoney stock-news path; after fallback, stock-news headlines include 2026 interim-profit-decline items and insurer-position-adjustment context, so rerunning MKF AI review may change the news-risk explanation.
+- The fallback is intentionally local to the AkShare call and does not change Google RSS, Eastmoney announcements, MKF selection, AI prompt, parser, SMC ranking/admission, or live-trading boundaries.
+- Next exact action: rerun MKF AI review or at least no-cache news context refresh for the current 17 candidates before relying on news-driven AI conclusions.
+
+## Completed Task: Rerun GPT6 MKF AI review with technical context on 2026-09-06 candidates (2026-09-06)
+
+### Task
+- User asked to fix the missing technical context issue and rerun GPT6 MKF AI Review on today's candidates.
+
+### Changed Files
+- `HANDOFF.md`: added this entry.
+- Temporary untracked local configs reused for scoped GPT6 rerun only: `.claude-gpt6-mkf-ai-providers.tmp.yaml` and `.claude-gpt6-mkf-ai-review.tmp.yaml`; repository default `yaml/ai_providers.yaml` was not changed.
+- Output created: `output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260906_gpt6_rerun3_techctx/`.
+
+### Behavior / Logic Changes
+- No production code, MKF selection logic, Ornith provider config, parser strictness, prompt, watchlist, SMC ranking/admission, or default provider behavior was changed.
+- The rerun fixed the prior disabled technical context by passing `--data-root PFrontStockData`; all 17 context records in the final summary report `status=ok`.
+
+### Validation
+- Rerun command: `./.venv/bin/python scripts/review_mkf_ai.py --selection-root output/edge_scout/mkf_candidate_selections --selection-run output/edge_scout/mkf_candidate_selections/mkf-select-20260906_085302 --output-root output/edge_scout/mkf_ai_reviews --config .claude-gpt6-mkf-ai-review.tmp.yaml --data-root PFrontStockData --run-id mkf-ai-review-20260906_gpt6_rerun3_techctx`.
+- Result summary: `status=partial`, `ai_provider=gsykj_gpt6`, `ai_model=gpt-6-astra`, `candidate_count=17`, `ai_attempt_count=17`, `ai_success_count=14`, `ai_error_counts={"ValueError": 3}`.
+- State counts: `standard_research=5`, `risk_attention=9`, `ai_unavailable=3`, `priority_research=0`, `insufficient_evidence=0`.
+- Effective GPT6 standard rows: `sz.000400`, `sh.600757`, `sh.600197`, `sz.001289`, `sz.002705`.
+- Effective GPT6 risk-attention rows: `sh.605377`, `sh.603665`, `sh.603279`, `sh.603013`, `sz.002867`, `sh.600025`, `sh.601089`, `sh.600085`, `sz.002946`.
+- GPT6 unavailable rows: `sh.601019`, `sh.603486`, `sh.603858`.
+
+### Risks / Review Notes
+- This run is a meaningful GPT6 result because `technical_context` is now `ok`; however it is still partial due to 3 parser/contract `ValueError` rows.
+- GPT6 appears stricter/more risk-focused than the earlier Ornith-1.5 complete run: no `priority_research`, five `standard_research`, nine `risk_attention`.
+- For today's best complete reference, Ornith-1.5 `mkf-ai-review-20260906_084534` remains the only 17/17 complete run; GPT6 `mkf-ai-review-20260906_gpt6_rerun3_techctx` can be used as a secondary risk-review lens, not as the sole ranking source.
+- Do not treat the three `ai_unavailable` rows as GPT6 negative stock opinions; they are parser/contract failures.
+
+## Completed Task: Rerun GPT6 MKF AI review on 2026-09-06 candidates (2026-09-06)
+
+### Task
+- User asked to rerun GPT6 MKF AI Review using today's candidate set.
+
+### Changed Files
+- `HANDOFF.md`: added this entry.
+- Temporary untracked local configs created for scoped rerun only: `.claude-gpt6-mkf-ai-providers.tmp.yaml` and `.claude-gpt6-mkf-ai-review.tmp.yaml`; these select `gsykj_gpt6` without changing repository default `yaml/ai_providers.yaml`.
+- Output created: `output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260906_gpt6_rerun2/`.
+- A mistaken earlier rerun output also exists at `output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260906_gpt6_rerun/`; it used default `local_finance` / Ornith-1.5 and should not be treated as GPT6 evidence.
+
+### Behavior / Logic Changes
+- No production code, MKF selection logic, Ornith provider config, parser strictness, prompt, watchlist, SMC ranking/admission, or default provider behavior was changed.
+- GPT6 rerun used `gsykj_gpt6` / `gpt-6-astra` through a temporary provider config pointing to `https://ai.gsykj.com/v1`.
+
+### Validation
+- Rerun command: `./.venv/bin/python scripts/review_mkf_ai.py --selection-root output/edge_scout/mkf_candidate_selections --selection-run output/edge_scout/mkf_candidate_selections/mkf-select-20260906_085302 --output-root output/edge_scout/mkf_ai_reviews --config .claude-gpt6-mkf-ai-review.tmp.yaml --run-id mkf-ai-review-20260906_gpt6_rerun2`.
+- Result summary: `status=partial`, `ai_provider=gsykj_gpt6`, `ai_model=gpt-6-astra`, `candidate_count=17`, `ai_attempt_count=17`, `ai_success_count=11`, `ai_error_counts={"ValueError": 6}`.
+- State counts: `insufficient_evidence=11`, `ai_unavailable=6`, `standard_research=0`, `risk_attention=0`, `priority_research=0`.
+- Effective GPT6 rows: `sh.603858`, `sh.601089`, `sh.603013`, `sh.603486`, `sh.603279`, `sh.605377`, `sz.000400`, `sz.001289`, `sh.600085`, `sz.002946`, `sh.601019`.
+- GPT6 unavailable rows: `sh.600757`, `sz.002867`, `sh.600025`, `sh.600197`, `sz.002705`, `sh.603665`.
+
+### Risks / Review Notes
+- The partial failure is no longer the old HTML `JSONDecodeError`; GPT6 produced some valid structured JSON, but 6 responses failed parser/contract validation with `ValueError`, so this run is not as reliable as the Ornith-1.5 full-success run.
+- The temporary MKF config used absolute paths because relative config paths were resolved from the parent project path in this script path flow; do not repeat the failed relative-path attempt.
+- The GPT6 rerun showed `technical_context` statuses as `disabled` and news storage under `/Users/artx/Local/Git/Stock/Message`, indicating the temporary config path affected relative path resolution; this limits direct comparability to the earlier Ornith-1.5 run.
+- For today's research reference, continue treating `mkf-ai-review-20260906_084534` as the best complete AI review unless a corrected GPT6 rerun with proper technical context and 17/17 parser success is produced.
+
+## Completed Task: Fix GPT6 provider API base path compatibility (2026-09-06)
+
+### Task
+- User approved a scoped fix for GPT6 JSON compatibility that must not affect Ornith behavior.
+
+### Changed Files
+- `yaml/ai_providers.yaml`: changed `gsykj_gpt6.base_url` from `https://ai.gsykj.com` to `https://ai.gsykj.com/v1`; left `local_finance` provider/default path intact.
+- `tests/test_ai_provider_config.py`: added assertions for `gsykj_gpt6` inventory and provider override, and updated existing Ornith assertions to match the current repo config model `Ornith-1.5-35B-A3B-oQ4e-mtp`.
+- `HANDOFF.md`: added this entry.
+
+### Behavior / Logic Changes
+- GPT6 now targets the OpenAI-compatible API path instead of the HTML web gateway, eliminating the prior local `JSONDecodeError` caused by parsing an HTML page as JSON.
+- No code-path changes were made to MKF selection, MKF AI prompt, Ornith request construction, or global AI parsing strictness.
+
+### Validation
+- `./.venv/bin/python -m pytest tests/test_ai_provider_config.py tests/test_mkf_ai_review.py -q` -> 42 passed.
+- `./.venv/bin/python -m py_compile src/ashare_edge_scout/ai_providers.py src/ashare_edge_scout/mkf_ai_review.py scripts/smoke_ai_provider.py` -> passed.
+- `./.venv/bin/python scripts/smoke_ai_provider.py --config yaml/ai_providers.yaml --provider gsykj_gpt6 --chat --timeout-seconds 90` no longer returns HTML/JSONDecodeError; `/models` succeeds, but chat returns standard `http_503` JSON error.
+
+### Risks / Review Notes
+- Initial GPT6 smoke after fixing `/v1` returned transient `http_503` and one `/models` response without `gpt-6-astra`; user screenshot from ccswith showed `gpt-6-astra`, so the endpoint was retried.
+- Retry on 2026-09-06 succeeded for both `https://ai.gsykj.com/v1` and `http://bs.gsykj.com/ai/v1`: `/models` listed `gpt-6-astra`, and chat calls for both `gpt-6-astra` and `gpt-5.6-sol` returned valid JSON.
+- Current config keeps `gsykj_gpt6.base_url` as `https://ai.gsykj.com/v1`; `http://bs.gsykj.com/ai/v1` is also viable based on the retry, but not selected.
+- Do not add parser looseness or Ornith prompt/request changes; GPT6 compatibility is resolved at endpoint/path level.
+
+## Completed Task: Compare latest three 2026-09-06 MKF scan/AI outputs (2026-09-06)
+
+### Task
+- User asked to find the latest three results under `output/` for today and identify the best result.
+
+### Changed Files
+- `HANDOFF.md`: added this reviewer handoff entry only.
+
+### Behavior / Logic Changes
+- None; analysis-only comparison.
+
+### Validation
+- Located today's three MKF candidate selection runs: `mkf-select-20260906_082311`, `mkf-select-20260906_084354`, `mkf-select-20260906_085302`.
+- All three candidate selections are equivalent by summary: 17 candidates, same signal date `2026-09-04`, same config SHA `d8f542e14e16e7d16489d3692861631edf0bfe75f10ee696b743774378d45bdd`, same candidate SHA in paired AI reviews.
+- Compared paired AI reviews: `mkf-ai-review-20260906_082448` used `local_finance` / `Ornith-1.0-35B-4bit` and succeeded 17/17; `mkf-ai-review-20260906_084534` used `local_finance` / `Ornith-1.5-35B-A3B-oQ4e-mtp` and succeeded 17/17; `mkf-ai-review-20260906_085443` used `gsykj_gpt6` / `gpt-6-astra` and failed 0/17 with `JSONDecodeError` for all candidates.
+
+### Risks / Review Notes
+- Best usable run by reliability and caution is `mkf-ai-review-20260906_084534`: same candidate set, complete AI success, stronger risk phrasing, and lower/more conservative confidence than 082448; top human-review candidates remain `sh.600757`, `sh.600197`, `sz.001289`, `sz.000400`, `sh.601019`.
+- Do not use `mkf-ai-review-20260906_085443` for research ranking until GPT6 JSON compatibility is fixed and smoke-tested.
+- This comparison is an AI review quality/readiness judgment, not a validated win-rate or return conclusion.
+
+## Completed Task: Add GSYKJ GPT6 AI provider config (2026-09-06)
+
+### Task
+- User asked to add a GPT6 provider to `yaml/ai_providers.yaml` with base URL `https://ai.gsykj.com`, key file `Key/aisky.key`, and model `gpt-6-astra`.
+
+### Changed Files
+- `yaml/ai_providers.yaml`: added enabled provider `gsykj_gpt6` named `GSYKJ GPT6 Astra` with timeout `240`.
+- `HANDOFF.md`: added this reviewer handoff entry.
+
+### Behavior / Logic Changes
+- No default provider switch was made; top-level `provider` remains whatever is currently configured in `yaml/ai_providers.yaml`.
+- Existing normal AI paths can use the new provider only if explicitly selected by provider override or by changing the top-level `provider` to `gsykj_gpt6`.
+
+### Validation
+- Not run; configuration-only YAML edit.
+
+### Risks / Review Notes
+- `Key/aisky.key` must exist locally and must not be committed.
+- Endpoint compatibility with the existing OpenAI-compatible client was not smoke-tested.
+
 ## Completed Task: GitHub release for MKF AI provider integration (2026-09-05)
 
 ### Task

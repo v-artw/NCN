@@ -198,8 +198,14 @@ def _fetch_eastmoney_stock_news(em_code: str, config: Mapping[str, Any]) -> tupl
         return [], f"error:{type(exc).__name__}"
     try:
         data = ak.stock_news_em(symbol=em_code)
-    except Exception as exc:
-        return [], f"error:{type(exc).__name__}"
+    except Exception as first_exc:
+        try:
+            import pandas as pd
+
+            with pd.option_context("future.infer_string", False):
+                data = ak.stock_news_em(symbol=em_code)
+        except Exception:
+            return [], f"error:{type(first_exc).__name__}"
     if not hasattr(data, "columns") or "新闻标题" not in data.columns:
         return [], "error:missing_column"
     titles = [f"[📈 东方财富] {str(title).strip()}" for title in data["新闻标题"].head(limit).tolist() if str(title).strip()]
