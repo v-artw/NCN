@@ -9,7 +9,7 @@
 ### Changed Files
 - This `HANDOFF.md` (main side, handoff chain only). No other main working-tree file touched.
 - New git worktree: `branch/T1` on fresh branch `T1` from `e9ad596` (identical tip to main). Old closed T1 history is gone; this is a new branch of the same name.
-- Inside worktree: symlinks `PFrontStockData -> NCN/PFrontStockData` (7384 parquet files, the only shared data path) and `.venv -> NCN/.venv` (runtime environment, not data — flagged for transparency); empty `output/` and `.runtime/` created local to the worktree.
+- Inside worktree: symlinks `PFrontStockData -> NCN/PFrontStockData` (7384 parquet files, the only shared data path), `.venv -> NCN/.venv` (runtime environment, not data — flagged for transparency), and (user-authorized later the same day) `Key/ts.key -> NCN/Key/ts.key`; empty `output/` and `.runtime/` created local to the worktree.
 - `.git/info/exclude` (local config, untracked): `/branch/`, `/PFrontStockData`, `/.venv` so both trees' `git status` stay clean.
 
 ### Behavior / Logic Changes
@@ -20,7 +20,7 @@
 
 ### Risks / Review Notes
 - Isolation contract, must be honored by all later sessions: T1 work writes ONLY under `branch/T1/` (scripts, docs, outputs, its own `output/` and `.runtime/`); do NOT read/write main-side `output/回测结果`, `backups/`, `.runtime/*` caches, or any main-local untracked artifact. Shared inputs are exactly: `PFrontStockData/` (+ `.venv` as tooling).
-- API credentials (`Key/ts.key`) are deliberately NOT linked (credentials ≠ stock data). If the new direction needs fresh downloads, that requires an explicit user exception first.
+- Credentials: user explicitly authorized sharing `Key/ts.key` only (2026-09-13) — linked into the worktree as `Key/ts.key` symlink and verified readable; `aisky.key`/`deepseek.key`/`nvidia.key` remain NOT linked. Shared-input whitelist is exactly: `PFrontStockData/`, `.venv` (tooling), `Key/ts.key`. Downloads using ts.key still write any fetched data into the worktree's own `.runtime/`/`output/`, never main-side caches.
 - Do not confuse this with the deleted intraday T1; old H1/H2 remain closed directions (see previous entry) — this branch starts clean.
 - Working dir note: sessions must `cd /Users/artx/Local/Git/Stock/NCN/branch/T1` (or be launched there) for the new work; the primary working directory of the current Claude session is still the main tree.
 
