@@ -1,5 +1,29 @@
 # Reviewer Handoff
 
+## Active Task: New T1 worktree created for a fresh research direction — isolation contract in force (2026-09-13)
+
+### Task
+- After closing the old T1, user pre-created `NCN/branch/T1/` and requested a new `T1` branch for new-direction analysis under a hard rule: every file lives inside the T1 folder; the ONLY thing shared with main is the stock price data — no reuse of any other main-side data/artifact.
+- Status: worktree and isolation set up and verified; the new research idea itself is NOT yet stated by the user. Next action: user defines the hypothesis, then pre-registration/analysis runs strictly inside the worktree.
+
+### Changed Files
+- This `HANDOFF.md` (main side, handoff chain only). No other main working-tree file touched.
+- New git worktree: `branch/T1` on fresh branch `T1` from `e9ad596` (identical tip to main). Old closed T1 history is gone; this is a new branch of the same name.
+- Inside worktree: symlinks `PFrontStockData -> NCN/PFrontStockData` (7384 parquet files, the only shared data path) and `.venv -> NCN/.venv` (runtime environment, not data — flagged for transparency); empty `output/` and `.runtime/` created local to the worktree.
+- `.git/info/exclude` (local config, untracked): `/branch/`, `/PFrontStockData`, `/.venv` so both trees' `git status` stay clean.
+
+### Behavior / Logic Changes
+- None in either working tree's code.
+
+### Validation
+- `git worktree list` shows exactly two trees (main @ NCN, T1 @ NCN/branch/T1 @ e9ad596); `git -C branch/T1 status -sb` clean; data symlink reads 7384 files; worktree footprint 60M = tracked files only, no data duplication.
+
+### Risks / Review Notes
+- Isolation contract, must be honored by all later sessions: T1 work writes ONLY under `branch/T1/` (scripts, docs, outputs, its own `output/` and `.runtime/`); do NOT read/write main-side `output/回测结果`, `backups/`, `.runtime/*` caches, or any main-local untracked artifact. Shared inputs are exactly: `PFrontStockData/` (+ `.venv` as tooling).
+- API credentials (`Key/ts.key`) are deliberately NOT linked (credentials ≠ stock data). If the new direction needs fresh downloads, that requires an explicit user exception first.
+- Do not confuse this with the deleted intraday T1; old H1/H2 remain closed directions (see previous entry) — this branch starts clean.
+- Working dir note: sessions must `cd /Users/artx/Local/Git/Stock/NCN/branch/T1` (or be launched there) for the new work; the primary working directory of the current Claude session is still the main tree.
+
 ## Completed Task: T1 branch deleted and intraday direction officially closed — project slimmed (2026-09-13)
 
 ### Task
