@@ -1,5 +1,196 @@
 # Reviewer Handoff
 
+## Completed Task: T1 branch deleted and intraday direction officially closed — project slimmed (2026-09-13)
+
+### Task
+- User judgment: T1's intraday idea (H1 confirm-filter / H2 entry-timing) is invalid; requested deleting the T1 branch and cleaning useless files to slim the project. Confirmed impact: T1 = main + one pure-sandbox commit (`18dbb21`, all additions under `experiments/`); main itself, its files, and origin are unaffected by the deletion.
+- Status: complete. Single branch `main`; production code was never touched by T1 at all.
+
+### Changed Files
+- Committed to main as closure/reference records: `docs/research/` (2026-09-07 intraday online-plan, H1 + H2 pre-registrations, 2026-09-12 legacy indicator-archive inventory, ai4finance integration plan), root `回测策略.md` (canonical MKF target-hit/target-zero calibre doc) and `易淘金.md` (GF/TDX-syntax MKF formula port), this `HANDOFF.md`.
+- Deleted from disk (user-approved): entire `experiments/daily-test/` (T1 sandbox incl. h1/h2 replay scripts, candidate yamls, launchd tooling), `experiments/ai4finance/` (separate track, user chose to remove), `config/launchd/com.vartw.stock-ncn.daily-test.plist` (job was never loaded), `.runtime/h1_intraday_probe_cache/` (16M) and `.runtime/daily-test/` (~1M), five `.claude-*.tmp.yaml` temp configs (one was a suspected API-key temp copy).
+- Branch T1 removed (`git branch -D T1`); `18dbb21` remains reflog-reachable for ~90 days.
+
+### Behavior / Logic Changes
+- None in `src/`, `yaml/`, or production scanners — the whole T1 footprint was sandbox/docs/cache.
+
+### Validation
+- Pre-checks: `git worktree list` (single tree, no separate T1 folder), `git diff main T1` (pure additions), `git ls-tree main experiments/` (absent), launchd unloaded, `.gitignore` covers `output/` and `.runtime/`.
+- Post-check: `git status` shows no tracked modifications; kept as-is on disk: h1/h2 report dirs (~76K under `output/回测结果/`, gitignored), the 1.3G main-line Doris grid output, `backups/` (1.1M), other `.runtime/` contents.
+
+### Risks / Review Notes
+- Direction closed for real: do NOT rerun H1/H2 or rebuild intraday filters from deleted scripts; any future intraday work requires a brand-new pre-registration (never a gate relaxation on closed arms). Negative results and mechanism decomposition remain fully readable in the committed pre-registration docs and this handoff chain.
+- Not deleted but flagged: `.runtime/ai4finance/` (77M runtime outputs) — outside the approved list; user decision pending. The 1.3G `output/回测结果/mkf-ai-score-threshold-grid-proc-det-doris-20260904-16w-1` is main-line evidence, kept.
+- Next exact action: none from this task; resume main-line work from `main`.
+
+## Completed Task: `../code` legacy indicator-archive full per-file inventory — delivered (2026-09-12)
+
+### Task
+- User asked whether `../code` (67 TDX/FuTu formula files, collected 2024-10) can improve returns; reframed to selection precision. Initial assessment delivered, user chose option (c): full per-file inventory report first, no backtests. Report completed.
+- Status: direction closed as inventory/assessment; future value only if user elects to pre-register a candidate rule (see next action).
+
+### Changed Files
+- Added: `docs/research/2026-09-12-legacy-indicator-archive-inventory.md` (full 67-file classification inventory).
+- Updated: `HANDOFF.md`. `../code` untouched (docx→txt conversion used a /tmp copy); no NCN code/config/data/yaml changed; no backtests run.
+
+### Behavior / Logic Changes
+- None.
+
+### Validation
+- 3 parallel read-only Explore agents deep-read all 67 files individually (groups #1–23 / #24–45 / #46–67); main agent cross-checked with keyword scans (RSV 14, CROSS 22, ZIG 1, BACKSET 5 files) and direct sampling.
+- Result: 6 near-duplicate files; 28 unusable (same-family redundant / display-only / ZIG-BACKSET-CONST-REFX repaint); 23 reference-only; 16 files yield 12 candidate rule shapes across 5 orthogonal dimensions (divergence-event families incl. MACD structural-blunting 3-state lifecycle, volatility squeeze/Waddah/chandelier/SSL regimes, TD9 + KDJ-episode counts, volume-price BREAKTHROUGH + OBV-MACD, BIAS exhaustion exit).
+- Known degraded code: `IF(CLOSE*1.35,…)` always-true across the "big money" family; `CONST(HHV(…,200))` future-function pollutes 海底捞月修改版3 except its COND2; Pine port uses wrong SMA α (1/4 vs 1/3) — porting semantics must be digit-checked before any use.
+
+### Risks / Review Notes
+- Candidates are UNVALIDATED hypotheses, not findings; the report's §5 priorities are recommendations only. Do NOT mass-backtest the 12 shapes on the same history (overfitting stop rule); do NOT port anything into `src/` without its own pre-registration (H1/H2 discipline, frozen gates, full-sample rolling next-day validation).
+- Do not treat "different-looking formula" as exemption from H1's negative lesson; cross-dimension orthogonality is itself the hypothesis under test.
+- Next exact action: user decides (a) pre-register 1a-i (MACD-hist/EMA5 cross-anchor bottom divergence as MKF confirmation filter — recommended first), (b) pick another §5 candidate, or (c) close the archive as reference-only. Working tree still holds all uncommitted H1/H2/launchd files from `18dbb21` onward — checkpoint commit decision from the earlier entry remains open.
+
+## Pending Task: Internet-informed project improvement assessment — awaiting priority clarification (2026-09-12)
+
+### Task
+- User requested an assessment of whether NCN needs improvements based on internet information. Startup rules and latest H2/H1 continuation entries read; problem steelman gate applies before recommendations.
+- Status: awaiting the user's primary assessment objective: selection quality, research/backtest credibility, engineering reliability, or an overall prioritized assessment.
+
+### Changed Files
+- `HANDOFF.md` only; all existing code, configs, uncommitted work, and caches intentionally unchanged.
+
+### Behavior / Logic Changes
+- None. No project-wide defect or improvement conclusion has been established.
+
+### Validation
+- Read `AGENTS.md` and newest relevant `HANDOFF.md` entries. No internet search, code audit, tests, remote operations, or backtests run yet.
+
+### Risks / Review Notes
+- Next exact action: after the user clarifies the objective, compare relevant repository evidence with authoritative internet sources; distinguish verified gaps from hypotheses, cite URLs, and propose prioritized improvements with validation targets and the smallest next action. Do not implement changes or start strategy studies merely from this assessment request.
+- Preserve H1 negative decision and H2 mechanism caveat; do not reinterpret H2's weak frozen-gate pass as proof of effective intraday low-point buying. Do not relax frozen gates or rerun closed directions. Read `remote-server.md` before any remote/test workflow covered by that rule.
+
+## Completed Task: H2 intraday entry-timing replay — technically "success" via weakest gate, mechanism does NOT support low-point buying (2026-09-08)
+
+### Task Status
+User asked whether the project's purpose is "MKF 是否适合分钟/小时线、能否在交易日相对低点买入". Clarified via steelman gate: that is an ENTRY-TIMING question (H2), distinct from the documented plan purpose (intraday evidence for human review) and from the failed H1 (signal filtering). User chose to pre-register H2; all four decision points were user-confirmed and frozen in `docs/research/2026-09-08-mkf-intraday-h2-entry-timing-preregistration.md` §9 (R1 primary / close fallback / H1 gates reused / H1 cache reused, zero downloads). H2 implemented and all four arms run on branch `T1`, local `.venv`, sandbox-only.
+
+### Design (frozen before running)
+Same H1 baseline signals (381 lag-0 events, 65 codes, 133 entry dates, window 2025-08-01→2026-08-27). ONLY variable = entry price on the entry day: baseline = open (production grid); treatment = R1 (intraday MKF pullback-recovery on CLOSED minute bars: both lines <20 then first closed bar both ≥20 → that bar's close) or R2 (limit at open×(1−1%), filled iff day low touches). Fallback no-event: close (primary, paired) or skip (sensitivity). Minute raw prices anchored per day: `factor = daily_open_adj / first_minute_open_raw` (§9.1). Hits recomputed by production `aggregate_lag_target_grid_metrics` on replaced `entry_open` with UNCHANGED `future_high_t1..t10` windows. Primary cell T+10×5%; gates identical to H1.
+
+### Results (all four arms complete)
+| arm | event share | event-day delta vs open | primary lift (hit/Wilson/exp) | frozen decision |
+|---|---|---|---|---|
+| R1-60m-close (PRIMARY) | 4.7% (18/381) | mean −1.0%, 89% below open | +1.57pp / **+0.015pp** / +0.079pp | **success** (Wilson gate only, barely ≥0; +2pp and +0.3pp gates NOT met) |
+| R1-60m-skip (events only) | n=18 | same | −5.25pp | failure_no_lift (statistically meaningless n) |
+| R1-15m-close | 69.2% | mean −0.6%, 67.5% below | +1.05pp / +0.010pp / +0.053pp | success (same weak Wilson pass) |
+| R2-1pct-close | 48.3% | −1% by construction | −0.26pp / −0.003pp / −0.013pp | failure_no_lift |
+
+Reports: `output/回测结果/h2-entry-timing-{r1-60m-close-20260908-162456, r1-60m-skip-20260908-162638, r1-15m-close-20260908-162704, r2-1pct-close-20260908-162707}/` (report.json/md each).
+
+### Honest mechanism decomposition (mandatory §5 report; READ BEFORE citing "success")
+- Paired entry-price delta across ALL rows ≈ 0 (mean +0.037% / +0.059%): treatment does NOT systematically buy lower. The primary/15m lift is driven by the CLOSE-FALLBACK priced against the convex high-touch hit metric (down entry days → close below open → same future highs clear the target more often; up days the reverse; hit rate is nonlinear in the price delta), NOT by the R1 rule.
+- R2 is the cleanest counter-evidence: it GUARANTEES a −1% entry on 48% of days yet ends −0.26pp. Days where a lower intraday price is available are systematically weaker days; price improvement is cancelled by adverse day selection.
+- R1 events do achieve ~0.6–1.0% below-open entries (the "find a low" mechanism works), but on 60m they fire on only 4.7% of entry days (post-signal days usually open with lines already ≥20 → no pullback → no event), and the events-only arm is worse (n=18).
+- Bottom line for the user's question ("能否通过分钟/小时线在交易日相对低点买入"): mechanically yes but rare; it does NOT translate into same-calibre hit/expectation improvement. Do NOT promote R1/R2 to any execution rule or dashboard buy hint.
+
+### Changed Files (all uncommitted on T1)
+- Added: `docs/research/2026-09-08-mkf-intraday-h2-entry-timing-preregistration.md` (frozen §9 + §9.1 alignment/warmup/calibre notes); `experiments/daily-test/scripts/h2_entry_timing_replay.py` (new, sandbox-only; reuses production grid + H1 minute cache via `MinuteIndex`; options `--rule/--period/--fallback/--r2-x`).
+- Updated: `experiments/daily-test/README.md` (new §十 H2 results + mechanism decomposition); `HANDOFF.md` (this entry).
+- Reused unchanged: `.runtime/h1_intraday_probe_cache/` (zero new downloads), production `src/` untouched, `yaml/` untouched.
+
+### Validation Completed
+- Script compile + 4 arm runs, each ~1-2 min, well inside the frozen ~15 min cap; counters sane (bad_factor=0 everywhere, missing_daily=0, no_minute_data 1/16 for 60m/15m R1 arms).
+- Baseline arm reproduces H1 baseline exactly (n=381, hit 0.3858267716535433 identical) → grid reuse verified.
+- OOS tails positive in all arms (+6.4/+2.6/+1.3pp) but on 27 dates — too small to carry decisions; noted, not cited as evidence.
+
+### Validation Pending
+- None for H2 as pre-registered. The incidental "entry-day CLOSE vs OPEN entry" observation (a fallback artifact) is NOT pre-registered and must NOT be extrapolated from H2; it needs its own pre-registration (independent hypothesis, independent gates, ideally deeper data) if the user wants to pursue it.
+
+### Next Exact Action
+- Await user decision on: (1) commit the T1 working tree (H1+H2 scripts, docs, README/HANDOFF, launchd loop files, candidate YAMLs — nothing committed since `18dbb21`; suggest one checkpoint commit, no push); (2) keep or remove the launchd intraday loop (`com.vartw.stock-ncn.daily-test`) now that both H1 filtering and H2 timing directions are closed/negative — do NOT silently keep or remove.
+- If user wants further intraday research: NEW pre-registration required (per H2 §8 and the anti-overfit rule); never re-run H1/H2 with relaxed gates or hand-picked windows.
+
+### Risks / Review Notes
+- The frozen-gate "success" of the primary arm is real per pre-registration but MUST always be reported together with the mechanism decomposition; citing it alone as "分钟线低点买入有效" would be exactly the false-confidence failure mode the steelman gate warns about.
+- Wilson≥0 gate is structurally weak (any positive hit-rate lift passes it); noted for future pre-registration design, but gates were frozen and honored as-is — do not retro-adjust.
+- Survivorship/current-vintage adjustment + focused-set selection bias apply to both arms identically; absolute rates not universe-representative (same as H1).
+- Research evidence only; not buy/sell/order/return advice; `production_enabled: false` unchanged.
+
+## Completed Task: H1 intraday confirm replay — NEGATIVE result, path A confirm-filter terminated (2026-09-08)
+
+### Task Status
+Ran the pre-registered H1 study (frozen in `docs/research/2026-09-08-mkf-intraday-h1-preregistration.md` §7, user-confirmed) end-to-end on branch `T1`: data stage (focused set + intraday labels) and analysis stage (baseline vs intraday-confirm through the PRODUCTION `mkf_post_cross_lag_comparison` grid, lag 0, window 2025-08-01 → 2026-08-27, 80 focus codes, main-board prefixes only). **Both the primary criterion (rule A, 60m) and the pre-registered sensitivity (rule B, 60m∧15m agree) returned `decision = failure_no_lift`.** Per the pre-registered decision tree (§6), this is a recorded NEGATIVE result: the path-A intraday-confirm filter direction is terminated. Nothing was promoted to production; no production file changed.
+
+### Key Results (pre-registered primary cell = T+10 × 5%, cumulative high-touch, target-zero calibre)
+- Sample gate PASS: baseline n=381, 65 codes (≥50), 133 entry dates (≥120). 743 parent crosses; 360 rejected by production hard gates. `min_years_observed≥4` NOT met by design (baostock ~1y minute depth) — reported, not gated, other gates not relaxed.
+- Rule A (primary, 60m last closed bar momentum≥20 ∧ near≥20): confirm n=245, hit 36.73% vs baseline 38.58% → **lift −1.85pp**; Wilson-lower lift −2.89pp; mean target-zero return lift −0.09pp. All three success gates fail (+2pp / ≥0 / +0.3pp). All 4 cells (T+5/T+10 × 3%/5%) worse than baseline.
+- Rule B (sensitivity, 60m ∧ 15m agree): confirm n=180, hit 36.11% → **lift −2.47pp** (worse than rule A); all 4 cells worse.
+- OOS tail (last 20% = 27 entry dates): lift +8.72pp (A) / +10.26pp (B), but OOS review only applies after success gates pass, and 27 dates is far too small to overturn the primary failure. Do not cite the OOS tail as positive evidence.
+
+### Changed Files (all uncommitted on T1 as of this entry)
+- `experiments/daily-test/scripts/h1_intraday_confirm_probe.py` (new, prior session): data stage — focus selection via frozen production mask `mkf_red_blue_cross20_green_exit_under80_mask`, baostock 60m/15m download cached to `.runtime/h1_intraday_probe_cache/`, multi-day-series labels (31-bar warmup; never single-day slices).
+- `experiments/daily-test/scripts/h1_intraday_confirm_replay.py` (new, prior session; FIXED this session): analysis stage. This session: (1) coerced `cross_date/signal_date/entry_date` to datetime after `pd.concat` (empty per-code panels degrade the column to object dtype → crash); (2) added `--confirm-rule {A,B}` (B = both periods True else fail; missing either = no-data) with rule-tagged output dir and report metadata.
+- Outputs (git-ignored `output/回测结果/`): `h1-intraday-confirm-20260908-155706/` (rule A) and `h1-intraday-confirm-ruleb-20260908-160742/` (rule B) — each `report.json` / `report.md` / `cells.csv`.
+- `experiments/daily-test/README.md`: checklist items completed; new section 九 records H1 negative result + limitations.
+- `.runtime/h1_intraday_probe_cache/`: manifest_20250801_20260827.json (80 codes; confirm_60m + confirm_15m labels; 22510 60m day-labels, 21322 15m) + 160 parquet minute caches (60m & 15m, 2025-07-01→2026-08-27). KEEP — do not delete (local minute-cache preservation rule).
+- Intentionally NOT changed: `src/` production code, `yaml/`, main/mkf shell scripts, the pre-registration doc (frozen before the run).
+
+### Validation Completed
+- Replay imports and reuses the production grid (`build_mkf_post_cross_lag_target_grid_panel`, `aggregate_lag_target_grid_metrics`) — same entry (next-open after lag-0 signal day), same hit definition (`max(high[T+1..T+horizon]) ≥ entry_open×(1+target)`), same hard gates; only variable = confirm filter.
+- 15m parquet integrity verified (80/80 readable, none empty) after a concurrent-writer race was caught and stopped (labels task killed mid-download; downloads finished cleanly in 569s; labels re-run from cache afterwards).
+- Label join sanity: baseline_labeled_rows=383, no_data rows=0, missing daily files=0.
+- Local `.venv`, `OMP/OPENBLAS/MKL_NUM_THREADS=1`, per pre-registration §5/§7.1 (local single-machine run was the frozen choice; remote-first priority explicitly overridden by the user-confirmed pre-registration).
+
+### Validation Pending
+- None for H1 itself — the pre-registered decision is final on this window/data. Optional (NOT pre-registered, needs a new pre-registration first): different periods/calibres, or a longer-window re-test if a deeper minute-bar source ever becomes available.
+
+### Next Exact Action
+- Commit decision (user's call): the T1 working tree holds the H1 scripts, README/HANDOFF updates, launchd intraday loop, candidate YAMLs, and the pre-registration docs — none committed since `18dbb21`. Suggested: commit as an "H1 negative result" checkpoint (no push unless requested).
+- The launchd loop (`com.vartw.stock-ncn.daily-test`, 5-min session snapshots of the full 17-candidate set) is still installed and collecting. With path A terminated, ask the user whether to (a) keep collecting as observational archive for the daily-test dashboard labels, or (b) `launchctl bootout` + remove the plist. Do NOT silently keep or remove it.
+- If the user wants to continue intraday research: it must be a NEW pre-registered path (per §6: "退回仅日级信号或换周期/口径"), never a relaxed re-run of H1 gates.
+
+### Risks / Review Notes
+- Do NOT promote intraday confirm/fail labels to any buy rule, watchlist filter, or production/dashboard gate — H1 failed on the primary criterion and the sensitivity arm. The probe/loop labels remain research annotations only.
+- Do NOT re-run H1 with relaxed gates or a hand-picked sub-window to chase the positive OOS tail — that is exactly the overfitting pattern the pre-registration forbids.
+- `focus` set selection (top-80 by in-window signal count) is deterministic but in-window: mild selection bias toward high-signal codes; it applied identically to both arms, so the arm comparison stays valid, but absolute hit rates are NOT universe-representative.
+- Adjusted current-vintage local daily bars + survivorship in current files remain limitations (listed in both reports).
+- Research evidence only — not buy/sell/order/return advice; `production_enabled: false` unchanged.
+
+## Completed Task: daily-test intraday overlay real-data smoke run (2026-09-08)
+
+### Task
+- Run the read-only intraday confirmation-overlay probe (`experiments/daily-test/`, path A from `docs/research/2026-09-07-mkf-intraday-online-plan.md`) against **real intraday data** with **real MKF candidates**, since the market is open (2026-09-08, ~10:14 CST). This was the top open item in the sandbox README progress list ("实盘数据冒烟运行").
+
+### Changed Files
+- `experiments/daily-test/data/mkf_candidates_20260908.yaml` (new): real MKF candidates from the 2026-09-07 AI review top effective ranking. Six `standard_research` (daily cross-up-20 => `up`), plus `sh.603665` (risk_attention => `down`).
+- `experiments/daily-test/data/test_candidates.yaml` (unchanged): kept as the documented template; the real run points at `mkf_candidates_20260908.yaml`.
+- `.runtime/daily-test/probe-20260908.json` (new, git-ignored): per-candidate overlay results.
+
+### Behavior / Logic Changes
+- None to production or sandbox code. This run only reused the existing read-only probe/indicator/adapter with a real candidate list.
+
+### Validation
+- Environment: local `.venv`, **network-reachable, market open** (2026-09-08 10:14 CST, morning session). No remote env attempted; the probe is a quick single-client read, so local is acceptable for a smoke run.
+- Command: `./.venv/bin/python -B experiments/daily-test/scripts/probe_intraday_overlay.py --config experiments/daily-test/data/mkf_candidates_20260908.yaml --periods 60m 15m --cache-ttl 30.0`.
+- All 7 candidates returned `fresh` data with 119 usable bars each; state legend populated. Results (period 60m primary):
+  - `confirm` (up + above-20, positive intraday move): sh.600757 (+3.52%), sh.600197 (+1.13%), sz.001289 (0.00%), sh.601019 (+2.24%), sh.600085 (+0.62%).
+  - `fail` (up but below-20 on the 15m last closed bar, negative move): sz.000400 (-1.19%).
+  - `fail` (down signal, regime above-20): sh.603665 (-0.05%).
+- Manual check: overlay state aligns with live snapshot `pct_chg` direction, forming bar correctly excluded from crossing counts. Path A data flow (fetch -> repindicate -> confirm/fail label) is end-to-end valid on live data.
+
+### Risks / Review Notes
+- **Multi-period tie-break ambiguity**: `classify()` lets the last processed period decide when `confirm`/`fail` disagree across periods. For sz.000400 the 60m bar was `confirm` while the 15m bar was `fail`, and `best_state` ended up `fail` only because 15m is processed last — not a deliberate "60m primary" rule. This is a research-label-only artifact of the probe; note it before trusting cross-period consensus.
+- **`daily_direction` here is hand-assigned from the prior selection**, not re-derived by the probe (the probe deliberately does not run the selector). Confirm/fail semantics assume those directions are correct for today.
+- Read-only research evidence only — not a buy/sell/order/return recommendation.
+
+### Intraday Loop (launchd) + Full Candidate Set (2026-09-08)
+- Installed a local launchd intraday loop per the user's choice (H1 pre-registration + local cron/launchd loop).
+- `experiments/daily-test/data/mkf_candidates_full.yaml` (new): the FULL MKF candidate set — all 17 codes from the 2026-09-07 review CSV (`standard_research` => `up`, `sh.603665` => `down`). Directions come from the real CSV, not the template placeholder.
+- `experiments/daily-test/scripts/run_intraday_once.sh` (new + session guard): one timestamped snapshot per call. Skips non-A-share-session hours (09:30-11:30, 13:00-15:00 Asia/Shanghai) unless `DAILY_TEST_FORCE_RUN=1`.
+- `experiments/daily-test/scripts/build_daily_test_launchd_plist.py` (new): regenerates `config/launchd/com.vartw.stock-ncn.daily-test.plist` with 5-minute slots during both sessions on weekdays (Mon-Fri) = 230 slots.
+- `experiments/daily-test/scripts/install_daily_test_launchd.sh` (new): regenerates plist, `plutil -lint`, bootout+bootstrap the agent. Currently installed & enabled (`launchctl` label `com.vartw.stock-ncn.daily-test`, WorkingDirectory = project root). `state = not running` is expected (idle between calendar intervals); it collects every 5 min during session hours.
+- Validate: plist lint OK; full 17-candidate pull works; last loop snapshot `.runtime/daily-test/probe-20260908_102029.json`. Next loop fire is the next 5-min session slot.
+- Reuses the user's existing project `.venv` + `PFrontStockData`/live adapters — no remote env, no LLM, no production file changed.
+
+### Next Exact Action
+- Steps 2–3 of the research doc (probe on real data + manual label check) pass, and the intraday loop is installed. The remaining decision is **H1 pre-registration**. Drafted in `docs/research/2026-09-08-mkf-intraday-h1-preregistration.md`. Needs user alignment on: (a) candidate-set scope (single 2026-09-07 date vs rolling multi-date window), (b) the confirm definition when 60m and 15m disagree (tie-break ambiguity seen on sz.000400 / sz.002867), and (c) minimum sample / annual coverage / out-of-sample / confidence-bound gates. H1 code must not start until these are fixed.
+
 ## Completed Task: Rerun 17-candidate MKF AI review after Eastmoney stock-news fallback (2026-09-07)
 
 ### Task
@@ -2176,6 +2367,72 @@
 - Minute bars and all reference entries are research-only, not live execution/fill evidence. Fees, slippage, taxes, limit-up/down fillability, queue priority, partial fills, position sizing, and real exit mechanics remain incomplete.
 - Next exact action: either wait for genuinely newer data after `2026-07-30` for true out-of-sample v6, or use the v5 result only as a human-review scanner ranking/risk annotation design candidate. If a new backtest is requested, pre-register fixed rules before running and use WSL -> Doris `.venv-doris/bin/python` -> local priority.
 - Preserve `.runtime/baostock-intraday-cache-wsl-full-v1/` and avoid deleting/overwriting local complete minute cache.
+
+## Current Task: MKF intraday confirmation-overlay sandbox + regime-based classify (2026-09-07)
+
+### Task Status
+Built and committed an isolated, read-only sandbox to verify research path A: overlay
+an intraday 15m/60m MKF cross-up-20 confirmation/failure label on top of daily MKF
+candidates. The sandbox does NOT modify any production file and does NOT touch
+`main.sh` / `mkf.sh` / `scripts/edge_scout_scan.sh`. Committed as `18dbb21` on branch
+`T1`.
+
+### Changed Files
+- Added (committed `18dbb21`, only these are git-tracked under `experiments/daily-test/`):
+  - `experiments/daily-test/README.md` — sandbox purpose, hard boundaries, progress checklist.
+  - `experiments/daily-test/config.yaml` — `schema_version: ncn_daily_test_sandbox_v1`, `mode: sandbox_only`, boundaries, overlay calibration params (`primary_period: 60m`, `secondary_periods: [15m]`, `exclude_forming_bar: true`, `under_80_gate: true`, `freshness_reject: [stale, market_closed]`).
+  - `experiments/daily-test/adapter/intraday_data.py` (+ `adapter/__init__.py`) — copied, stdlib-only, read-only intraday market-data adapter (Sina live snapshot + Eastmoney minute bars); never executes or uses portfolio/return inputs.
+  - `experiments/daily-test/scripts/mkf_intraday_indicator.py` — exact same-calibre reimplementation of production MKF lines + cross-up-20 from `src/ashare_edge_scout/pmkf_mkf/research.py`.
+  - `experiments/daily-test/scripts/probe_intraday_overlay.py` — end-to-end read-only probe (fetch + indicator + classify).
+  - `experiments/daily-test/data/test_candidates.yaml` — 4 demo candidates (placeholder, NOT real MKF selection).
+  - `experiments/daily-test/scripts/run_daily_test.sh` — runner.
+- Intentionally NOT changed: all production files, all main/shell scripts, `docs/`.
+- Ignored (git-ignored by `.gitignore` lines 2 & 15): `__pycache__/` and `.runtime/daily-test/` (probe output). These are NOT committed.
+- No secrets committed. `Key/ts.key` is only referenced as a config note; the key file is git-ignored.
+
+### Behavior / Logic Changes
+- NONE to production. The `classify` decision now uses `current_above_20` (whether the
+  last **CLOSED** bar has both `momentum` and `near` >= 20) instead of "any crossing in
+  window", which previously labeled almost every candidate `confirm` because the RSV-based
+  MKF lines oscillate around 20 on intraday bars. For a `up` daily direction: regime above
+  20 → `confirm`, below 20 → `fail`; for `down` it is inverted.
+
+### Validation Completed
+- classify unit tests: 6/6 PASS (up+above→confirm, up+below→fail, down+below→confirm,
+  down+above→fail, stale→no_data, direction_unknown→direction_unknown).
+- Probe runs end-to-end against live data: fetches 60m/15m bars + Sina snapshot, computes
+  the indicator, writes `.runtime/daily-test/probe.json`.
+- `git status` clean for `experiments/daily-test/`; `__pycache__` + `.runtime/` confirmed ignored.
+- Confirmed NO production code/config references `experiments/daily-test` (grep src/, scripts/, configs).
+
+### Validation Pending
+- Live confirm/fail discrimination on REAL data during A-share session (9:30-11:30 /
+  13:00-15:00 Shanghai). All states currently report `no_data` because the smoke run
+  happened at 16:08 (post-close), so `freshness=market_closed` correctly short-circuits
+  the regime decision BEFORE it.
+- Replace the 4 demo codes in `data/test_candidates.yaml` with REAL MKF candidates +
+  REAL daily direction (`up`/`down`) — a true selection run, since the probe does NOT run
+  the daily selector and currently only assumes a direction.
+
+### Next Exact Action
+- Re-run the probe on `experiments/daily-test/data/test_candidates.yaml` (option B) during
+  the next A-share session to observe real confirm/fail states. Then pre-register H1
+  (intraday-filter group vs daily-only baseline using the EXISTING daily backtest calibre —
+  see `docs/research/2026-09-07-mkf-intraday-online-plan.md` section 6).
+- If H1 fails (no lift over daily-only baseline) → record negative result and stop path A.
+- `daily_direction` is a one-way INPUT (production selection result → sandbox), never fed
+  back into production selection, so editing `data/test_candidates.yaml` does NOT affect
+  main's scan results.
+
+### Risks / Review Notes
+- Do NOT promote intraday-confirm/fail labels to a buy rule or production/watchlist change
+  until H1 passes with the existing daily backtest calibre.
+- Sandbox stays research-only: `production_enabled` stays `false`; no live execution,
+  portfolio, or LLM calls inside the sandbox.
+- The MKF cross-up-20 requires BOTH `momentum` and `near` to move together (simultaneous
+  both-line crossing); `current_above_20` (instantaneous both>=20) can legitimately differ
+  from `last_cross_dir` (most recent simultaneous crossing event) — not a bug, keep both
+  for context.
 
 ## Relevant Historical Research Conclusions
 
