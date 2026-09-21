@@ -79,8 +79,34 @@ def test_mkf_news_cache_path_and_schema(tmp_path: Path) -> None:
     assert context.attn_risks == ("减持",)
 
 
-def test_mkf_news_same_day_cache_hit_avoids_network(tmp_path: Path) -> None:
+def test_mkf_news_same_day_cache_refreshes_online_by_default(tmp_path: Path) -> None:
     config = _config(tmp_path)
+    cache_path = tmp_path / "Message" / "sh.600001_20260821.json"
+    cache_path.parent.mkdir()
+    cache_path.write_text(
+        '{"date":"2026-08-21","news_txt":"[📋 公告] 已缓存","fatal_risks":[],"attn_risks":[]}\n',
+        encoding="utf-8",
+    )
+
+    def fake_fetch(em_code: str, config: dict[str, object]) -> tuple[str, dict[str, str]]:
+        return "[📋 公告] 当天新增公告", {"fake": "success:1"}
+
+    original = mkf_news_context._fetch_news_multi_source
+    mkf_news_context._fetch_news_multi_source = fake_fetch  # type: ignore[assignment]
+    try:
+        context = build_mkf_news_context("sh.600001", config, today=date(2026, 8, 21))
+    finally:
+        mkf_news_context._fetch_news_multi_source = original  # type: ignore[assignment]
+
+    assert context.cache_status == "refreshed"
+    assert context.source_status == {"fake": "success:1"}
+    assert context.news_txt == "[📋 公告] 当天新增公告"
+    assert "当天新增公告" in cache_path.read_text(encoding="utf-8")
+
+
+def test_mkf_news_cache_hit_only_when_online_fetch_disabled(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    config["FETCH_ONLINE_BY_DEFAULT"] = False
     cache_path = tmp_path / "Message" / "sh.600001_20260821.json"
     cache_path.parent.mkdir()
     cache_path.write_text(

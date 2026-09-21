@@ -1,5 +1,212 @@
 # Reviewer Handoff
 
+## Completed Task: MKF news context refreshes on every online AI review run (2026-09-21)
+
+### Task
+- User asked to analyze MKF news fetching and ensure every run fetches news so same-day information is not missed.
+
+### Changed Files
+- `src/ashare_edge_scout/mkf_news_context.py`: changed default online behavior so same-day cache no longer short-circuits network fetching.
+- `tests/test_mkf_news_context.py`: updated regression coverage for online refresh and retained cache-hit behavior only when online fetching is explicitly disabled.
+- `HANDOFF.md`: added this reviewer handoff entry.
+
+### Behavior / Logic Changes
+- Current mechanism: `scripts/review_mkf_ai.py` calls `run_mkf_ai_review`, which builds MKF news context per candidate via `mkf_news_context.py` and stores daily JSON files under `Message/` when cache is enabled.
+- Previous risk: if `sh.xxxxxx_YYYYMMDD.json` already existed, `build_mkf_news_context` returned `cache_status="hit"` and skipped all Google/Eastmoney/announcement fetches for that stock that day, so later same-day news could be missed.
+- New behavior: when `FETCH_ONLINE_BY_DEFAULT: true` (repository default in `yaml/mkf_news_context.yaml`), every MKF AI review run fetches online sources, re-extracts risk words, and rewrites the daily cache on successful/non-all-failed fetches.
+- Cache is now read as a fallback only when `FETCH_ONLINE_BY_DEFAULT` is explicitly false; cache writing/retention still works.
+
+### Validation
+- Local `.venv`: `./.venv/bin/python -m pytest tests/test_mkf_news_context.py tests/test_mkf_ai_review.py -q` -> 36 passed.
+- `git diff --check` -> passed.
+- Real external news smoke test used temporary cache dir and `sh.600519`: first and second same-day calls both returned `cache_status=refreshed` (not `hit`), with Google/Eastmoney/news announcement source statuses all `success:2`.
+
+### Risks / Review Notes
+- Each online MKF AI review now makes source requests even if same-day cache exists; this reduces missed same-day news but increases Google/Eastmoney request pressure.
+- Do not reintroduce same-day cache short-circuit for default online mode; if rate limiting is needed later, add an explicit freshness/throttle policy rather than silently skipping a run's news refresh.
+
+## Pending Task: MKF remote migration to 10.0.0.200 with nginx and 08:00 schedule (2026-09-19)
+
+### Task
+- User asked whether MKF can be migrated to host `10.0.0.200`, SSH user `chinaadmin`, SSH key `Key/200.key`, displayed through nginx on that host, with automatic daily 08:00 scanning.
+- Required outputs: plain MKF scan result, MKF+AI result, and Markdown (`.md`) result.
+- Status: paused for one key confirmation before any remote access or deployment because this is remote setup plus scheduled production-adjacent operation.
+
+### Changed Files
+- `HANDOFF.md` only.
+
+### Behavior / Logic Changes
+- None yet. No remote files, nginx config, scheduler, scanner code, or AI config changed.
+
+### Validation
+- Read `AGENTS.md`, newest relevant `HANDOFF.md`, and `remote-server.md` before remote work.
+- Local `git status --short` confirmed only pre-existing modifications/untracked `backups/`; no local code was changed by this task.
+- Initial SSH probe incorrectly treated `Key/200.key` as a private key and was rejected locally due to mode `0644`; no local permission or key content was changed.
+- After user clarified `Key/200.key` is a password file, a one-shot `expect` probe used password authentication (`PubkeyAuthentication=no`) without printing or uploading the password; 200 returned three `Permission denied` responses and closed the connection.
+- SSH now succeeds with the default local `~/.ssh/id_rsa`; `Key/200.key` is the key passphrase and was read without printing it.
+- Remote host: Debian 12, Linux 6.12.93+rpt-rpi-v8, aarch64; `sudo -n` works; about 92G disk free.
+- Remote currently lacks `$HOME/NCN`, `PFrontStockData`, nginx, AI key files, and supported Python; only system Python 3.11.2 is present. No remote files or packages have been changed.
+- No scan, nginx check, or cron/systemd setup has been run.
+- User authorized using local proxy `127.0.0.1:1082` when 200 cannot download; verified temporary SSH reverse tunnel `127.0.0.1:18082` with `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`, and `curl https://deb.debian.org/` returned HTTP 200.
+- Debian apt cache currently has no `python3.12` candidate; do not assume apt can provide the supported interpreter on this ARM64 host.
+- User authorized using local proxy `127.0.0.1:1082` for remote downloads and provided `Key/200sudo.key` for sudo prompts.
+- nginx installation succeeded and service is active on 200.
+- Python 3.12.10 source was downloaded and `./configure --prefix=$HOME/.local/python312 --with-ensurepip=install` completed with a Makefile, but a later probe found the install incomplete and nginx not on PATH; do not assume either is ready. Exact next action remains to complete the build/install and verify both services.
+- User clarified that 200 is their internal device and the deployment sync should copy the project/code/YAML broadly; explicitly exclude `.env*`, `*.key`, `.runtime/`, `output/`, `.venv/`, and `.git/`. User's approved rsync command uses exactly those exclusions; no need to exclude `PFrontStockData` unless they choose separately.
+- User ran the approved rsync command; remote `~/NCN/scripts/edge_scout_scan.sh` and `~/NCN/yaml/mkf_ai_review.yaml` are present. User confirmed broad project sync is intended, excluding `.env*`, `*.key`, `.runtime/`, `output/`, `.venv/`, and `.git/`.
+- Python 3.12 build previously failed in CPython `deepfreeze.py` with `UnicodeDecodeError`; scanning the source tree also returned filesystem `Bad message` under `Modules/`. User supplied remote proxy `10.0.0.147:1082`; a fresh official Python 3.12.10 archive was downloaded through it and key files passed UTF-8 checks.
+- User explicitly authorized deleting `~/.local/src/Python-3.12.10.broken.20260919_211937`; repeated `sudo rm -rf` still reports `Directory not empty`.
+- User supplied `dmesg`: ext4 on `/dev/mmcblk0p2` reports `No space for directory leaf checksum`, `Directory block failed checksum`, and recommends `e2fsck -D`; affected inodes include `387829` and `397709`. This is confirmed filesystem directory-index corruption, not a Python or permission issue.
+- Stop deletion, compilation, package installation, and NCN deployment until filesystem repair is completed. `sudo e2fsck -f -D /dev/mmcblk0p2` correctly aborted because the root filesystem is mounted.
+- User currently has only Windows and macOS, no separate Linux environment. Recommended next path: back up important remote files over SSH, then use a temporary Ubuntu/Debian live USB or Raspberry Pi alternate boot/USB recovery environment to run offline `e2fsck`; do not use macOS native tools or Windows ext4 write tools for repair.
+- Fresh `~/.local/src/Python-3.12.10` must be preserved; no further deployment until offline repair and post-reboot dmesg checks are clean.
+- User now has a 32G SD card and identifies DHCP server plus ZeroTier as the critical 200 services; they ask whether to back up/migrate them to the 32G card. Current root device reports about 117G capacity, so a raw full-disk clone to 32G is not safe/possible; recommend service-level backup or filesystem-aware migration after verifying actual used blocks and target capacity.
+- User requested backing up DHCP and ZeroTier configuration to local Mac `../../200`; local destination exists. The automated remote archive/transfer was blocked by the safety classifier as `Credential Leakage` because `/var/lib/zerotier-one` contains node identity secrets. No backup was created or transferred. Provide user-run commands with explicit password prompts and advise protecting the local backup.
+- Updated local documentation at `../../200/README.md` (`/Users/artx/Local/Git/200/README.md`) with the verified SSH method: `chinaadmin@10.0.0.200` using `/Users/artx/.ssh/id_rsa`, with `Key/200.key` as the private-key passphrase; explicitly warns not to use `ssh -i Key/200.key` or password authentication. Added ssh-agent guidance for other Claude processes. It contains no passwords, passphrases, keys, or key contents.
+- nginx was previously installed by the interrupted apt command but a later `command -v nginx`/dpkg probe did not find it; recheck/install after the Python recovery.
+
+### Risks / Review Notes
+- Do not deploy or schedule anything until the user confirms whether `10.0.0.200` should receive a full NCN code checkout with local `PFrontStockData`/keys copied, or only generated artifacts served by nginx.
+- Preserve project boundary: this may run read-only research scans and AI review; it must not add live broker login, live order submission, leverage, or unattended real-money execution.
+- Next exact action after confirmation: read `remote-server.md`, inspect existing MKF scan/AI/markdown entrypoints, then SSH to `10.0.0.200` using `Key/200.key` only for authorized setup checks.
+
+## Diagnostic Task: Doris T1 minute-line completion check (2026-09-15)
+
+### Task
+- User asked whether Doris-side minute-line downloading has completed.
+
+### Changed Files
+- `HANDOFF.md` only.
+
+### Behavior / Logic Changes
+- None. This was a read-only remote status check.
+
+### Validation
+- Read `AGENTS.md`, newest relevant `HANDOFF.md`, and `remote-server.md` before Doris access.
+- Doris SSH reachable at `ts.dorisw.kdns.fr:56731`; `$HOME/NCN/.venv-doris/bin/python` exists and reports Python 3.13.15.
+- Process check found one active two-shard fetcher still running: PID 5553, `branch/T1/experiments/t1l/fetch_t1l_5min_cache.py ... --cache-dir branch/T1/.runtime/t1l-5min-parquet --sleep 1.0 --shard-index 0 --shard-count 2`, elapsed about 17h40m at check time.
+- `branch/T1/.runtime/t1l-5min-parquet/cache_summary_shard_1_of_2.json` exists but is not a completed healthy cache: shard 1/2 processed 2300 codes / 4600 frequency rows with `status_counts={'downloaded': 137, 'download_error': 4463}`; all summarized failures are BaoStock `10002007` / `网络接收错误。` with repeated `Broken pipe` in `fetch_shard_1_of_2.log`.
+- Shard 0 log had only reached 60/2301 codes at the check (`statuses={'downloaded': 120}`) and no summary JSON existed yet.
+- Current parquet cache directory had 266 files and 131 code directories, far below full-universe completion.
+
+### Risks / Review Notes
+- Minute-line cache on Doris is **not complete** and should not be used as full-sample evidence.
+- Do not restart aggressively or increase shard count; the prior BaoStock blacklist/network errors make repeated pressure risky.
+- Next exact action: let PID 5553 finish or stop it deliberately, then reassess whether to retry failed codes with a much slower/resumable policy after BaoStock/network cooldown; preserve existing remote cache/logs.
+
+## Completed Task: MKF AI pre-review ranking WSL backtest rejects A/B/C/D promotion (2026-09-14)
+
+### Task
+- User requested running MKF AI pre-review ranking backtest on WSL after correcting the target grid to existing MKF lagX/T+X with 3%/4% targets, not 5%.
+
+### Changed Files
+- `scripts/evaluate_mkf_ai_prereview_ranking.py`: temporary research-only ranking backtest script; deleted after the WSL result was captured.
+- `tests/test_mkf_ai_prereview_ranking.py`: temporary focused tests; deleted with the research-only script after validation.
+- `/Users/artx/.claude/projects/-Users-artx-Local-Git-Stock-NCN/memory/feedback_mkf_take_profit_window.md`: removed hard-coded 5%/1.05 memory and replaced it with target-window-only guidance.
+- `/Users/artx/.claude/projects/-Users-artx-Local-Git-Stock-NCN/memory/MEMORY.md`: index updated to avoid 5% target default.
+
+### Behavior / Logic Changes
+- New script evaluates daily MKF AI-before ranking profiles against current `amount_cny desc, code asc` baseline using configured MKF post-cross lag signals, Top 30 per signal date, next tradable open entry, T+X cumulative high touch, and targets restricted to 3%/4%.
+- A/B/C/D profiles are deterministic research-only scores; no AI calls, broker access, orders, production config changes, or production candidate sort changes.
+
+### Validation
+- Read `AGENTS.md`, latest `HANDOFF.md`, and `remote-server.md` before WSL work.
+- Local `.venv`: `./.venv/bin/python -m pytest tests/test_mkf_ai_prereview_ranking.py -q` -> 6 passed.
+- `git diff --check` -> passed.
+- Local smoke run: `./.venv/bin/python scripts/evaluate_mkf_ai_prereview_ranking.py --data-root PFrontStockData --config yaml/edge_scout_v1.yaml --start-date 2026-08-01 --end-date 2026-09-11 --top-n 30 --targets 3,4 --horizons 1-10 --workers 4 --output-dir .runtime/mkf_ai_prereview_ranking_smoke_20260914 --emit-selected` -> wrote `.runtime/mkf_ai_prereview_ranking_smoke_20260914`; summary confirms target_pct only 3 and 4.
+- WSL direct SSH check succeeded after wrapper banner timeout: host `10.20.98.161`, 20 CPUs, 19GiB total / 18GiB available, 0 swap used, Python 3.14.4.
+- WSL `.venv`: focused pytest `tests/test_mkf_ai_prereview_ranking.py -q` -> 6 passed.
+- WSL full run: 8 workers, `2016-01-01..2026-09-11`, Top30, horizons `T+1..T+20`, targets 3/4 -> 3197 processed codes, 156673 events, 155959 mature; output fetched and SHA256 checked at `output/回测结果/mkf_ai_prereview_ranking_20260914_103745/`.
+- Result: across 320 non-baseline full-period profile/horizon/target cells, zero positive lifts vs current `amount_cny desc, code asc` baseline. Key T+10 target4 baseline hit-rate 56.2353%; best alternative `C_elastic_liquidity_proxy` 55.4794% (-0.7559pp). T+10 target3 baseline 64.3671%; best alternative C 63.7355% (-0.6316pp).
+
+### Risks / Review Notes
+- Do not promote A/B/C/D deterministic ranking formulas from this run; current amount-based AI-before order remains the best tested choice under this pre-registered grid.
+- Do not rerun or cite the old 5% target口径; current valid target grid is 3%/4%.
+- Production sorting remains unchanged; any future attempt should use a new pre-registered hypothesis rather than tuning these same formulas post hoc.
+- WSL wrapper `sync-code` emitted harmless remote delete warnings for old `experiments/ai4finance` directories; no destructive remote cleanup was performed.
+
+## Completed Task: Doris/T1 minute-line downloader two-shard safety change (2026-09-14)
+
+### Task
+- User clarified the intended scope: keep local MKF/BaoStock download behavior unchanged, but change Doris-side minute-line downloading from the previous 8-shard mode to two-thread/two-shard access after BaoStock blacklist errors.
+
+### Changed Files
+- `branch/T1/experiments/t1l/fetch_t1l_5min_cache.py`: default request sleep changed from 0.05s to 1.0s; default shard count changed to 2.
+- `branch/T1/tests/test_t1l_mkf_minute_b3_entry.py`: added regression test for default two shards and 1.0s sleep.
+- `HANDOFF.md` and `branch/T1/HANDOFF.md`: updated continuation notes.
+- Local main MKF/BaoStock downloader files were restored to their prior behavior: `Autobaostock_download.py`, `yaml/baostock_config.yaml`, `config/edge_scout_schedule.env.example`, `docs/2026-08-01-edge-scout-usage.md`, and `tests/test_autobaostock_download.py` should not carry the earlier single-worker change.
+
+### Behavior / Logic Changes
+- Main/local Edge Scout and MKF BaoStock download behavior remains unchanged.
+- T1l 5-minute cache fetcher now defaults to two shards with a 1.0s per-call sleep, replacing the previously launched 8-shard Doris pattern.
+
+### Validation
+- Local main downloader scope verified with empty diff for `Autobaostock_download.py`, `yaml/baostock_config.yaml`, `config/edge_scout_schedule.env.example`, `docs/2026-08-01-edge-scout-usage.md`, and `tests/test_autobaostock_download.py` after restoring the accidental single-worker change.
+- Local `.venv`: `./.venv/bin/python -m pytest tests/test_autobaostock_download.py tests/test_edge_scout_scan_auto_update.py branch/T1/tests/test_t1l_mkf_minute_b3_entry.py -q` -> 21 passed.
+- `git diff --check` -> passed.
+- User manually ran the approved SSH stop command; Doris T1l old 8-shard chain PIDs 4055/4056/4058/4060/4063/4066/4070/4073/4075/4079/4080/4081/4083/4084/4086/4087 were stopped. Follow-up strict process check found no real `fetch_t1l_5min_cache` or `run_preregistered_mkf_minute_b3_entry` process remaining.
+
+### Risks / Review Notes
+- Immediate remaining action: user should manually stop the Doris T1l 8-shard chain if it is still running; preserve remote cache/output.
+- Before restart, sync the updated T1 fetcher to Doris and run exactly two shards (`--shard-count 2`, shard indexes 0 and 1), not 8.
+- Do not retry BaoStock aggressively while blacklisted; after cooldown/unblock, restart only the two-shard Doris minute download with rate limiting.
+
+## Diagnostic Task: BaoStock login blacklist blocks Edge Scout auto-update (2026-09-14)
+
+### Task
+- User reported MKF/Edge Scout scan stops at data update check with `baostock login failed: 黑名单用户，请与管理员联系` and asked whether it may be related to recent 5-minute-line pulls.
+
+### Changed Files
+- `HANDOFF.md` only.
+- No scanner/data/provider code changed.
+
+### Behavior / Logic Changes
+- None. Current failure is at `scripts/check_edge_scout_data_update.py` BaoStock login during `scripts/edge_scout_scan.sh` auto-update freshness check, before scan execution.
+
+### Validation
+- Read `AGENTS.md` and newest `HANDOFF.md` per startup rule.
+- Inspected `scripts/check_edge_scout_data_update.py`, `scripts/edge_scout_scan.sh`, and `output/edge_scout/data_updates/latest_check.json`.
+- Local `.venv` freshness check: `PFrontStockData` latest observed trade date is 2026-09-11, latest coverage ratio 0.9994585814834868 (7384/7388), above the configured 0.95 gate.
+- Web search found no strong official error-code page for this exact message; one third-party troubleshooting reference maps BaoStock `10001011`/blacklist wording to IP blacklisting after frequent/parallel access, and BaoStock's own site lists `baostock@163.com` contact.
+
+### Risks / Review Notes
+- Do not keep retrying BaoStock login in a loop while blacklisted; it may prolong the block.
+- Plausible cause includes the recent 5-minute/minute-bar batch fetches, especially if concurrent or repeated logins were used, but this is not proven from local logs alone.
+- Safe immediate workaround for deterministic local scan: run with `EDGE_SCOUT_AUTO_UPDATE=0` to skip BaoStock freshness/download and use existing local data through 2026-09-11.
+- Durable fix should reduce BaoStock pressure: avoid parallel/frequent logins, reuse one session where possible, rate-limit requests, and optionally add a fail-closed/local-data-only fallback that requires explicit user opt-in.
+
+## Completed Task: Add Aliweek AI provider as repository default (2026-09-13)
+
+### Task
+- User requested adding an OpenAI-compatible `aliweek` provider using `https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`, key file `Key/aliw.key`, setting it as default, and assessing whether NCN AI prompts need changes for an internet-search-capable model.
+
+### Changed Files
+- `yaml/ai_providers.yaml`: default provider changed from `local_finance` to `aliweek`; added enabled `aliweek` provider with model `qwen3.8-max`, key file `Key/aliw.key`, timeout `240`.
+- `tests/test_ai_provider_config.py`: updated repository default assertions to `aliweek`; kept same-provider MKF/News resolution test isolated via `EDGE_SCOUT_AI_PROVIDERS_CONFIG` temp config so it does not require real Aliweek credentials.
+- `tests/test_news_ai_review.py`: updated repository News AI default assertions to `aliweek`.
+
+### Behavior / Logic Changes
+- MKF and News AI review configs still point at central `yaml/ai_providers.yaml`, so repository default AI review provider is now Aliweek unless overridden by `EDGE_SCOUT_AI_PROVIDERS_CONFIG` or `provider_override`.
+- No prompt text was changed. Current MKF/News prompts deliberately constrain the model to supplied NCN technical/news context and forbid outside memory/self-supplied facts; OpenAI-compatible transport also sends no web-search tool metadata. Therefore Aliweek's possible web-search capability is not currently integrated into the NCN evidence contract.
+
+### Validation
+- Local validation used project `.venv` per project instruction.
+- `./.venv/bin/python -m pytest tests/test_ai_provider_config.py tests/test_news_ai_review.py tests/test_mkf_ai_review.py -q` -> 68 passed.
+- `git diff --check` -> passed.
+- No live chat/model smoke was run; endpoint/key connectivity remains unverified.
+
+### Risks / Review Notes
+- Prompt assessment: do NOT simply let the model browse and mix external facts into `research_summary`; that would weaken auditability and may conflict with the existing strict evidence-only design. If NCN wants internet-search evidence from Aliweek, first add an explicit cited web-evidence input/output contract: searched sources, dates, URLs, quoted facts, stale/source-risk flags, and tests requiring every external factual claim to map to supplied/cited evidence.
+- The model list in the screenshot includes other models, but the repository schema supports one configured model per provider; only `qwen3.8-max` was added as the default because it is the top text/reasoning/vision model shown and matches the user's "can search internet" intent. Add separate provider keys later if NCN needs `qwen3.8-flash`, `qwen3.7-plus`, etc.
+
+## Completed Task: T1b — full `../code` archive backtested on Doris inside the T1 worktree; supersedes the "idea not yet stated" line in the next entry (2026-09-13)
+
+- User-stated direction after the worktree was created: automatically backtest EVERY archive candidate (12 shapes / 17 arms) on minute bars as daily buy points, remotely on TS/Doris; AI analysis must NOT be invoked on TS (pure indicator computation).
+- Executed end-to-end on branch T1 (`871dd07` harness + `952a7f1` handoff): frozen pre-registration `docs/research/2026-09-13-t1b-minute-buypoint-preregistration.md` (inside T1), Doris run under `.venv-doris` (pandas 3.0.5 verified), L1 full-universe daily scan (4601 codes), L2 15-minute replay over 400 selected MKF-event codes (baostock fetch 800/800 ok).
+- Headline: **L1 passes (all frozen gates vs both baselines): B2 WAE, D1 GMMA-surge, E1 BIAS-exhaustion — audit-clean; L2: 0/17 pass.** Production MKF lag0 baseline (47.2% T+10×5%) is BELOW the unconditional all-days baseline (51.3%) in the window. Research evidence only; `production_enabled: false`.
+- Full detail, calibre, near-miss attribution, and stop-rules: `branch/T1/HANDOFF.md` (top entry) and `branch/T1/output/回测结果/t1b_final_verdict_table.csv`. Isolation contract honored: all writes under `branch/T1/`; shared inputs exactly `PFrontStockData`, `.venv`, `Key/ts.key`; minute cache preserved at `branch/T1/.runtime/t1b-20260913/minute_cache/`.
+- Standing caveat: these 17 arms have now spent their gates on 2025-08..2026-08; follow-up requires NEW pre-registration on unseen data.
+
 ## Active Task: New T1 worktree created for a fresh research direction — isolation contract in force (2026-09-13)
 
 ### Task

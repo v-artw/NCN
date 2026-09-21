@@ -273,12 +273,13 @@ def build_mkf_news_context(code: str, config: Mapping[str, Any], *, today: date 
         return MkfNewsContext(code, normalized, em_code, day.isoformat(), None, "invalid_code", {}, NO_NEWS_TEXT, (), (), public_config)
     if bool(config.get("ENABLE_AUTO_CLEANUP", True)):
         cleanup_old_cache(config, today=day)
-    if bool(config.get("ENABLE_NEWS_CACHE", True)) and cache_path.is_file():
-        cached = _load_cache(cache_path, today=day)
-        if cached is not None:
-            news_txt, fatal, attention = cached
-            return MkfNewsContext(code, normalized, em_code, day.isoformat(), str(cache_path), "hit", {}, news_txt, fatal, attention, public_config)
-    if not bool(config.get("FETCH_ONLINE_BY_DEFAULT", True)):
+    fetch_online = bool(config.get("FETCH_ONLINE_BY_DEFAULT", True))
+    if not fetch_online:
+        if bool(config.get("ENABLE_NEWS_CACHE", True)) and cache_path.is_file():
+            cached = _load_cache(cache_path, today=day)
+            if cached is not None:
+                news_txt, fatal, attention = cached
+                return MkfNewsContext(code, normalized, em_code, day.isoformat(), str(cache_path), "hit", {}, news_txt, fatal, attention, public_config)
         return MkfNewsContext(code, normalized, em_code, day.isoformat(), str(cache_path), "miss_no_fetch", {}, NO_NEWS_TEXT, (), (), public_config)
     fetch_config = dict(config)
     fetch_config["_google_query_code"] = normalized
