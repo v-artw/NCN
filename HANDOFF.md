@@ -1,5 +1,28 @@
 # Reviewer Handoff
 
+## Completed Task: MKF shared ge4 chop filter Doris backtest consistency check (2026-09-22)
+
+### Task
+- User asked to use the corrected program for Doris backtesting and judge whether the corrected program behaves as expected.
+
+### Changed Files
+- `HANDOFF.md`: added this consistency-check entry.
+
+### Behavior / Logic Changes
+- None. This task only reran Doris backtests after the shared `pmkf_mkf/chop_filter.py` refactor and selector ge4 hookup.
+
+### Validation
+- Read `AGENTS.md`, newest `HANDOFF.md`, and `remote-server.md` before Doris work.
+- Doris command used `$HOME/NCN/.venv-doris/bin/python`, not system Python; workers=12; BLAS/OpenMP threads set to 1; data root `PFrontStockData`; config `yaml/edge_scout_v1.yaml`; start date `2021-01-01`; target pcts `3,4`; variants `baseline,exclude_chop_ge_3,exclude_chop_ge_4,only_chop_ge_3`.
+- Reran T+1..T+10 output to `.runtime/mkf_post_cross_lag_target_grid_chop_v1_targets3_4_t1_10_shared_20260922.{json,csv}`. Hashes exactly match pre-refactor Doris evidence: JSON `b7ae70db70c2a7b97e8889cdcadb8c799bb7b084dd1fe10b0258703f1220da3e`, CSV `67d3e43bcda3cd57da1ec0b9b8c348e2783eb2981ef360ef68c59060376d0cfa`.
+- Reran T+20 output to `.runtime/mkf_post_cross_lag_target_grid_chop_v1_targets3_4_t20_shared_20260922.{json,csv}`. Hashes exactly match pre-refactor Doris evidence: JSON `2d29e905979d3d6581ac612b37761193ae3f9c2647f44127e6466b14a4eeceba`, CSV `1005ec462c8efd1ac552a1e85135f5535b0973d1df0a0e47eba11f135fb5236e`.
+- Fetched all four outputs back to local `.runtime/` and hash-checked locally.
+- Key ge4 full-period summary from fetched CSV: T+1..T+10 target 3% improved 80/80 cells avg +1.3297pp; target 4% improved 80/80 cells avg +1.4256pp. T+20 target 3% improved 8/8 cells avg +0.9230pp; target 4% improved 8/8 cells avg +1.1151pp.
+
+### Risks / Review Notes
+- Conclusion: corrected/shared program is consistent with the previous Doris research output byte-for-byte for the requested grids, so ge4 selector hookup did not alter backtest semantics.
+- CSV cell-level retention summaries are horizon-cell counts and not the same denominator as the earlier full lag-event retention 141037/155234; use the hash identity as the strongest consistency evidence.
+
 ## Completed Task: MKF ge4 conservative chop filter hooked into candidate selector (2026-09-22)
 
 ### Task
