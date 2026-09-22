@@ -49,7 +49,7 @@ def _mkf_run(root: Path, count: int = 1) -> Path:
         MkfCandidateRow(f"sh.{600000 + index:06d}", "2026-04-09", "2026-04-08", 1, 9.0 + index, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, "")
         for index in range(1, count + 1)
     ]
-    return _atomic_publish(root, "mkf-select-test", rows, {"schema_version": "ncn_mkf_candidate_selector_v5", "candidate_count": count, "published_at_utc": "2026-04-09T00:00:00+00:00"})
+    return _atomic_publish(root, "mkf-select-test", rows, {"schema_version": "ncn_mkf_candidate_selector_v6", "candidate_count": count, "published_at_utc": "2026-04-09T00:00:00+00:00"})
 
 
 def _news_config(path: Path) -> Path:
@@ -346,7 +346,7 @@ def test_mkf_ai_review_orders_ai_unavailable_after_risk_attention(tmp_path: Path
         MkfCandidateRow("sh.600002", "2026-04-09", "2026-04-07", 2, 11.0, 2e8, 2.0, 30.0, 24.0, 35.0, True, True, True, ""),
     ]
     selection_root = tmp_path / "selections"
-    _atomic_publish(selection_root, "mkf-select-test", rows, {"schema_version": "ncn_mkf_candidate_selector_v5", "candidate_count": 2, "published_at_utc": "2026-04-09T00:00:00+00:00"})
+    _atomic_publish(selection_root, "mkf-select-test", rows, {"schema_version": "ncn_mkf_candidate_selector_v6", "candidate_count": 2, "published_at_utc": "2026-04-09T00:00:00+00:00"})
 
     class MixedClient:
         def analyze(self, candidate: dict[str, object], context: dict[str, object], news_context: dict[str, object]) -> tuple[dict[str, object], str]:

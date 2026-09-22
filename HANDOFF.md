@@ -1,5 +1,77 @@
 # Reviewer Handoff
 
+## Completed Task: MKF ge4 conservative chop filter hooked into candidate selector (2026-09-22)
+
+### Task
+- User asked to “接入 ge4 保守过滤试试” after Doris full-sample research showed `exclude_chop_ge_4` improved all checked MKF lag/T+X 3%/4% hit-rate cells while retaining ~90.85% events.
+
+### Changed Files
+- `src/ashare_edge_scout/pmkf_mkf/chop_filter.py`: new shared chop feature module containing the previously Doris-validated `compute_sideways_chop_features_at()` formula plus `CHOP_EXCLUDE_SCORE=4`, `CHOP_FILTER_RULE="exclude_chop_ge_4"`, and threshold metadata.
+- `src/ashare_edge_scout/pmkf_mkf/mkf_post_cross_lag_comparison.py`: now imports the shared chop function so research backtests and actual selector share one implementation.
+- `src/ashare_edge_scout/pmkf_mkf/candidates.py`: upgraded selector schema to `ncn_mkf_candidate_selector_v6`, selector id to include `exclude_chop_ge4_v6`, filters out candidates when `chop_available and chop_score >= 4`, keeps `chop_available=False`, appends chop audit fields to candidate CSV/JSON, and adds `summary["chop_filter"]` metadata.
+- `scripts/select_mkf_candidates.py`: prints `chop_filter=exclude_chop_ge_4` in CLI summary.
+- `tests/test_mkf_candidate_selector.py`: updated v6 expectations and added ge4 reject / chop-unavailable keep / score3 keep tests.
+- `tests/test_mkf_post_cross_lag_target_grid.py`: imports `compute_sideways_chop_features_at` from the shared module.
+- `tests/test_export_scan_csv_for_web_ai.py`, `tests/test_mkf_ai_review.py`: updated v6 fixture schema/reason strings.
+
+### Behavior / Logic Changes
+- Actual MKF candidate selection now applies the conservative sideways/chop exclusion immediately after the MKF post-cross lag signal passes and before cross-context/MKF-line output construction.
+- Rejection condition is explicitly `chop_available=True` and `chop_score >= 4`; unavailable/warmup rows are retained, matching the Doris research policy.
+- Candidate outputs now include `chop_available`, `chop_score`, `chop_efficiency20`, `chop_range20_pct`, `chop_net_return20_abs`, `chop_overlap10`, `chop_atr14_pct`, `chop_is_sideways_ge3`, and `chop_is_sideways_ge4` for auditability.
+- No live broker, order, watchlist, production enablement, or SMC admission/ranking paths were modified.
+
+### Validation
+- Local focused: `./.venv/bin/python -m pytest tests/test_mkf_post_cross_lag_target_grid.py tests/test_mkf_candidate_selector.py -q` -> 30 passed.
+- Local affected downstream: `./.venv/bin/python -m pytest tests/test_export_scan_csv_for_web_ai.py tests/test_mkf_ai_review.py -q` -> 39 passed.
+- Local combined affected suite: same four test files -> 69 passed.
+- `git diff --check` -> passed.
+- Local full suite: `./.venv/bin/python -m pytest -q` -> 607 passed, 3 skipped, 3 failed; failures are pre-existing/unrelated AI provider default expectations (`local_finance` vs `aliweek`) in `tests/test_ai_provider_config.py` and `tests/test_news_ai_review.py`, matching already modified `yaml/ai_providers.yaml` state.
+- Doris focused sync used only selected source/script/test files; no broad `--delete`.
+- Doris import smoke used `$HOME/NCN/.venv-doris/bin/python` and confirmed schema `ncn_mkf_candidate_selector_v6`, rule `mkf_red_blue_cross20_post_lag0_lag1_lag2_exclude_chop_ge4_v6_and_existing_hard_gates`, and `CHOP_FILTER_RULE=exclude_chop_ge_4`.
+- Doris selector CLI smoke used `$HOME/NCN/.venv-doris/bin/python scripts/select_mkf_candidates.py --data-root PFrontStockData --config yaml/edge_scout_v1.yaml --output-root .runtime --run-id mkf-ge4-smoke-20260922 --top 3`; scanned 7375 codes, signal date 2026-09-02, candidate_count 3, selector `mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6`.
+- Doris output machine check: summary schema v6, `chop_filter.enabled=True`, `rule=exclude_chop_ge_4`, boundaries production/watchlist/orders all false, candidates CSV contains chop fields, retained candidates max `chop_score=3`.
+
+### Risks / Review Notes
+- This is an actual MKF candidate-source behavior change, but still within read-only research/demo boundaries; downstream consumers should expect schema v6 and additional chop fields.
+- The full local suite remains blocked by unrelated AI provider config/test drift, not by MKF ge4 changes.
+- Doris `.runtime/mkf-ge4-smoke-20260922` is a smoke output and should be treated as validation evidence, not a canonical daily run.
+
+## Completed Task: MKF sideways-chop exclusion Doris backtest (2026-09-22)
+
+### Task
+- User asked whether MKF can exclude sideways/up-down crawling stocks like the screenshot, then requested a Doris backtest comparing whether excluding those stocks increases lagX/T+X 3%/4% hit probability for X<=10.
+
+### Changed Files
+- `src/ashare_edge_scout/pmkf_mkf/mkf_post_cross_lag_comparison.py`: added research-only sideways/chop features at the lag signal row, variant metrics, and variant-aware CSV rows.
+- `scripts/evaluate_mkf_post_cross_lag_target_grid.py`: added `--horizons`, `--target-pcts`, and `--chop-variants` CLI arguments; defaults preserve legacy baseline behavior.
+- `tests/test_mkf_post_cross_lag_target_grid.py`: added focused tests for no-lookahead chop features, baseline preservation, exclusion variants, warmup retention, and CSV variant rows.
+- `HANDOFF.md`: updated this entry.
+
+### Behavior / Logic Changes
+- Pre-registered `chop_score` uses only historical daily OHLCV at `signal_index`: 20-day trend efficiency <=0.25, 20-day range pct <=0.12, abs 20-day net return <=0.04, 10-transition high/low overlap >=0.55, and ATR14/close <=0.035.
+- Baseline MKF production candidate behavior is unchanged; chop features are recorded on event rows and compared through research variants only.
+- New variants: `baseline`, `exclude_chop_ge_3`, `exclude_chop_ge_4`, and diagnostic `only_chop_ge_3`. Exclusion variants keep rows where chop features are unavailable.
+
+### Validation
+- Read `AGENTS.md`, newest relevant `HANDOFF.md`, and `remote-server.md` before implementation/remote use.
+- Local `.venv`: `./.venv/bin/python -m pytest tests/test_mkf_post_cross_lag_target_grid.py -q` -> 15 passed.
+- `git diff --check` -> passed.
+- Doris environment: `ts.dorisw.kdns.fr:56731`, `$HOME/NCN/.venv-doris/bin/python` -> Python 3.13.15; `memory_pressure` free percentage 95% before run.
+- Doris focused pytest could not run because `.venv-doris` lacks pytest (`No module named pytest`); did not use system `python3` as fallback.
+- Doris backtest used `.venv-doris/bin/python`, 12 workers, BLAS/OpenMP threads set to 1, `--horizons 1..10`, `--target-pcts 3,4`, variants baseline/exclude_ge3/exclude_ge4/only_ge3, start date 2021-01-01, 3197 codes processed.
+- Doris outputs fetched and hash-checked: `.runtime/mkf_post_cross_lag_target_grid_chop_v1_targets3_4_t1_10_20260922.json` SHA256 `b7ae70db70c2a7b97e8889cdcadb8c799bb7b084dd1fe10b0258703f1220da3e`; CSV SHA256 `67d3e43bcda3cd57da1ec0b9b8c348e2783eb2981ef360ef68c59060376d0cfa`.
+- Full-period lagX/T+X (X=1..7): `exclude_chop_ge_3` improved 3% and 4% hit rate in 7/7 cells each; average deltas +2.3593pp (3%) and +2.4847pp (4%). `exclude_chop_ge_4` improved 7/7 cells each; average deltas +1.4221pp (3%) and +1.5059pp (4%).
+- Full-period all lag0..7 × T+1..T+10: both `exclude_chop_ge_3` and `exclude_chop_ge_4` improved 80/80 cells for both 3% and 4%; avg deltas were +2.2465pp/+2.3823pp for ge3 and +1.3297pp/+1.4256pp for ge4.
+- Audit 2024-present all lag0..7 × T+1..T+10: both exclusion variants improved 80/80 cells for both targets; avg deltas were +2.4797pp/+2.6477pp for ge3 and +1.4345pp/+1.5732pp for ge4.
+- Doris T+20 supplemental backtest used the same `.venv-doris/bin/python` and full 3197-code sample; outputs `.runtime/mkf_post_cross_lag_target_grid_chop_v1_targets3_4_t20_20260922.json` SHA256 `2d29e905979d3d6581ac612b37761193ae3f9c2647f44127e6466b14a4eeceba`, CSV SHA256 `1005ec462c8efd1ac552a1e85135f5535b0973d1df0a0e47eba11f135fb5236e`.
+- Full-period T+20 lag0..7: `exclude_chop_ge_3` improved 8/8 cells for both targets; avg deltas +1.6372pp (3%) and +1.9493pp (4%). `exclude_chop_ge_4` improved 8/8 cells for both targets; avg deltas +0.9230pp (3%) and +1.1151pp (4%). Audit 2024-present T+20 also improved every lag/target cell.
+- Retention: `exclude_chop_ge_3` kept 129255/155234 events (83.2646%); `exclude_chop_ge_4` kept 141037/155234 events (90.8545%).
+
+### Risks / Review Notes
+- This is strong research evidence that excluding sideways/chop candidates improves MKF target-touch probability for the requested X<=10 grid, but it remains research-only; no production selector/watchlist behavior was changed.
+- `exclude_chop_ge_3` gives larger hit-rate lift but removes ~16.7% of events; `exclude_chop_ge_4` is gentler and still improves every checked cell while removing ~9.1%.
+- Before production promotion, decide whether to use the stronger ge3 filter or conservative ge4 filter, then run a separate promotion plan/update for actual MKF candidate filtering and UI/reason reporting.
+
 ## Completed Task: MKF news context refreshes on every online AI review run (2026-09-21)
 
 ### Task

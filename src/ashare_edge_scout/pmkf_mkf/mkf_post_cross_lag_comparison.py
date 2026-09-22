@@ -9,6 +9,7 @@ import pandas as pd
 
 from ..research_precision70 import production_gate_mask
 from ..research_v2 import summarize_counts
+from .chop_filter import compute_sideways_chop_features_at
 from .quality import _numeric, normalise_stock_frame
 from .research import mkf_red_blue_cross20_green_exit_under80_mask
 
@@ -19,6 +20,23 @@ GRID_TARGET_PCTS = tuple(range(1, 21))
 PRIMARY_HORIZONS = (5, 10)
 T20_CLOSE_FALLBACK_SCHEMA_VERSION = "ncn_mkf_post_cross_lag_t20_close_fallback_v1"
 T20_CLOSE_FALLBACK_HORIZON = 20
+CHOP_FILTER_VARIANTS = (
+    "baseline",
+    "exclude_chop_ge_3",
+    "exclude_chop_ge_4",
+    "only_chop_ge_3",
+)
+CHOP_FEATURE_COLUMNS = [
+    "chop_available",
+    "chop_score",
+    "chop_efficiency20",
+    "chop_range20_pct",
+    "chop_net_return20_abs",
+    "chop_overlap10",
+    "chop_atr14_pct",
+    "chop_is_sideways_ge3",
+    "chop_is_sideways_ge4",
+]
 
 # Pre-registered stability gates: a cell may be named a "best point" candidate only
 # if it passes every gate below. Numbers are frozen before any grid run and must not
@@ -35,7 +53,16 @@ STABILITY_GATE_CONFIG = {
 
 
 def _grid_columns(horizons: tuple[int, ...] = GRID_HORIZONS, *, include_future_close: bool = False) -> list[str]:
-    columns = ["code", "cross_date", "signal_date", "entry_date", "post_cross_lag", "entry_open", "status"]
+    columns = [
+        "code",
+        "cross_date",
+        "signal_date",
+        "entry_date",
+        "post_cross_lag",
+        "entry_open",
+        "status",
+        *CHOP_FEATURE_COLUMNS,
+    ]
     for horizon in range(1, max(horizons) + 1):
         columns.extend((f"date_t{horizon}", f"future_high_t{horizon}"))
         if include_future_close:
@@ -49,6 +76,7 @@ def _target_key(target_pct: int) -> str:
 
 def _target_return(target_pct: int) -> float:
     return float(target_pct) / 100.0
+
 
 
 def build_mkf_post_cross_lag_target_grid_panel(
@@ -125,6 +153,7 @@ def build_mkf_post_cross_lag_target_grid_panel(
                 "post_cross_lag": int(lag),
                 "entry_open": float(entry_open),
                 "status": "mature" if len(future) >= max_horizon else "partial",
+                **compute_sideways_chop_features_at(data, signal_index),
             }
             for horizon in range(1, max_horizon + 1):
                 if len(future) < horizon:
@@ -261,6 +290,53 @@ def aggregate_lag_target_grid_metrics(
                 for horizon in horizons
             }
     return {"periods": list(periods), "lag_summary": lag_summary, "grid_metrics": grid_metrics}
+
+
+def _filter_panel_for_chop_variant(panel: pd.DataFrame, variant: str) -> pd.DataFrame:
+    if variant == "baseline":
+        return panel
+    available = panel.get("chop_available", pd.Series(False, index=panel.index)).astype(bool)
+    score = pd.to_numeric(panel.get("chop_score"), errors="coerce")
+    if variant == "exclude_chop_ge_3":
+        return panel.loc[~(available & score.ge(3))]
+    if variant == "exclude_chop_ge_4":
+        return panel.loc[~(available & score.ge(4))]
+    if variant == "only_chop_ge_3":
+        return panel.loc[available & score.ge(3)]
+    raise ValueError(f"unknown chop variant: {variant}")
+
+
+def _chop_variant_summary(panel: pd.DataFrame, variant_panel: pd.DataFrame) -> dict[str, Any]:
+    available = panel.get("chop_available", pd.Series(False, index=panel.index)).astype(bool)
+    score = pd.to_numeric(panel.get("chop_score"), errors="coerce")
+    return {
+        "events": int(len(variant_panel)),
+        "baseline_events": int(len(panel)),
+        "retention_vs_baseline": float(len(variant_panel) / len(panel)) if len(panel) else 0.0,
+        "chop_filtered_events": int((available & score.ge(3)).sum()),
+        "chop_ge4_events": int((available & score.ge(4)).sum()),
+        "chop_unavailable_events": int((~available).sum()),
+    }
+
+
+def _aggregate_chop_variants(
+    panel: pd.DataFrame,
+    diagnostics: Mapping[str, Any],
+    *,
+    horizons: tuple[int, ...],
+    target_pcts: tuple[int, ...],
+    chop_variants: tuple[str, ...],
+) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for variant in chop_variants:
+        if variant not in CHOP_FILTER_VARIANTS:
+            raise ValueError(f"unknown chop variant: {variant}")
+        variant_panel = _filter_panel_for_chop_variant(panel, variant)
+        aggregated = aggregate_lag_target_grid_metrics(variant_panel, diagnostics, horizons=horizons, target_pcts=target_pcts)
+        aggregated["best_point_readout"] = _best_point_readout(aggregated)
+        aggregated["chop_summary"] = _chop_variant_summary(panel, variant_panel)
+        result[variant] = aggregated
+    return result
 
 
 def _parse_target_pct(target_label: str) -> int:
@@ -425,8 +501,16 @@ def build_lag_target_grid_report(
     workers: int,
     horizons: tuple[int, ...] = GRID_HORIZONS,
     target_pcts: tuple[int, ...] = GRID_TARGET_PCTS,
+    chop_variants: tuple[str, ...] = ("baseline",),
 ) -> dict[str, Any]:
     aggregated = aggregate_lag_target_grid_metrics(panel, diagnostics, horizons=horizons, target_pcts=target_pcts)
+    variant_metrics = _aggregate_chop_variants(
+        panel,
+        diagnostics,
+        horizons=horizons,
+        target_pcts=target_pcts,
+        chop_variants=chop_variants,
+    )
     observed_start = panel["cross_date"].min() if len(panel) else pd.NaT
     observed_end = panel["cross_date"].max() if len(panel) else pd.NaT
     return {
@@ -471,6 +555,25 @@ def build_lag_target_grid_report(
             "status_counts": {str(key): int(value) for key, value in panel.get("status", pd.Series(dtype=object)).value_counts().items()},
         },
         "event_diagnostics": {str(key): int(value) for key, value in diagnostics.items()},
+        "chop_filter": {
+            "research_only": True,
+            "production_enabled": False,
+            "score_components": {
+                "chop_efficiency20_le_0_25": "abs(close[t] / close[t-20] - 1) / sum(abs(daily_returns[t-19:t])) <= 0.25",
+                "chop_range20_pct_le_0_12": "(rolling_high20 - rolling_low20) / close[t] <= 0.12",
+                "chop_net_return20_abs_le_0_04": "abs(close[t] / close[t-20] - 1) <= 0.04",
+                "chop_overlap10_ge_0_55": "mean adjacent high/low overlap ratio over the latest 10 transitions >= 0.55",
+                "chop_atr14_pct_le_0_035": "ATR14 / close[t] <= 0.035",
+            },
+            "variants": {
+                "baseline": "no sideways/chop exclusion",
+                "exclude_chop_ge_3": "exclude rows with chop_available and chop_score >= 3",
+                "exclude_chop_ge_4": "exclude rows with chop_available and chop_score >= 4",
+                "only_chop_ge_3": "diagnostic cohort rows with chop_available and chop_score >= 3",
+            },
+            "missing_feature_policy": "exclusion variants keep rows where chop_available is false, so warmup history alone does not remove early samples",
+        },
+        "variant_metrics": variant_metrics,
         "date_range": {
             "start_date": start_date,
             "end_date": end_date,
@@ -730,14 +833,15 @@ def t20_close_fallback_summary_csv_rows(report: Mapping[str, Any]) -> list[dict[
     return rows
 
 
-def lag_target_grid_summary_csv_rows(report: Mapping[str, Any]) -> list[dict[str, Any]]:
+def _lag_target_rows_for_metrics(metrics_report: Mapping[str, Any], *, variant: str | None = None) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for lag, periods in report["grid_metrics"].items():
+    chop_summary = metrics_report.get("chop_summary", {})
+    for lag, periods in metrics_report["grid_metrics"].items():
         for period, horizons in periods.items():
             for horizon, targets in horizons.items():
                 for target_label, metrics in targets.items():
                     target_pct = _parse_target_pct(target_label)
-                    rows.append({
+                    row = {
                         "lag": lag,
                         "period": period,
                         "horizon": horizon,
@@ -751,7 +855,24 @@ def lag_target_grid_summary_csv_rows(report: Mapping[str, Any]) -> list[dict[str
                         "mean_target_zero_return": metrics.get("mean_target_zero_return"),
                         "entry_dates": metrics.get("entry_dates"),
                         "codes": metrics.get("codes"),
-                        "events": report["lag_summary"].get(lag, {}).get("events"),
-                        "retention_vs_parent_crosses": report["lag_summary"].get(lag, {}).get("retention_vs_parent_crosses"),
-                    })
+                        "events": metrics_report["lag_summary"].get(lag, {}).get("events"),
+                        "retention_vs_parent_crosses": metrics_report["lag_summary"].get(lag, {}).get("retention_vs_parent_crosses"),
+                    }
+                    if variant is not None:
+                        row = {
+                            "variant": variant,
+                            **row,
+                            "chop_filtered_events": chop_summary.get("chop_filtered_events"),
+                            "chop_unavailable_events": chop_summary.get("chop_unavailable_events"),
+                        }
+                    rows.append(row)
     return rows
+
+
+def lag_target_grid_summary_csv_rows(report: Mapping[str, Any]) -> list[dict[str, Any]]:
+    if "variant_metrics" in report and set(report["variant_metrics"]) != {"baseline"}:
+        rows: list[dict[str, Any]] = []
+        for variant, metrics_report in report["variant_metrics"].items():
+            rows.extend(_lag_target_rows_for_metrics(metrics_report, variant=variant))
+        return rows
+    return _lag_target_rows_for_metrics(report)

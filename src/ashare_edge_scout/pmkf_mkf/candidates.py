@@ -26,6 +26,7 @@ from ..config import (
 )
 from ..data.daily_bars import DataValidationError
 from ..data.data_sources import get_parquet_codes, get_parquet_latest_date_coverage, load_stock_records
+from .chop_filter import CHOP_EXCLUDE_SCORE, CHOP_FILTER_RULE, CHOP_THRESHOLDS, compute_sideways_chop_features_at
 from .research import (
     mkf_red_blue_cross20_green_exit_under80_mask,
     mkf_red_blue_cross20_lines,
@@ -34,9 +35,9 @@ from .research import (
 from ..research_precision70 import production_gate_mask
 from ..stock_selector import _safe_float
 
-SCHEMA_VERSION = "ncn_mkf_candidate_selector_v5"
+SCHEMA_VERSION = "ncn_mkf_candidate_selector_v6"
 DEFAULT_MKF_POST_CROSS_LAGS = parse_mkf_post_cross_lag_range(DEFAULT_MKF_POST_CROSS_LAG_RANGE)
-SELECTION_RULE = "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5_and_existing_hard_gates"
+SELECTION_RULE = "mkf_red_blue_cross20_post_lag0_lag1_lag2_exclude_chop_ge4_v6_and_existing_hard_gates"
 
 
 def _mkf_lag_range_value(config: Mapping[str, Any]) -> str:
@@ -62,7 +63,7 @@ def mkf_selector_id(allowed_lags: frozenset[int]) -> str:
     """Build the selector identifier from the configured inclusive lag range."""
 
     suffix = "_".join(f"lag{lag}" for lag in sorted(allowed_lags))
-    return f"mkf_red_blue_cross20_post_{suffix}_v5"
+    return f"mkf_red_blue_cross20_post_{suffix}_exclude_chop_ge4_v6"
 
 
 def mkf_selection_rule(allowed_lags: frozenset[int]) -> str:
@@ -89,6 +90,15 @@ class MkfCandidateRow:
     source_path: str
     selection_reason: str = SELECTION_RULE
     research_only: bool = True
+    chop_available: bool = False
+    chop_score: int | None = None
+    chop_efficiency20: float | None = None
+    chop_range20_pct: float | None = None
+    chop_net_return20_abs: float | None = None
+    chop_overlap10: float | None = None
+    chop_atr14_pct: float | None = None
+    chop_is_sideways_ge3: bool = False
+    chop_is_sideways_ge4: bool = False
 
 
 @dataclass(frozen=True)
@@ -193,6 +203,10 @@ def evaluate_mkf_candidate_stock(
     if row_index not in signal.index or not bool(signal.loc[row_index]):
         return None
 
+    chop = compute_sideways_chop_features_at(data, row_index)
+    if chop["chop_available"] and chop["chop_score"] >= CHOP_EXCLUDE_SCORE:
+        return None
+
     cross_context = _latest_cross_context(data, row_index, allowed_lags)
     if cross_context is None:
         return None
@@ -218,6 +232,7 @@ def evaluate_mkf_candidate_stock(
         mkf_red_blue_cross_up_20_under_80=True,
         source_path=str(source_path or ""),
         selection_reason=selection_rule,
+        **chop,
     )
 
 
@@ -353,6 +368,14 @@ def run_mkf_candidate_selection(
         "allowed_post_cross_lags": sorted(allowed_lags),
         "selection_profile": selection_profile,
         "effective_min_adv20_cny": float(min_adv20_cny) if min_adv20_cny is not None else float((config.get("universe") or {}).get("min_adv20_cny", 0.0)),
+        "chop_filter": {
+            "enabled": True,
+            "rule": CHOP_FILTER_RULE,
+            "exclude_when": f"chop_available and chop_score >= {CHOP_EXCLUDE_SCORE}",
+            "missing_feature_policy": "keep_rows_where_chop_available_is_false",
+            "thresholds": CHOP_THRESHOLDS,
+            "doris_validation": "full current main-board parquet backtest improved all checked T+1..T+10 and T+20 3pct/4pct hit-rate cells",
+        },
         "review_order": "amount_cny_desc_code_asc",
         "validation_summary": {
             "historical_validation": "not_run_in_selection_command",

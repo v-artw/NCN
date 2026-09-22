@@ -3,6 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from ashare_edge_scout.pmkf_mkf.chop_filter import compute_sideways_chop_features_at
 from ashare_edge_scout.pmkf_mkf.mkf_post_cross_lag_comparison import (
     GRID_SCHEMA_VERSION,
     PRIMARY_HORIZONS,
@@ -210,6 +211,93 @@ def test_hard_gate_still_applies_at_lag_signal_row(monkeypatch: pytest.MonkeyPat
 
     assert panel["post_cross_lag"].tolist() == [0]
     assert panel.attrs["diagnostics"]["lag_1_hard_gate_rejected"] == 1
+
+
+def test_sideways_chop_features_use_signal_history_only() -> None:
+    frame = _frame(rows=35)
+    for index in range(35):
+        frame.loc[index, "open"] = 100.0 + (0.2 if index % 2 else -0.2)
+        frame.loc[index, "close"] = 100.0 + (0.2 if index % 2 else -0.2)
+        frame.loc[index, "high"] = 101.0
+        frame.loc[index, "low"] = 99.0
+    before = compute_sideways_chop_features_at(frame, 22)
+    frame.loc[25:, "high"] = 130.0
+    frame.loc[25:, "close"] = 125.0
+    after = compute_sideways_chop_features_at(frame, 22)
+
+    assert before["chop_available"] is True
+    assert before["chop_score"] >= 3
+    assert after == before
+
+
+def test_chop_variants_preserve_baseline_and_filter_rows(monkeypatch: pytest.MonkeyPatch) -> None:
+    frame = _frame(rows=50)
+    signal = pd.Series(False, index=frame.index)
+    signal.iloc[[22, 35]] = True
+    monkeypatch.setattr(
+        "ashare_edge_scout.pmkf_mkf.mkf_post_cross_lag_comparison.mkf_red_blue_cross20_green_exit_under80_mask",
+        lambda _: signal,
+    )
+    for index in range(0, 25):
+        frame.loc[index, ["open", "close"]] = 100.0 + (0.2 if index % 2 else -0.2)
+        frame.loc[index, "high"] = 101.0
+        frame.loc[index, "low"] = 99.0
+    for index in range(25, 50):
+        value = 100.0 + (index - 24) * 2.0
+        frame.loc[index, ["open", "close"]] = value
+        frame.loc[index, "high"] = value * 1.02
+        frame.loc[index, "low"] = value * 0.98
+
+    panel = build_mkf_post_cross_lag_target_grid_panel("sh.600001", frame, _config(), lags=(0,), horizons=(1,))
+    report = build_lag_target_grid_report(
+        panel=panel,
+        diagnostics=panel.attrs["diagnostics"],
+        code_list=["sh.600001"],
+        code_list_sha256="abc",
+        start_date="2025-01-01",
+        end_date=None,
+        workers=1,
+        horizons=(1,),
+        target_pcts=(3, 4),
+        chop_variants=("baseline", "exclude_chop_ge_3", "only_chop_ge_3"),
+    )
+
+    baseline = report["grid_metrics"]["0"]["full_period"]["T+1"]["target_3pct"]
+    variant_baseline = report["variant_metrics"]["baseline"]["grid_metrics"]["0"]["full_period"]["T+1"]["target_3pct"]
+    excluded = report["variant_metrics"]["exclude_chop_ge_3"]["grid_metrics"]["0"]["full_period"]["T+1"]["target_3pct"]
+    only_chop = report["variant_metrics"]["only_chop_ge_3"]["grid_metrics"]["0"]["full_period"]["T+1"]["target_3pct"]
+
+    assert baseline == variant_baseline
+    assert baseline["n"] == 2
+    assert excluded["n"] == 1
+    assert only_chop["n"] == 1
+    csv_rows = lag_target_grid_summary_csv_rows(report)
+    assert {row["variant"] for row in csv_rows} == {"baseline", "exclude_chop_ge_3", "only_chop_ge_3"}
+    assert {row["target_pct"] for row in csv_rows} == {3, 4}
+
+
+def test_chop_exclusion_keeps_unavailable_warmup_rows(monkeypatch: pytest.MonkeyPatch) -> None:
+    frame = _frame(rows=12)
+    _patch_signal(monkeypatch, frame, index=0)
+    panel = build_mkf_post_cross_lag_target_grid_panel("sh.600001", frame, _config(), lags=(0,), horizons=(1,))
+    report = build_lag_target_grid_report(
+        panel=panel,
+        diagnostics=panel.attrs["diagnostics"],
+        code_list=["sh.600001"],
+        code_list_sha256="abc",
+        start_date="2025-01-01",
+        end_date=None,
+        workers=1,
+        horizons=(1,),
+        target_pcts=(3,),
+        chop_variants=("baseline", "exclude_chop_ge_3"),
+    )
+
+    baseline = report["variant_metrics"]["baseline"]["grid_metrics"]["0"]["full_period"]["T+1"]["target_3pct"]
+    excluded = report["variant_metrics"]["exclude_chop_ge_3"]["grid_metrics"]["0"]["full_period"]["T+1"]["target_3pct"]
+    assert baseline["n"] == 1
+    assert excluded["n"] == 1
+    assert report["variant_metrics"]["exclude_chop_ge_3"]["chop_summary"]["chop_unavailable_events"] == 1
 
 
 def test_grid_report_metadata_and_csv_rows_preserve_research_boundary(monkeypatch: pytest.MonkeyPatch) -> None:

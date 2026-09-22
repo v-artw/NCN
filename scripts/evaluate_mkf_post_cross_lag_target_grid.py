@@ -22,7 +22,9 @@ import pandas as pd
 
 from ashare_edge_scout.config import load_config
 from ashare_edge_scout.pmkf_mkf.mkf_post_cross_lag_comparison import (
+    CHOP_FILTER_VARIANTS,
     GRID_HORIZONS,
+    GRID_TARGET_PCTS,
     build_lag_target_grid_report,
     build_mkf_post_cross_lag_target_grid_panel,
     lag_target_grid_summary_csv_rows,
@@ -32,6 +34,23 @@ from ashare_edge_scout.research_precision70 import PREFIXES
 REQUIRED_COLUMNS = ["date", "open", "high", "low", "close", "preclose", "volume", "amount", "tradestatus", "isST"]
 
 
+def _parse_int_csv(value: str) -> tuple[int, ...]:
+    try:
+        parsed = tuple(int(item.strip()) for item in value.split(",") if item.strip())
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("expected comma-separated integers") from exc
+    if not parsed:
+        raise argparse.ArgumentTypeError("at least one integer is required")
+    return parsed
+
+
+def _parse_str_csv(value: str) -> tuple[str, ...]:
+    parsed = tuple(item.strip() for item in value.split(",") if item.strip())
+    if not parsed:
+        raise argparse.ArgumentTypeError("at least one value is required")
+    return parsed
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-root", type=Path, default=Path("PFrontStockData"))
@@ -39,11 +58,23 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--start-date", default="2021-01-01")
     parser.add_argument("--end-date", default=None)
     parser.add_argument("--workers", type=int, default=min(os.cpu_count() or 1, 8))
+    parser.add_argument("--horizons", type=_parse_int_csv, default=GRID_HORIZONS)
+    parser.add_argument("--target-pcts", type=_parse_int_csv, default=GRID_TARGET_PCTS)
+    parser.add_argument("--chop-variants", type=_parse_str_csv, default=("baseline",))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--summary-csv", type=Path, default=None)
     args = parser.parse_args(argv)
     if not 1 <= args.workers <= 16:
         parser.error("--workers must be between 1 and 16")
+    invalid_horizons = [horizon for horizon in args.horizons if horizon < 1 or horizon > 20]
+    if invalid_horizons:
+        parser.error("--horizons values must be between 1 and 20")
+    invalid_targets = [target for target in args.target_pcts if target < 1 or target > 20]
+    if invalid_targets:
+        parser.error("--target-pcts values must be between 1 and 20")
+    invalid_variants = [variant for variant in args.chop_variants if variant not in CHOP_FILTER_VARIANTS]
+    if invalid_variants:
+        parser.error(f"unknown --chop-variants: {','.join(invalid_variants)}")
     return args
 
 
@@ -117,7 +148,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         start_date=args.start_date,
         end_date=args.end_date,
         workers=args.workers,
-        horizons=GRID_HORIZONS,
+        horizons=args.horizons,
+        target_pcts=args.target_pcts,
+        chop_variants=args.chop_variants,
     )
     _atomic_json(args.output, report)
     if args.summary_csv is not None:

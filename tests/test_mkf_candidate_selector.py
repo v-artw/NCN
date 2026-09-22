@@ -81,6 +81,7 @@ def _patch_mkf(monkeypatch: pytest.MonkeyPatch, *, selected: bool = True, lag: i
     monkeypatch.setattr(selector, "mkf_red_blue_cross20_green_exit_under80_mask", fake_base_mask)
     monkeypatch.setattr(selector, "mkf_red_blue_cross20_post_lag_mask", fake_post_lag_mask)
     monkeypatch.setattr(selector, "mkf_red_blue_cross20_lines", fake_lines)
+    _patch_chop(monkeypatch, available=False, score=None)
 
 
 def test_mkf_candidate_selector_selects_cross_day_lag0(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -90,7 +91,7 @@ def test_mkf_candidate_selector_selects_cross_day_lag0(monkeypatch: pytest.Monke
     row = evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"])
 
     assert row is not None
-    assert row.selection_reason == "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5_and_existing_hard_gates"
+    assert row.selection_reason == "mkf_red_blue_cross20_post_lag0_lag1_lag2_exclude_chop_ge4_v6_and_existing_hard_gates"
     assert row.cross_date == records[-1]["date"].isoformat()
     assert row.post_cross_lag == 0
     assert row.mkf_red_cross_up_20 is True
@@ -106,7 +107,7 @@ def test_mkf_candidate_selector_selects_first_post_cross_day(monkeypatch: pytest
     row = evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"])
 
     assert row is not None
-    assert row.selection_reason == "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5_and_existing_hard_gates"
+    assert row.selection_reason == "mkf_red_blue_cross20_post_lag0_lag1_lag2_exclude_chop_ge4_v6_and_existing_hard_gates"
     assert row.cross_date == records[-2]["date"].isoformat()
     assert row.post_cross_lag == 1
     assert row.mkf_red_cross_up_20 is True
@@ -126,11 +127,60 @@ def test_mkf_candidate_selector_selects_second_post_cross_day(monkeypatch: pytes
     assert row.post_cross_lag == 2
 
 
+def _patch_chop(monkeypatch: pytest.MonkeyPatch, *, available: bool, score: int | None) -> None:
+    monkeypatch.setattr(selector, "compute_sideways_chop_features_at", lambda data, row_index: {
+        "chop_available": available,
+        "chop_score": score,
+        "chop_efficiency20": 0.2 if available else None,
+        "chop_range20_pct": 0.08 if available else None,
+        "chop_net_return20_abs": 0.02 if available else None,
+        "chop_overlap10": 0.6 if available else None,
+        "chop_atr14_pct": 0.02 if available else None,
+        "chop_is_sideways_ge3": bool(available and score is not None and score >= 3),
+        "chop_is_sideways_ge4": bool(available and score is not None and score >= 4),
+    })
+
+
 def test_mkf_candidate_selector_rejects_absent_signal(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_mkf(monkeypatch, selected=False)
     records = _records()
 
     assert evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"]) is None
+
+
+def test_mkf_candidate_selector_rejects_chop_ge4(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_mkf(monkeypatch)
+    _patch_chop(monkeypatch, available=True, score=4)
+    records = _records()
+
+    assert evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"]) is None
+
+
+def test_mkf_candidate_selector_keeps_chop_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_mkf(monkeypatch)
+    _patch_chop(monkeypatch, available=False, score=None)
+    records = _records()
+
+    row = evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"])
+
+    assert row is not None
+    assert row.chop_available is False
+    assert row.chop_score is None
+    assert row.chop_is_sideways_ge4 is False
+
+
+def test_mkf_candidate_selector_keeps_chop_score3(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_mkf(monkeypatch)
+    _patch_chop(monkeypatch, available=True, score=3)
+    records = _records()
+
+    row = evaluate_mkf_candidate_stock("sh.600001", records, CONFIG, records[-1]["date"])
+
+    assert row is not None
+    assert row.chop_available is True
+    assert row.chop_score == 3
+    assert row.chop_is_sideways_ge3 is True
+    assert row.chop_is_sideways_ge4 is False
 
 
 def test_mkf_candidate_selector_rejects_third_post_cross_day(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -150,7 +200,7 @@ def test_mkf_candidate_selector_accepts_configured_lag5(monkeypatch: pytest.Monk
     assert row is not None
     assert row.post_cross_lag == 5
     assert row.cross_date == records[-6]["date"].isoformat()
-    assert row.selection_reason == "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_v5_and_existing_hard_gates"
+    assert row.selection_reason == "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates"
 
 
 def test_mkf_candidate_selector_is_causal_at_manual_as_of(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -205,7 +255,7 @@ def test_mkf_atomic_publish_keeps_all_rows_and_refuses_overwrite(tmp_path: Path)
 
     assert len(json.loads((directory / "candidates.json").read_text())) == 2
     manifest = json.loads((directory / "manifest.json").read_text())
-    assert manifest["schema_version"] == "ncn_mkf_candidate_selector_v5"
+    assert manifest["schema_version"] == "ncn_mkf_candidate_selector_v6"
     assert re.fullmatch(r"mkf_candidates_\d{8}_\d{6}\.csv", manifest["timestamped_candidates_csv"])
     assert (directory / manifest["timestamped_candidates_csv"]).read_bytes() == (directory / "candidates.csv").read_bytes()
     with pytest.raises(FileExistsError):
@@ -238,13 +288,15 @@ def test_mkf_selection_reports_boundaries_and_progress(tmp_path: Path, monkeypat
     configured_lag_range = repo_config["mkf"]["candidate_selector"]["post_cross_lag_range"]
     configured_lags = sorted(parse_mkf_post_cross_lag_range(configured_lag_range))
     expected_selector = selector.mkf_selector_id(frozenset(configured_lags))
-    assert summary["schema_version"] == "ncn_mkf_candidate_selector_v5"
+    assert summary["schema_version"] == "ncn_mkf_candidate_selector_v6"
     assert summary["selector_id"] == expected_selector
     assert summary["selection_rule"] == f"{expected_selector}_and_existing_hard_gates"
     assert summary["post_cross_lag_range"] == configured_lag_range
     assert summary["allowed_post_cross_lags"] == configured_lags
     assert summary["selection_profile"] == "small_capital"
     assert summary["effective_min_adv20_cny"] == 50_000_000.0
+    assert summary["chop_filter"]["enabled"] is True
+    assert summary["chop_filter"]["rule"] == "exclude_chop_ge_4"
     assert summary["boundaries"]["production_enabled"] is False
     assert summary["boundaries"]["smc_admission_modified"] is False
     assert summary["boundaries"]["watchlist_modified"] is False
@@ -280,6 +332,7 @@ def test_mkf_cli_top_is_display_only_and_must_be_positive(tmp_path: Path, capsys
     assert f"selector={expected_selector}" in output
     assert f"post_cross_lag_range={configured_lag_range}" in output
     assert "selection_profile=small_capital" in output
+    assert "chop_filter=exclude_chop_ge_4" in output
     assert "effective_min_adv20_cny=50000000" in output
     assert "candidate_count=1" in output
     assert summary["selection_profile"] == "small_capital"

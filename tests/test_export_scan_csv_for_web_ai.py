@@ -43,7 +43,7 @@ def _write_csv(path: Path, code: str = "sh.600001") -> None:
             "mkf_momentum": "35.0",
             "mkf_inter": "30.0",
             "mkf_near": "40.0",
-            "selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_v5_and_existing_hard_gates",
+            "selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_exclude_chop_ge4_v6_and_existing_hard_gates",
         })
 
 
@@ -56,7 +56,7 @@ def _mkf_run(root: Path, run_id: str, *, timestamped_name: str, candidate_count:
     (run / "summary.json").write_text(json.dumps({"candidate_count": candidate_count}), encoding="utf-8")
     (run / "manifest.json").write_text(
         json.dumps({
-            "schema_version": "ncn_mkf_candidate_selector_v5",
+            "schema_version": "ncn_mkf_candidate_selector_v6",
             "timestamped_candidates_csv": timestamped_name,
         }),
         encoding="utf-8",

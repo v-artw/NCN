@@ -14,6 +14,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
+from ashare_edge_scout.pmkf_mkf.chop_filter import CHOP_FILTER_RULE
 from ashare_edge_scout.mkf_candidate_selector import run_mkf_candidate_selection
 
 
@@ -60,6 +61,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"selector={result.selector_id}")
     print(f"post_cross_lag_range={result.post_cross_lag_range}")
     print(f"selection_profile={args.selection_profile}")
+    print(f"chop_filter={CHOP_FILTER_RULE}")
     if args.min_adv20_cny is not None:
         print(f"effective_min_adv20_cny={args.min_adv20_cny:.0f}")
     print("historical_validation=not_run_in_selection_command")
