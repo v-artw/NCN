@@ -48,14 +48,17 @@ def test_repository_ai_provider_inventory() -> None:
     config = load_ai_provider_config(ROOT / "yaml" / "ai_providers.yaml")
 
     assert config.schema_version == "ncn_ai_providers_v1"
-    assert config.provider == "aliweek"
-    selected = config.providers[config.provider]
-    assert selected["base_url"] == "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
-    assert selected["model"] == "qwen3.8-max"
-    assert selected["key_file"] == str(ROOT / "Key" / "aliw.key")
-    assert selected["api_key_env"] == ""
-    assert selected["timeout_seconds"] == 240
-    assert selected["enabled"] is True
+    # 默认 provider 以 yaml 顶层 provider 为唯一事实源：切换默认（如 aliweek↔local_finance）
+    # 不应要求修改本测试；此处只断言"默认必须存在且启用"，档案按名字钉。
+    assert config.provider in config.providers
+    assert config.providers[config.provider]["enabled"] is True
+    aliweek = config.providers["aliweek"]
+    assert aliweek["base_url"] == "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    assert aliweek["model"] == "qwen3.8-max"
+    assert aliweek["key_file"] == str(ROOT / "Key" / "aliw.key")
+    assert aliweek["api_key_env"] == ""
+    assert aliweek["timeout_seconds"] == 240
+    assert aliweek["enabled"] is True
     assert config.providers["nvidia_kimi"]["enabled"] is True
     assert config.providers["nvidia_kimi"]["model"] == "moonshotai/kimi-k3"
     nvidia_deepseek = config.providers["nvidia_deepseek_v4_pro"]
@@ -163,7 +166,10 @@ def test_provider_override_selects_gsykj_gpt6_without_changing_default() -> None
         ROOT / "yaml" / "ai_providers.yaml", provider_override="gsykj_gpt6"
     )
 
-    assert default_config.provider == "aliweek"
+    # 不硬编码默认 provider 名字：默认由 yaml 顶层 provider 决定，切默认时本测试无需改；
+    # 这里只验证 override 没有污染默认解析（默认仍解析为 yaml 指定的、且启用的 provider）。
+    assert default_config.provider in default_config.providers
+    assert default_config.providers[default_config.provider]["enabled"] is True
     assert gpt6_config.provider == "gsykj_gpt6"
     selected = gpt6_config.providers[gpt6_config.provider]
     assert selected["base_url"] == "https://ai.gsykj.com/v1"

@@ -1,6 +1,6 @@
 schema_version: ncn_ai_providers_v1
 enabled: true
-provider: aliweek
+provider: local_finance
 timeout_seconds: 120
 temperature: 0
 seed: 42

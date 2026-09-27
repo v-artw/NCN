@@ -1,5 +1,46 @@
 # Reviewer Handoff
 
+## Completed Task: 本地 MKF 全量跑 vs 10.0.0.200（Pi）07-25 07:00 调度结果对比 (2026-09-27)
+
+### Task
+- 用户要求：本地完整 MKF（full-small）跑一遍，与 Pi 今早 7:00 调度结果分两步对比：第一步候选是否完全一致，第二步 AI 分层。
+- 边界执行：对 10.0.0.200 全程只读（ssh/scp），未做任何修改；Doris 只是测试环境、绝不是数据来源（见 [[doris-test-env-not-data-source]]、[[reference-ncn-data-flow]]）；smc/ 文件全程不读不提（SMC 已剥离、后期退役）。
+- 途中口径修正：首轮本地 AI 用了 aliweek（qwen3.8-max），17/22 只 ai_unavailable（ValueError），对比无效；用户把 `yaml/ai_providers.yaml` 顶层 provider 永久改为 `local_finance`（与 Pi 同模型 Ornith-1.5-35B-A3B-oQ4e-mtp），决策：**永久切换 + 回测也走 ai_providers.yaml + 对比完成后去掉 2 个 canary 测试的默认 provider 硬编码**。
+
+### 第一步结论：候选扫描（22 vs 23，零算法漂移）
+- 本地 `EDGE_SCOUT_AUTO_UPDATE=0 ./mkf.sh mkf-small` → 22 只（`output/edge_scout/mkf_candidate_selections/mkf-select-20260927_184810/mkf_candidates_20260927_184952.csv`）；Pi 基线 23 只（`output/mkf_pi_compare_20260927/pi/mkf_candidates_20260925_072408.csv`，9-25 07:00 full-small 作业，之后周末无运行）。
+- 唯一差异 **sh.600660**：Pi 选中、本地未选。22 只共同候选的**所有研究字段逐值一致**（仅机器路径 source_path 不同）；两边 MKF 代码与 yaml md5 一致。
+- 根因（已实证，非猜测）：BaoStock 前复权（adjustflag=2，两边方式相同）是**动态快照**——600660 除息回补时点不同：Pi parquet（9-24 21:08 写入）9-21/22/23 行未复权→red momentum 23.932→SELECTED；本地 parquet（9-26 22:29 写入）已复权→36.601→NOT SELECTED。同一 gate 链（production_gate_mask → cross20_post_lag → chop_ge4_v6 → latest_cross_context）喂两份数据分别复现。
+- **风险（勿在 Pi 上动手）**：Pi 增量下载是追加式的，除息回补不会重写历史行，Pi 会**持续误选 600660**，直到一次干净的全量重拉。此为用户决策项，本次未处理。
+
+### 第二步结论：AI 分层（同模型 Ornith-1.5-35B，common=22：同层 17 / 异层 5）
+- 分布：Pi `standard 16 / risk 5 / ai_unavailable 2`（`mkf_ai_reviews_20260925_074420.csv`）vs 本地 `16 / 4 / 2`（`output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260927_184952/mkf_ai_reviews_20260927_190036.csv`）。
+- 5 个异层：sh.601865（risk→unavailable）、sh.601965（unavailable→risk）、sz.000680（risk→standard）、sz.000999（standard→risk）、sz.002867（risk→standard）。均为边界 conf（0.38~0.42）翻转或瞬时 API 失败互换，**无方向性冲突**（priority 两边全 0，无 priority 翻转）。
+- 可解释差异源：新闻上下文本地为 9-27 全新抓取（比 Pi 的 9-25 多两个交易日）+ 量化 MoE 在 temp=0 下非严格确定性。
+- **遗留观察项（后续再查）**：sh.603737 两边都 ai_unavailable——稳定失败，不是瞬时噪声，值得单独定位（本次未展开）。
+
+### Changed Files
+- `yaml/ai_providers.yaml`（用户改，未提交）：顶层 `provider: aliweek → local_finance`（永久）。local_finance = Ornith-1.5-35B-A3B-oQ4e-mtp @ `http://ts.dorisw.kdns.fr:18090/v1`，key_file `Key/ts.key`，env `EDGE_SCOUT_LOCAL_AI_API_KEY`。
+- `tests/test_ai_provider_config.py`（未提交）：2 个 canary 测试去默认 provider 硬编码——`test_repository_ai_provider_inventory` 只断言"默认存在且启用"（`config.provider in config.providers` + enabled），按名字钉各档案（aliweek 档案仍在）；`test_provider_override_selects_gsykj_gpt6_without_changing_default` 同理验证 override 不污染默认解析。今后再切默认 provider 无需改测试。
+- 新增对比存档 `output/mkf_pi_compare_20260927/pi/`（Pi 基线 csv/AI_SUMMARY.txt + 本地两轮 run log）与 `/tmp/pi_sh.600660.parquet`（仅用于复现验证的临时件）。
+
+### Validation（远程验证记录，按 AGENTS.md）
+- 环境：本地 Mac `./.venv/bin/python`；Pi 10.0.0.200（只读 ssh/scp）。命令：`EDGE_SCOUT_AUTO_UPDATE=0 ./mkf.sh mkf-small`（两轮：aliweek 轮 AI 失败弃用、local_finance 轮有效）。
+- `pytest tests/test_ai_provider_config.py -q`：**13 passed**；主仓全量 `pytest -q`：**527 passed, 3 skipped**（与基线一致，canary 改动 + 永久切换零回归）。
+- grep 确认 `tests/ scripts/ src/` 无残留"默认=aliweek"硬编码（aliweek 仅剩注册表档案名）。
+- 回测 AI 配置中央化核查（用户要求"回测也使用 ai_providers.yaml"）：`scripts/evaluate_mkf_ai_score_rotation_backtest.py`（--ai-config 默认 `yaml/ai_providers.yaml`，load_ai_provider_config 无 override→自动跟随顶层 provider）与 `scripts/smoke_local_finance_models.py`（--config 默认同一文件）本就已中央化，**无需改代码**；顶层切 local_finance 后回测自动使用它。注：smoke 工具 `--provider` 默认 `local_finance` 是工具本职（本地模型质量对比），非业务链路硬编码。
+
+### Next Exact Action
+- 两项未提交改动（`yaml/ai_providers.yaml`、`tests/test_ai_provider_config.py`）等用户决定提交时机（不 push）。建议提交时一起带上本 HANDOFF 条目。
+- 若继续查 sh.603737 稳定 ai_unavailable：本地对单只跑 review-mkf-ai 取证 error 原文即可（勿动 Pi、勿动 Doris）。
+- Pi 600660 误选的干净重拉属用户决策，未获指示前不碰 200。
+
+### Risks / Do-Not-Repeat
+- 跨机对比差异先按"各机 baostock 下载时点不同→前复权快照不同"分析；**不要再把 Doris 当数据源/参照**（用户两次强调，已固化为记忆）。
+- **MKF 工作不提 smc/**：SMC 已剥离且将退役，读取或引用 smc 文件会引偏对比结论（用户明确纠正过）。
+- 对比 AI 分层时两边模型必须一致（本轮曾因 aliweek vs Ornith 导致首轮作废）；ai_unavailable 集合本身含瞬时噪声，分层对比只读方向、不逐字。
+- Pi 侧 7:00 full-small 周末不跑；下次对比应选同一交易日双方都有运行的窗口。
+
 ## Completed Task: SMC 完整分离到 smc/ 子项目（删除/移走 smc 对 MKF 零影响）(2026-09-27)
 
 ### Task
