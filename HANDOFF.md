@@ -26,11 +26,13 @@
 - 主仓全量 `pytest -q`：**527 passed, 3 skipped**；`pytest smc/tests -q`：**81 passed**（含移植用例）。
 - **删除验收实测**：`mv smc /tmp` 后主仓 527 全绿、`main.sh/mkf.sh/edge_scout_scan.sh help` 均 OK、SMC 别名 rc=2，随后恢复 smc/ 并复测通过。
 - 真实链路 smoke：`EDGE_SCOUT_AUTO_UPDATE=0 smc_scan.sh audit-smc-news`（tmp roots）rc=0，JSON 产出正常（证明 smc 包 import/venv/bootstrap 全通）；8 个 shell 入口 `bash -n` 全 OK；aismc.sh 在 `/tmp` CWD 下 `--help` OK。
+- **真实全市场选股冒烟（2026-09-27 补跑，pending 项已清）**：`EDGE_SCOUT_AUTO_UPDATE=0 smc_scan.sh select --top 5` rc=0、`status=success`、`signal_date=2026-09-24`、`candidate_count=10`（与分离前 09-26 标准门槛同日实测 10 只一致，零行为漂移）；产物 `candidates.csv/json`、`summary.json`、`manifest.json`、`human_review_summary.csv`、时间戳观察副本齐全，落新默认输出根 `smc-output/selections/`（`.gitignore:24` 已覆盖）；`research_only=True`、`selection_reason=smc_medium_buy_and_hard_gates` 与边界文案原样。注：`--top` 只限终端展示、落盘为完整候选集，是分离前既有语义。
 - 关键假设已实证：smc 副本 yaml 经 `load_mkf_ai_config`/`load_review_config` 解析出 ai_config→`smc/yaml/ai_providers.yaml`、key→仓库根 `Key/aliw.key`、NEWS_CACHE_DIR→仓库根 `Message/`、SMC 原生缓存→`smc/.runtime/news_cache`（smc_ai_review.yaml 必须用 MKF 式 loader，非 news loader）。
 
 ### Next Exact Action
-- `git add`（含 smc/ 全部新路径与删除路径）并提交本分离 commit（不 push）。
-- 可选补充：用户方便时跑一次真实 `smc_scan.sh select --top 5` 全市场扫描冒烟（本次未跑，仅 CLI --help 与 audit 真链路验证）。
+- 分离已提交：`87015d0`（46 files，rename 历史保留，不 push）；本条 HANDOFF 冒烟更新需随下一次文档提交入库。
+- 分离任务本身无剩余验证项；回到主线（scanner 胜率研究，见 [[project_phase_win_rate]]）时直接基于主仓 MKF 流程继续，SMC 侧改动只在 `smc/` 内进行时不需要触碰主仓测试。
+- 若用户希望历史 SMC 输出可查：提醒分离前的旧 run 仍在 `output/edge_scout/`（未迁移，replay 守卫双路径均可用），新 run 全部在 `smc-output/`。
 
 ### Risks / Do-Not-Repeat
 - **yaml 副本漂移**：主仓 `yaml/ai_providers.yaml`（provider/model/key 变更）或 `mkf_news_context.yaml` 更新后必须手动同步 `smc/yaml/` 副本（只改相对路径前缀，语义保持一致）；parity 测试只护住 MKF↔SMC-news 同 provider，不护副本内容等值。
