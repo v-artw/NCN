@@ -1,5 +1,34 @@
 # Reviewer Handoff
 
+## Completed Task: 前复权历史自愈·重叠重写窗口（方案①）实现 + 回归测试 (2026-09-27 深夜)
+
+### Task
+- 用户批准："实现方案①，补回归测试"。背景：Pi 与本地 MKF 反复出现 22 vs 23 差异（唯一差异 sh.600660，三次复现），根因**不是** smc 修复引入——两边代码/yaml md5 一致、22 只共同候选逐字段一致；根因是 BaoStock 前复权动态快照 + 增量下载纯追加永不重写历史行 → 各机数据时点错位。审计量化：最近 80 行接缝率本地 8.0% / Pi 8.3%，且两边接缝清单几乎一致（多为快照共性），600660 属少数机器特异性接缝。
+- 方案①=每次增量除追加外，重叠重下最近 N 行（默认 120），靠既有 `concat + drop_duplicates(keep='last')` 用当前快照覆盖旧行，每日自愈。`overlap_bars=0` 精确退回旧纯追加行为。
+
+### Changed Files（未提交）
+- `Autobaostock_download.py`：新增 `DEFAULT_OVERLAP_BARS=120` + config 键 `overlap_bars` + CLI `--overlap-bars`；新纯函数 `resolve_download_window(df_dates, end_date, global_start, overlap_bars)`（返回 `(real_start, is_append)`，None=跳过）与 `_date_str`（兼容 Timestamp/str/date）；`process_one_stock` 增量检查改走纯函数并新增 `overlap_bars` 形参；`main()` 全接线（读 config、覆盖 args、**submit 第 6 参**、日志行、summary 新增 `overlap_bars` 字段）。关键语义：**文件已追平 end_date 时也要重写窗口**（这正是除息后唯一修复通道）。
+- `scripts/edge_scout_scan.sh` `auto_update_data()`：删除"current→跳过下载"早退分支；现在 check rc∈{0,10} 都继续跑下载器（rc=0 打印"仍执行前复权重叠重写窗口自愈旧行"），后接同一套下载后校验。如需退回旧行为：yaml `overlap_bars: 0`。
+- `tests/test_autobaostock_download.py`：+12 条回归（窗口数学、已最新仍自愈、短历史整体重写、空文件、str/Timestamp 兼容、legacy skip/append、默认值防清零、CLI、假 bs 端到端"除息回补覆盖旧行 + 追加新行"×3）。
+- `tests/test_edge_scout_scan_auto_update.py`：`test_current_data_skips_download_and_runs_scanner` → 重写为 `test_current_data_still_runs_self_heal_download_then_scanner`（钉住新语义：current 必须调用下载器、不得出现"跳过下载"）。
+
+### Validation
+- `pytest tests/test_autobaostock_download.py tests/test_edge_scout_scan_auto_update.py -q`：**21 passed**；全量 `pytest -q`：**539 passed, 3 skipped**（基线 527+3，+12 净新增，零回归）；`bash -n` 通过。
+- **在线真火测试**（本地 .venv，真 baostock，end_date=2026-09-24，overlap=120，对象=Pi 600660 stale 文件副本 `/tmp/selfheal_smoke/`）：Pi 的未复权 9-21/22/23 行被重写为 52.75/52.77/52.80，与本地正式库该行逐值一致 → 600660 型差异可被单次自愈运行消除，行数不变、无重复日期。
+- **新观察（重要）**：真火重拉当晚（9-27 23:5x）当前快照在 2026-04-03 出现 -1.86% 窗口内新接缝（清明假期边界、除权因子表仍在服务端回补中；同时今日快照反而把本地 9-26 文件里的 09-21 潜伏接缝抹平了）。含义：baostock 除息回补是**逐日渐进**的，一次拉取可能拿到"修复中"的中间态；窗口内 04-03 每日都会被重写，快照收敛后自动对齐，无需人工干预。窗口外更早历史若被后续因子回补，120 行窗口触及不到（只影响超长回看动量，MKF 主窗口 ≤60 日内不受影响）——如未来要做长窗口研究，考虑周期性 `--clean` 全量重拉（用户决策，未实现）。
+
+### Next Exact Action
+- 等用户决定提交（建议连同上一条目一起提交；不 push）。
+- 部署：本地即时生效；**Pi 未动**（遵守只读边界）。Pi 需用户经其 `../../200` 部署通道同步本次改动后，下一次调度自动开始自愈；部署前 Pi 每天仍会误选 600660。
+- 可选：部署后对比一轮 mkf-small，预期两边同为 22 只（600660 消失或双方一致）。
+- 遗留（已定位、未获批）：sh.603737 ai_unavailable = `杠杆` 裸词误伤研究性引文（`src/ashare_edge_scout/mkf_ai_review.py:269`），两个收窄方案已呈报，等用户拍板，勿擅动 fail-closed 治理护栏。
+
+### Risks / Do-Not-Repeat
+- **不要**再把 22v23 归因于 smc 分离——已三次实证零算法漂移，唯一变量是各机前复权快照时点。
+- 窗口起点若从 `date[-(N+1)]+1天` 改成别的锚式，会破坏 `resolve_download_window` 的 4 条数学回归；改前先跑回归。
+- hub 的"已最新→跳过下载"是**故意移除**的旧语义（它正是 Pi 永不修复的机制）；恢复它必须同时把 overlap_bars 设为 0，否则只是空转。
+- 每天多拉 7417×~120 行是方案①的固有成本（Pi 上调度时长会上升）；嫌重可把 overlap_bars 降到 60（覆盖 MKF 全部动量窗口），不建议降到 0。
+
 ## Completed Task: 本地 MKF 全量跑 vs 10.0.0.200（Pi）07-25 07:00 调度结果对比 (2026-09-27)
 
 ### Task

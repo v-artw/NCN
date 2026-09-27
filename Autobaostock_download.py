@@ -38,6 +38,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---------------------------- 默认配置 ----------------------------
+# 前复权历史自愈窗口：BaoStock 前复权是动态快照，除权除息后会回补改写历史行；
+# 纯追加式增量更新永远拿不到回补后的旧行，导致各机器数据时点错位（如 600660 型差异）。
+# 每次增量除追加新行外，重叠重下最近 N 行，用 keep='last' 覆盖旧值，实现每日自愈。
+DEFAULT_OVERLAP_BARS = 120
+
 DEFAULT_CONFIG = {
     "data_dir": "./PFrontStockData",       # 数据输出目录（前复权）
     "start_date": "1990-12-19",            # 全局开始日期
@@ -46,7 +51,8 @@ DEFAULT_CONFIG = {
     "clean_before_download": False,        # 是否清空目录再下载
     "max_workers": 2,                      # 并发线程数（RPi 建议 2）
     "query_timeout": 30,                   # 单次查询超时秒数
-    "stock_list_date": ""                  # 获取股票列表的基准日期（空则用end_date）
+    "stock_list_date": "",                 # 获取股票列表的基准日期（空则用end_date）
+    "overlap_bars": DEFAULT_OVERLAP_BARS   # 增量重叠重写窗口（行）；0 退回纯追加旧行为
 }
 
 CONFIG_FILE = os.path.join(PROJECT_ROOT, "yaml", "baostock_config.yaml")
@@ -79,6 +85,8 @@ def parse_args():
     clean_group.add_argument('--no-clean', action='store_true', help='下载前不清空输出目录（覆盖配置）')
     parser.add_argument('--workers', type=int, help='并发进程数')
     parser.add_argument('--max-failure-rate', type=float, default=0.10, help='失败+超时占比上限，范围 0 到 1')
+    parser.add_argument('--overlap-bars', type=int, default=None,
+                        help='增量重叠重写窗口（行）：每次重下最近N行以自愈前复权回补；0 退回纯追加，默认取配置 overlap_bars')
     parser.add_argument('--summary-json', type=str, help='写出机器可读下载摘要 JSON')
     return parser.parse_args()
 
@@ -151,7 +159,50 @@ def worker_init():
                 logger.warning(f"子进程 baostock 登录异常: {e}，重试 {attempt+2}/3")
     logger.error("子进程 baostock 登录失败，该进程的查询任务将全部失败")
 
-def process_one_stock(code, global_start_date, end_date, adjust_flag, output_dir):
+def _date_str(value):
+    """把 date 列元素规约为 YYYY-MM-DD 字符串（兼容 Timestamp/str/date）。"""
+    if isinstance(value, pd.Timestamp):
+        return value.strftime('%Y-%m-%d')
+    if isinstance(value, datetime.date):
+        return value.strftime('%Y-%m-%d')
+    return str(value)[:10]
+
+
+def resolve_download_window(df_dates, end_date, global_start_date, overlap_bars):
+    """决定单只股票的下载起点，返回 (real_start_date, is_append)；real_start_date=None 表示跳过。
+
+    纯函数（不触网），便于回归测试。overlap_bars>0 时把起点从"最后日期+1"回退到
+    "倒数第 N+1 行+1"，即重叠重下最近 N 行——这些行会被合并逻辑（drop_duplicates
+    keep='last'）用 BaoStock 当前复权快照的新值覆盖，旧行污染得以每日自愈；即便文件
+    已覆盖到 end_date（无新行可追加）也要重写窗口，这正是除息后"已最新"机器唯一的修复通道。
+    """
+    if df_dates is None or len(df_dates) == 0:
+        return global_start_date, False
+    last_date_str = _date_str(df_dates.iloc[-1])
+    if overlap_bars <= 0:
+        # 旧行为：纯追加
+        if last_date_str >= end_date:
+            return None, False
+        next_dt = datetime.datetime.strptime(last_date_str, "%Y-%m-%d") + datetime.timedelta(days=1)
+        real_start_date = next_dt.strftime("%Y-%m-%d")
+    else:
+        n = len(df_dates)
+        if n <= overlap_bars:
+            # 历史不足窗口：从已存最早行整体重写
+            real_start_date = _date_str(df_dates.iloc[0])
+        else:
+            anchor_dt = datetime.datetime.strptime(
+                _date_str(df_dates.iloc[-(overlap_bars + 1)]), "%Y-%m-%d")
+            real_start_date = (anchor_dt + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        if last_date_str >= end_date and real_start_date > end_date:
+            return None, False
+    if real_start_date > end_date:
+        return None, False
+    return real_start_date, True
+
+
+def process_one_stock(code, global_start_date, end_date, adjust_flag, output_dir,
+                      overlap_bars=DEFAULT_OVERLAP_BARS):
     """
     单只股票的处理（运行在子进程中）
     返回值: (code, success, updated)
@@ -160,26 +211,18 @@ def process_one_stock(code, global_start_date, end_date, adjust_flag, output_dir
     real_start_date = global_start_date
     is_append = False
 
-    # 增量检查
+    # 增量检查（含前复权重叠重写窗口）
     if os.path.exists(final_path):
         try:
             df_old = pd.read_parquet(final_path, columns=['date'])
-            if not df_old.empty:
-                last_date = df_old['date'].iloc[-1]
-                if isinstance(last_date, pd.Timestamp):
-                    last_date_str = last_date.strftime('%Y-%m-%d')
-                else:
-                    last_date_str = str(last_date)
-                if last_date_str >= end_date:
-                    return (code, True, False)   # 已是最新
-                last_dt = datetime.datetime.strptime(last_date_str, "%Y-%m-%d")
-                next_dt = last_dt + datetime.timedelta(days=1)
-                real_start_date = next_dt.strftime("%Y-%m-%d")
-                if real_start_date > end_date:
-                    return (code, True, False)
-                is_append = True
+            real_start_date, is_append = resolve_download_window(
+                df_old['date'], end_date, global_start_date, overlap_bars)
+            if real_start_date is None:
+                return (code, True, False)   # 已是最新且无需重写
         except Exception as e:
             logger.warning(f"{code} 读取已有文件失败，将重新下载: {e}")
+            real_start_date = global_start_date
+            is_append = False
 
     # 下载数据
     try:
@@ -217,7 +260,7 @@ def process_one_stock(code, global_start_date, end_date, adjust_flag, output_dir
 
 def build_download_summary(*, requested_end_date, effective_end_date, stock_list_date, locked_trade_date,
                            total, updated_count, failed_count, timeout_count, data_dir, max_failure_rate,
-                           clean_before_download=False):
+                           clean_before_download=False, overlap_bars=None):
     failure_count = failed_count + timeout_count
     failure_rate = failure_count / total if total else 1.0
     status = "success" if total > 0 and failure_rate <= max_failure_rate else "failed"
@@ -238,6 +281,7 @@ def build_download_summary(*, requested_end_date, effective_end_date, stock_list
         "data_dir": data_dir,
         "incremental": not clean_before_download,
         "clean_before_download": clean_before_download,
+        "overlap_bars": overlap_bars,
     }
 
 
@@ -286,6 +330,8 @@ def main():
         config['clean_before_download'] = False
     if args.workers:
         config['max_workers'] = args.workers
+    if args.overlap_bars is not None:
+        config['overlap_bars'] = args.overlap_bars
 
     output_dir = config['data_dir']
     start_date = config['start_date']
@@ -296,6 +342,7 @@ def main():
     max_workers = min(config['max_workers'], (os.cpu_count() or 2) * 2)
     query_timeout = config.get('query_timeout', 30)
     stock_list_date = config.get('stock_list_date', '')
+    overlap_bars = int(config.get('overlap_bars', DEFAULT_OVERLAP_BARS))
 
     if not stock_list_date:
         stock_list_date = end_date
@@ -354,6 +401,8 @@ def main():
     logger.info(f"📂 数据目录: {output_dir}")
     logger.info(f"📅 日期范围: {start_date} -> {end_date}")
     logger.info(f"🔧 复权类型: {adjust_flag}")
+    if overlap_bars > 0 and not clean_flag:
+        logger.info(f"🩹 前复权自愈窗口: 每次重叠重写最近 {overlap_bars} 行（除息回补自动覆盖）")
 
     updated_count = 0
     failed_count = 0
@@ -361,7 +410,7 @@ def main():
     total = len(stock_codes)
 
     with ProcessPoolExecutor(max_workers=max_workers, initializer=worker_init) as executor:
-        futures = {executor.submit(process_one_stock, code, start_date, end_date, adjust_flag, output_dir): code for code in stock_codes}
+        futures = {executor.submit(process_one_stock, code, start_date, end_date, adjust_flag, output_dir, overlap_bars): code for code in stock_codes}
         with tqdm(total=total, unit="stock", desc="下载进度") as pbar:
             for future in as_completed(futures):
                 code = futures[future]
@@ -398,6 +447,7 @@ def main():
         data_dir=output_dir,
         max_failure_rate=args.max_failure_rate,
         clean_before_download=clean_flag,
+        overlap_bars=overlap_bars,
     )
     write_summary_json(args.summary_json, summary)
     logger.info(f"📉 失败率: {summary['failure_rate']:.2%} (门槛 {args.max_failure_rate:.2%})")

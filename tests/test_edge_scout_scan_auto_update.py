@@ -27,22 +27,34 @@ def _base_env(tmp_path: Path) -> dict[str, str]:
     return env
 
 
-def test_current_data_skips_download_and_runs_scanner(tmp_path: Path) -> None:
+def test_current_data_still_runs_self_heal_download_then_scanner(tmp_path: Path) -> None:
+    # 前复权自愈回归：检查返回 current（无新交易日）时，hub 不得跳过下载器——
+    # 重叠重写窗口是除息回补后"已最新"机器唯一的修复通道（600660 型差异根因）。
     marker = tmp_path / "scanner-ran"
+    download_marker = tmp_path / "downloader-ran"
     env = _base_env(tmp_path)
     env["EDGE_SCOUT_UPDATE_CHECK_COMMAND"] = (
         "mkdir -p \"$(dirname \"$CHECK_SUMMARY\")\"; "
         "printf '%s\\n' '{\"status\":\"success\",\"action\":\"current\","
         "\"remote_latest_trade_date\":\"2026-07-31\"}' > \"$CHECK_SUMMARY\"; exit 0"
     )
-    env["EDGE_SCOUT_DOWNLOADER_COMMAND"] = "exit 99"
+    env["EDGE_SCOUT_DOWNLOADER_COMMAND"] = (
+        f"touch {download_marker}; "
+        f"{sys.executable} -c 'import json,os,pathlib,pandas as pd; "
+        "root=pathlib.Path(os.environ[\"DATA_ROOT\"]); "
+        "pd.DataFrame({\"date\":pd.to_datetime([os.environ[\"REMOTE_LATEST\"]])}).to_parquet(root/\"sh.600000.parquet\",index=False); "
+        "path=pathlib.Path(os.environ[\"DOWNLOAD_SUMMARY\"]); path.parent.mkdir(parents=True,exist_ok=True); "
+        "path.write_text(json.dumps({\"status\":\"success\",\"requested_end_date\":\"2026-07-31\",\"effective_end_date\":\"2026-07-31\"})+\"\\n\")'"
+    )
     env["EDGE_SCOUT_SCANNER_COMMAND"] = f"touch {marker}"
 
     result = subprocess.run(["bash", str(SCRIPT), "market"], env=env, text=True, capture_output=True)
 
     assert result.returncode == 0, result.stderr
     assert marker.is_file()
-    assert "本地数据已是最新，跳过下载" in result.stdout
+    assert download_marker.is_file()  # 已最新也必须调用下载器执行窗口重写
+    assert "本地已是最新（2026-07-31），仍执行前复权重叠重写窗口自愈旧行" in result.stdout
+    assert "跳过下载" not in result.stdout
 
 
 def test_new_remote_date_downloads_before_scanner(tmp_path: Path) -> None:

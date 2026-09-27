@@ -136,18 +136,21 @@ auto_update_data() {
     local check_status=$?
     set -e
 
-    if [ "${check_status}" -eq 0 ]; then
-        echo " 数据更新：本地数据已是最新，跳过下载。"
-        return
-    fi
-    if [ "${check_status}" -ne 10 ]; then
+    if [ "${check_status}" -ne 0 ] && [ "${check_status}" -ne 10 ]; then
         echo "ERROR: 无法确认 BaoStock 最新交易日，停止扫描；详情：${check_summary}" >&2
         exit "${check_status}"
     fi
 
     local remote_latest
     remote_latest="$("${VENV}" -c 'import json,sys; print(json.load(open(sys.argv[1]))["remote_latest_trade_date"])' "${check_summary}")"
-    echo " 数据更新：发现远端新交易日 ${remote_latest}，开始增量下载到 ${DATA_ROOT}。"
+    if [ "${check_status}" -eq 0 ]; then
+        # 前复权是动态快照：除息后旧行会被回补改写，"已最新"不代表"已正确"。
+        # 因此即便没有新交易日，也要跑一次下载器，让重叠重写窗口自愈 stale 历史行
+        # （600660 型跨机差异的根因）。如需退回旧的"已最新即跳过"，把配置 overlap_bars 设为 0。
+        echo " 数据更新：本地已是最新（${remote_latest}），仍执行前复权重叠重写窗口自愈旧行。"
+    else
+        echo " 数据更新：发现远端新交易日 ${remote_latest}，开始增量下载到 ${DATA_ROOT}。"
+    fi
     if [ -n "${EDGE_SCOUT_DOWNLOADER_COMMAND:-}" ]; then
         DATA_ROOT="${DATA_ROOT}" REMOTE_LATEST="${remote_latest}" DOWNLOAD_SUMMARY="${download_summary}" \
             bash -c "${EDGE_SCOUT_DOWNLOADER_COMMAND}"
