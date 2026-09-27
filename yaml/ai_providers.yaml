@@ -1,6 +1,6 @@
 schema_version: ncn_ai_providers_v1
 enabled: true
-provider: local_finance
+provider: aliweek
 timeout_seconds: 120
 temperature: 0
 seed: 42
@@ -8,6 +8,14 @@ response_format:
   type: json_object
 
 providers:
+  aliweek:
+    enabled: true
+    name: Alibaba Aliweek Qwen
+    base_url: https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+    model: qwen3.8-max
+    key_file: Key/aliw.key
+    timeout_seconds: 240
+
   local_finance:
     enabled: true
     name: Doris Local Finance AI
@@ -50,6 +58,15 @@ providers:
     name: NVIDIA DeepSeek V4 Pro 0813
     base_url: https://integrate.api.nvidia.com/v1
     model: deepseek-ai/deepseek-v4-pro-0813
+    key_file: Key/nvidia.key
+    api_key_env: EDGE_SCOUT_NVIDIA_API_KEY
+    timeout_seconds: 240
+
+  nvidia_glm-5.3-flash:
+    enabled: true
+    name: NVIDIA glm-5.3-flash
+    base_url: https://integrate.api.nvidia.com/v1
+    model: z-ai/glm-5.3-flash
     key_file: Key/nvidia.key
     api_key_env: EDGE_SCOUT_NVIDIA_API_KEY
     timeout_seconds: 240

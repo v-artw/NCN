@@ -1,5 +1,257 @@
 # Reviewer Handoff
 
+## Completed Task: aismc.sh — SMC 候选 × MKF 同款小资金一键流程 + SMC 专用 AI 委员会 (2026-09-26)
+
+### Task
+- 用户要求：新建 `aismc.sh`，把 MKF 的小资金一键流程（自动更新/AI分层/MD，ADV20 5000万）应用到 SMC 扫描结果；股票数据下载、新闻公报抓取、AI 分析、md 生成逻辑完全复制 mkf.sh 的成熟实现；输出在 smc-output；交互方式为方向键菜单（与 mkf.sh 一致）。
+- 追加要求：为 SMC 建立独立 AI 委员会（原 MKF 委员会提示词把 SMC 候选的 mkf_* 空字段判为"信号不可复核"，与 SMC 语义冲突），并明确用"和 mkf 相同的方式"在 yaml/ 目录单独建 `smc_ai_review.yaml`，aismc.sh 使用该文件。
+
+### Changed Files
+- 新增根目录 `aismc.sh`（未跟踪、chmod +x）：菜单 7 项镜像 mkf.sh（小资金一键/标准一键/选股[自动|本地]/AI分层/MD导出/退出），子命令 `aismc-small / aismc-review / select[-small][-local] / layer / export-md / help`。一键流程含 [1/3][2/3][3/3] 实时进度（tee 流式，修掉"静默 2-3 分钟像卡死"的体验问题）。
+- 新增 `yaml/smc_ai_review.yaml`（未 commit）：与 mkf_ai_review.yaml 同构（ai_config=ai_providers.yaml、news_config=mkf_news_context.yaml、review.max_candidates=30、technical_context 一致），仅 prompt.system 换为 SMC 语境：明确"mkf_* 为 null 属正常、禁止因此降级"、要求用 smc_gap_pct/start_diagnostic/risk_warnings 复核、评估追顶风险（缺口回补/量能背离/涨幅透支）。aismc.sh 通过 `EDGE_SCOUT_MKF_AI_CONFIG=yaml/smc_ai_review.yaml` 传入既有 review-mkf-ai 管线——零代码修改。
+- 小资金口径：select_stocks.py 无 ADV20 覆盖参数，故运行时派生 `smc-output/config/edge_scout_v1_small_adv20_50000000.yaml`（完整复用 edge_scout_v1.yaml，仅 universe.min_adv20_cny 100M→50M），经 `EDGE_SCOUT_CONFIG` env 传给既有 select 管线。未修改 src/、scripts/、任何已跟踪 yaml。
+- 桥接沿用 smc.sh 的只读方案（candidates.json 原样复制+v6 schema summary/manifest，manifest.bridge 记录真实来源 ncn_smc_stock_selector_v4），目录前缀 aismc-layer-。
+
+### Validation
+- 选股：`select-small-local --top 30` 实测 signal_date=2026-09-24、13 只候选（标准门槛同日为 10 只），selection_rule=smc_medium_buy_and_existing_hard_gates 未变，仅流动性下限放宽。
+- 管线加载：`_normalize_prompt_config` 读取新 yaml 返回 `business_yaml_prompt.system`（与 MKF 完全同一代码路径），角色/状态/JSON schema 约束齐全。
+- 委员会冒烟（--top 1）：sz.001216 获完整 SMC 委员会分析（risk_attention, conf 0.28；引用 6 连板高位、异常波动公告、量能背离、缺口回补、"高位追涨诊断"；无 MKF 字段降级话术）；其余 12 只按 --top 限流写为 ai_unavailable 保守行（预期行为：--top 只限制 AI 调用数量，CSV 仍覆盖全部候选）。
+- 本地数据已更新到 2026-09-24（BaoStock 增量 status=success，7413 中失败 49，远低于 10% 门禁）；周五 09-25 数据 BaoStock 尚未发布（remote_latest=09-24）。
+- 用户已停掉两个后台一键任务（b5tuvy7x1、bfta0aulj，按用户指示），选择自己在菜单里跑；完整 13 只 AI 全量分层尚未由用户跑完出最终分布。
+
+### Next Exact Action
+- 用户菜单第 1 项跑完后：核对 13 只的 SMC 委员会分层分布与 MKF 委员会旧口径（27 只那次 standard/risk/insufficient 混合）的差异，必要时校准 `yaml/smc_ai_review.yaml` 的分层校准段措辞。
+- 若用户认可 SMC 委员会口径：考虑把 `yaml/smc_ai_review.yaml` git-add（tracked 文件需用户点头）；mdfile/桥接目录同理。
+
+### Risks / Do-Not-Repeat
+- **度量工具变了**：SMC 委员会的 tier 分布与 MKF 委员会（含今晚 27 只那次 smc.sh 全量分层）不可直接比较；引用分层结论必须注明提示词版本。
+- 不要改 src/scripts 里的 review-mkf-ai 或 select 管线来实现 SMC 定制——env 覆盖（EDGE_SCOUT_MKF_AI_CONFIG/EDGE_SCOUT_CONFIG）是既定通道。
+- 菜单第 1/5 项串行调用远端 35B（约30-60秒/只）；不要同时开两个一键任务（用户终端+助手后台会互相拖慢，本会话已两次被用户叫停后台）。
+- smc.sh 仍然存在且走 MKF 委员会口径；aismc.sh 才是 SMC 专用委员会入口，两者输出目录共用 smc-output，靠 run 前缀（smc-layer- vs aismc-layer-）区分。
+- 交互菜单只支持键盘（↑/↓+回车+q），终端无鼠标事件；非 tty 环境 run_menu 会报错退出（与 mkf.sh 相同）。
+
+## Completed Task: MKF vs SMC 2015-01-01→2026-09-22 全数据同方法对比回测 (2026-09-26)
+
+### Task
+- 用户要求：mkf 与 SMC 从 2015-01-01 到 2026-09-22 使用所有数据进行回测对比。
+- 两臂同一套 MKF v3 lag-grid 机器（lag0–5、入场=信号行次日开盘、信号行复查 gate、停牌不消耗窗口、T+1..T+20 累计高点触及 3%/4%、未命中记 0、去重、baseline+exclude_chop_ge_4、门槛 n≥300/dates≥120/codes≥50），仅父信号不同：MKF=红蓝线上穿20（已提交脚本 `scripts/evaluate_mkf_post_cross_lag_target_grid.py` 原样跑，报告含 lag6/7，对比只取 lag0–5）；SMC=`production_smc_mask`（experiments 克隆脚本）。
+
+### Changed Files
+- 未修改 `src/`、`scripts/`；新增未跟踪分析脚本 `experiments/smc_mkf_method_grid/compare_arms.py`（读两臂 json，出 240 格胜负表/门槛内最优/年度表/固定格 delta）。
+- 证据目录 `output/回测结果/20260926-mkf-vs-smc-2015-20260922/`：README（口径+命令+sha256）、mkf_arm.{json,csv,log}（json sha `87b45962…ca4fc`）、smc_arm.{json,csv,log}（json sha `271d2fd5…2973`）、对比报告.md、单元格对比.csv（240 行）。未 git-add。
+- 远端产物保留在 Doris `$HOME/NCN/.runtime/mkf_vs_smc_2015/`（未删除）。
+
+### Validation
+- Doris `.venv-doris/bin/python`，workers=12，主板 3197 代码（7375 parquet 过滤），数据截至 2026-09-02（尾部未满 T+20 记 partial）；两臂串行跑完，SMC 臂日志 `status=ok codes=3197 events=910825`；MKF 驱动本就不打印 status 行，json 解析校验通过。
+- 结果：MKF 92,249 父/212,565 事件 vs SMC 158,847 父/910,825 事件（密度≈4.3×）。baseline 全期 240 格（lag0–5×T+1..20×3%/4%）**SMC 更高 240/240**，双臂均过门槛。门槛内最优 full_period T+20 3%：MKF 74.68%（lag2）vs SMC 76.46%（lag0，Wilson 76.24）；4%：68.14 vs 71.16；ge4：75.61 vs 77.00；审计期 2024+ 3%：75.78 vs 77.14。
+- SMC 优势随窗口拉长收窄：lag0 T+1 4% +9.52pp → T+5 3% +6.12 → T+10 3% +4.57 → T+20 3% +2.26。年度（lag0 3%）：T+10 SMC 9/11 年更高；T+20 口径 2016/2018/2022 MKF 略高（早期年 MKF n<3500），2025 近乎持平（79.4 vs 79.3）。
+
+### Next Exact Action
+- 若要推进"用 SMC 信号做组合层"：下一步是容量/费用口径（同日多信号的资金分配、涨跌停不可成交标记、触及后真实止盈滑点），触及率优势≠已实现盈亏优势。
+- 若要对 lag 曲线做选点：SMC 的最优点在 lag0（当日信号次日开盘即最优），与 MKF 需 lag2/lag5 不同，可用它简化买入时点规则。
+
+### Risks / Do-Not-Repeat
+- 这是"同一交易框架下命中率"对比，不是收益金额对比；SMC 母信号定义本身包含资金面过滤+门槛，与 MKF 纯穿越不同源。
+- 幸存者偏差仍在（当前代码表回溯 2015）；早期年份样本小，勿引单年 delta 做结论。
+- 口径已两轮冻结复现（2021 窗、2018 窗、2015 窗三次 SMC 最优单元格一致），不要再改 builder 语义；compare_arms.py 只做读取聚合。
+
+## Completed Task: smc.sh 独立 SMC 入口，复用 MKF 同款新闻抓取 + AI 委员会分层 (2026-09-26)
+
+### Task
+- 用户要求：单独创建 smc.sh，使用与 mkf.sh 相同的 AI 与消息抓取/分析方式，输出保存在 smc-output 目录。
+
+### Changed Files
+- 新增根目录 `smc.sh`（未跟踪、未 git-add）：方向键菜单 + 子命令，镜像 mkf.sh 结构。
+- 未修改 `scripts/edge_scout_scan.sh`、`src/`、任何 yaml；全部通过既有 `EDGE_SCOUT_OUTPUT_ROOT` 环境变量做输出隔离。
+
+### Implementation / Method Notes
+- 所有子命令设 `EDGE_SCOUT_OUTPUT_ROOT=$PROJECT_ROOT/smc-output`（可用 `EDGE_SCOUT_SMC_OUTPUT_ROOT` 覆盖）；默认 `output/edge_scout` 树零写入（实测确认）。
+- AI 与新闻：直接复用 `review-mkf-ai`（`mkf_ai_review.py`），与 mkf.sh 同一条链路——provider/model 来自 `yaml/ai_providers.yaml`（当前 local_finance，Doris omlx 18090），新闻走 MKF 多源抓取（Google News RSS/东财股票新闻/公告，`Message/` 缓存，在线刷新），分析为 MKF 委员会研究分层（priority/standard/risk_attention/insufficient）。
+- SMC 候选 → MKF AI 分层经只读桥接 `smc-output/smc_ai_layer_runs/`：heredoc 内嵌 python 把 SMC `candidates.json` 原样复制并生成 v6 schema 的 summary/manifest 以通过 `validate_mkf_selection_run` 的完整性校验；manifest/summary 写入 `selection_origin=ncn_smc_stock_selector_v4` 与桥接说明，不冒充 MKF 选股。候选字段中 mkf_* 为空属预期，AI 会如实指出信号不可复核（已见样例输出）。
+- 命令：`smc-review`（一键：更新+选股+桥接+分层）、`smc-review-native`（既有 select-review：SMC 原生 news_ai_review 复核+前瞻归档）、`smc-select[-local]`、`smc-layer [--selection-run DIR] [--top N]`、`review-news`。
+- 输出目录：smc-output/{selections, smc_ai_layer_runs, mkf_ai_reviews, news_reviews, smc_news_prospective}。
+
+### Validation
+- `./smc.sh help` OK；`smc-select-local` 写入 smc-output/selections/select-20260926_215255（27 候选）；默认 selections 树无新增。
+- `smc-layer --top 2` 端到端通过：news=refreshed×4、AI 委员会评分成功 2 只（标准研究 conf=0.42）、2 只本轮 ai_unavailable（如实落 CSV）。
+- 27 只全量分层已完整跑通（约 13 分钟，远端 35B 串行；结果 `smc-output/mkf_ai_reviews/mkf-ai-review-20260926_215455/`：standard_research 11、risk_attention 8、insufficient_evidence 7、ai_unavailable 1、priority_research 0；全部候选的 mkf_* 信号字段为 null 被 AI 如实标为"信号不可复核"）。自动化场景建议 `--top` 限量或接受分钟级耗时。
+
+### Next Exact Action
+- 用户如要 SMC 一键纳入日常：考虑 cron/launchd 直接调 `./smc.sh smc-review`（接受 AI 时长）；或把 `yaml/mkf_ai_review.yaml` 的 review.max_candidates 作为默认限流。
+- 若希望 `smc-output/` 不进 git status，在 `.gitignore` 加一行（tracked 文件，需用户点头）。
+
+### Risks / Do-Not-Repeat
+- 桥接 run 的 schema_version 是 MKF v6 标签（校验器要求），真实来源记录在 manifest.bridge 中；不要把它当作 MKF 候选证据引用。
+- AI 委员会提示词含"红蓝线上穿20"语境，对 SMC 候选会报"信号不可复核"，属桥接的已知语义差，不是 bug。
+- SMC 原生复核（review-news / select-review）与 MKF 通道的新闻实现是两套代码（news_ai_review vs mkf_news_context，源相同 Google/东财）；菜单里两条路径都保留并注明。
+
+## Completed Task: SMC 信号套用 MKF v3 lag-grid 方法回测 (2026-09-26)
+
+### Task
+- User asked: 用 MKF 的方法回测 SMC 的扫描结果——信号后 0–5 日买入、触及 3%/4%、T+1..T+20。
+- 口径（已冻结在证据 README）：父信号 `production_smc_mask`（gate∧smc_medium_buy 全历史重放）；lag0 信号行=父日当天，入场=lag 信号行下一可交易日开盘；`production_gate_mask` 在每个 lag 信号行复查；停牌行不消耗窗口；T+1..T+n 累计最高价触及 entry_open×(1+pct/100)，入场日 high 不计；未命中记 0；同 (code,lag,entry) 去重；chop 变体 baseline/exclude_chop_ge_4 并报。
+
+### Changed Files
+- 新增未跟踪脚本 `experiments/smc_mkf_method_grid/evaluate_smc_lag_target_grid.py`（`--self-test` 4 组用例通过：lag 对齐、信号行门槛、停牌跳过、共享报表复用）。未 git-add。
+- 证据目录 `output/回测结果/20260926-smc-mkf-method-lag-grid/`（README + main_2021/main_2018 json/csv/log + smoke），未 git-add。
+- 未修改 `src/`、`scripts/`、生产 `yaml/`、watchlist、选择器；模块复用件 hash 本地=Doris 一致（`mkf_post_cross_lag_comparison.py` `563a1712…616e`）。
+
+### Validation
+- Doris `$HOME/NCN` `.venv-doris/bin/python`，workers=12，全主板 3197 代码，数据截至 2026-09-02；主窗 2021-01-01（与 MKF v3 冻结证据同起点）+ 敏感窗 2018-01-01。
+- 主结果（baseline，全期，n/entry_dates/codes 门槛内最优）：lag0 T+20 3% = 76.40%（Wilson 下界 76.13%，n=100,936，2,911 只）；4% T+20 = 71.2%；lag1–5 仅低 0.3–1.1pp；ge4 过滤 +0.5–0.6pp；2024 至今审计期 77.14% 无回撤；2018 窗 76.94% 同结论。
+- 对 MKF 同口径参考（09-22 冻结证据）：T+20 3% +1.70pp、T+10 3% +4.75pp、T+5 3% +6.7pp；SMC 事件密度约为 MKF 3.8 倍（583,764 vs 155,234）。
+- 年度子门槛（≥4 年回撤≤5pp）不满足（2022–2024 回撤 5.7–11.3pp；MKF 同口径亦受 2023 拖累），报告时已如实标注。
+
+### Next Exact Action
+- 如需把该网格用于实际筛选：先做同日多事件竞争/资金容量与费用可成交性模拟（触及口径≠已实现收益）。
+- 任何叠加新条件（月份/板块/趋势）的分层必须先注册假设再跑，防止事后挑选。
+
+### Risks / Do-Not-Repeat
+- 父信号是当前 SMC 公式的历史重放，不是 `output/edge_scout/selections` 存档；两者不可混用为同一证据。
+- 本条目对应的新回测与此前被撤销的"SMC 降级审计"无关，那套脚本/结论已按用户指示彻底删除，勿试图恢复或以其名义引用。
+
+## Completed Task: MKF K线/本地分规则隔离筛选实验接入 (2026-09-23)
+
+### Task
+- User asked to connect the verified K线分 × 本地分 rules into screening logic on a separate test branch, separate folder, and separate file, without sharing production files except virtualenv, Key files, and stock data.
+
+### Changed Files
+- Added `experiments/mkf_score_gated_selector/select_mkf_score_gated.py` on branch `experiment/mkf-score-gated-selector`.
+- Updated `HANDOFF.md` with this implementation/validation note.
+- Did not modify production `src/`, existing `scripts/`, production `yaml/`, watchlist, SMC, broker, or order files for this task.
+
+### Behavior / Logic Changes
+- Added a research-only isolated selector script that does not import `ashare_edge_scout`, does not use existing production scripts, and does not add `src` to `sys.path`.
+- Script independently implements parquet loading, MKF red/blue cross20 parent signal, lag0/1/2/3 resolution, K线 confirmation score, local_score approximation, ge4 sideways/chop exclusion, rule classification, and CSV/JSON/summary/manifest outputs.
+- Implemented rule buckets from Doris cumulative-hit backtests:
+  - `strong_k9_l8_lag0`: `9.0 <= candle_confirm_score < 10.0`, `8.0 <= local_score < 8.5`, `lag0`.
+  - `watch_k8_l6_lag2`: `8.0 <= candle_confirm_score < 9.0`, `6.0 <= local_score < 6.5`, `lag2`.
+  - `slow_repair_k4_l_lt6_lag1_lag3`: `4.0 <= candle_confirm_score < 5.0`, `local_score < 6.0`, `lag1/lag3`.
+- Outputs explicitly mark `research_only: true`, `production_enabled: false`, `broker_connected: false`, and `orders_submitted: false`; no watchlist/SMC/broker/order path is touched.
+
+### Validation
+- Near-miss follow-up: added `near_misses.csv` / `near_misses.json` to the isolated output so stocks passing MKF/ge4 base filters but rejected by the three score rules are auditable.
+- 10.0.0.200 `/opt/ncn` K线一致性 check: `twadmin@10.0.0.200:/opt/ncn/src/ashare_edge_scout/signals/candle_confirm.py` sha256 `47996fcd452075fb6fff5155f320a5e094742718b8e18e6dc2e0964f2f88e03e` matches local exactly; `mkf_ai_review.py` also matches local exactly with sha256 `24f00f8a03af992f7904bba8ebbb1334435a5a4f73d6aa6137f962a4938db31b`.
+- Isolated script K线 scoring was aligned to the matched production `candle_confirm.py` volume mean semantics before the final Doris near-miss rerun.
+- Local: `./.venv/bin/python experiments/mkf_score_gated_selector/select_mkf_score_gated.py --self-test` passed.
+- Local: forbidden production import grep for `ashare_edge_scout`, `sys.path`, and `scripts` references returned no matches; `git diff --check` passed.
+- Local smoke: `--limit-codes 50 --run-id local-smoke-20260923-chop` completed successfully with `candidate_count=0`.
+- Doris pre-read: `remote-server.md` was read before remote sync/run.
+- Doris: focused rsync only for `experiments/mkf_score_gated_selector/`; no broad `--delete`; used `$HOME/NCN/.venv-doris/bin/python` (`Python 3.13.15`) with BLAS/OpenMP env set to 1.
+- Doris self-test passed.
+- Doris smoke: `--limit-codes 200 --run-id doris-smoke-20260923-chop` completed successfully with `candidate_count=0`.
+- Doris full latest-snapshot run: `--run-id doris-full-20260923` processed 7375 parquet files, completed successfully, and selected `candidate_count=0` for the current latest per-code snapshot.
+- Fetched initial Doris full outputs locally under `.runtime/mkf_score_gated_selector/doris-full-20260923/`:
+  - `candidates.csv` sha256 `c8f9657048ba4e5b1c0a878647439920c45ff23e36705cba4571cc3828bbf482` size 559.
+  - `candidates.json` sha256 `37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570` size 3.
+  - `summary.json` sha256 `d57bb9bd06caa0bbf5c3afcfb80e51136bf057ea71bd6f539a5450b3d8b479b4` size 2363.
+  - `manifest.json` sha256 `215f4d37a5fa5c0f3fdcdeafa8747a3b787feafa8a9d10984c31515c4a7849e9` size 605.
+- Final Doris full near-miss rerun after K线 scoring alignment: `.runtime/mkf_score_gated_selector/doris-near-misses-aligned-20260923/`, `candidate_count=0`, `near_miss_count=16`.
+  - `near_misses.csv` sha256 `3eb58420ff8dabe349e13d8c0225fdfc967201bb8707cda276950bd743be6351` size 9235.
+  - `near_misses.json` sha256 `bed21cfc087203eb9f6f8e08b001420c687c8abd0cbb4aa1801b20595ac148a2` size 23568.
+  - `summary.json` sha256 `c8ed3d839bef794b1a0ae10aaad20dbce3eee0046369a67867e10e69b8e07a0d` size 2500.
+  - `manifest.json` sha256 `de6a7f284410beea3d51dee646d1e6d7634aeeaeb0ddadd38d9072e50161159d` size 851.
+
+### Risks / Review Notes
+- Current full latest-snapshot output has zero candidates; this means no stock simultaneously met MKF lag, ge4 exclusion, K线分, and 本地分 gates on the latest available per-code date, not that the historical rule is invalid.
+- The local_score implementation is an isolated copy/approximation of the AI review local scoring inputs; it intentionally does not import production modules and may drift from future production changes.
+- Pre-existing unrelated working-tree changes were present before this task: `tests/test_ai_provider_config.py`, `tests/test_news_ai_review.py`, `yaml/ai_providers.yaml`, and `backups/`; do not include them unless the user explicitly asks.
+
+## Completed Task: MKF K线分9/8/4 × 本地分交叉 one-off Doris backtest (2026-09-23)
+
+### Task
+- User asked to further backtest K线分 ranges `9.0-9.9`, `8.0-8.9`, and `4.0-4.9` combined with local score buckets.
+
+### Changed Files
+- `HANDOFF.md`: added this evidence entry.
+- No source/test/selector/watchlist/SMC/broker/production program files were modified.
+- One-off analysis artifact only: Doris `.runtime/mkf_kbucket_local_backtest.py` sha256 `310ea7af8a5e917d4977d6f1a186cebf451668596fdf7e2ae6c1bcdd2b28cbde`.
+
+### Method
+- Same MKF event/entry/target-hit method as the previous K线分 one-off backtest: lag0..5, T+1..T+10, targets 3%/4%, entry next tradable open, future high from entry+1 onward, existing hard gates, no future data in scores.
+- K buckets: `K9_9.0_9.9`, `K8_8.0_8.9`, `K4_4.0_4.9`.
+- Local buckets: `L_ge_9.0`, `L_8.5_8.9`, `L_8.0_8.4`, `L_7.5_7.9`, `L_7.0_7.4`, `L_6.5_6.9`, `L_6.0_6.4`, `L_lt_6.0`.
+- Stable gate used for interpretation: `n>=300`, `entry_dates>=120`, `codes>=50`.
+
+### Doris Validation
+- Ran on Doris in `$HOME/NCN` with `$HOME/NCN/.venv-doris/bin/python`, not system `python3`; BLAS/OpenMP threads set to 1; workers=12.
+- Full run processed 3197 codes and selected 22176 events in K buckets 9/8/4.
+- Output artifacts fetched to local `.runtime/` and preserved remotely under Doris `.runtime/`:
+  - `.runtime/mkf_kbucket_local_score_backtest_20260923.json` sha256 `8b78eef7e6dbbfae8d2b013c27b1dd60a976c58562c93ef1be191765c1f25706` size 32561.
+  - `.runtime/mkf_kbucket_local_score_backtest_20260923.csv` sha256 `f453f43193e47232624a4143b8dd80766b40d8f22a34086599b33b37a87aae25` size 214106.
+
+### Key Results
+- Stable best by K bucket:
+  - K9 target 3%: local `L_8.0_8.4`, lag0, T+9, n=522, hits=282, hit rate 54.0230%, Wilson lower 49.7337%.
+  - K9 target 4%: local `L_8.0_8.4`, lag0, T+9, n=522, hits=247, hit rate 47.3180%, Wilson lower 43.0701%.
+  - K8 target 3%: local `L_6.0_6.4`, lag2, T+9, n=494, hits=239, hit rate 48.3806%, Wilson lower 44.0032%.
+  - K8 target 4%: local `L_6.0_6.4`, lag2, T+8, n=494, hits=203, hit rate 41.0931%, Wilson lower 36.8394%.
+  - K4 target 3%: local `L_lt_6.0`, lag1, T+10, n=1511, hits=693, hit rate 45.8637%, Wilson lower 43.3648%.
+  - K4 target 4%: local `L_lt_6.0`, lag1, T+9, n=1511, hits=623, hit rate 41.2310%, Wilson lower 38.7742%.
+- T+10 fixed-window stable best:
+  - K9: local `L_8.0_8.4`, lag0, 3%=51.7241% (270/522), 4%=45.5939% (238/522).
+  - K8: local `L_6.0_6.4`, lag2 for 3%=46.7611% (231/494); local `L_6.0_6.4`, lag1 for 4%=39.0977% (156/399), closely followed by lag2 38.6640%.
+  - K4: local `L_lt_6.0`, lag1, 3%=45.8637% (693/1511), 4%=40.7015% (615/1511).
+
+### T+20 Cumulative Extension (2026-09-23)
+- User noticed the initial T+20 figures were too low versus prior ~74% 3% hit rate. Root cause: the first T+20 one-off script incorrectly tested only the day-N high instead of cumulative max high through T+N. Corrected and reran with cumulative within-window hit semantics matching the prior MKF target-grid backtests.
+- Correct one-off artifact: Doris `.runtime/mkf_kbucket_local_backtest_t20_cumulative.py` sha256 `1236945d9c21b4f1ff9c5cf248fb88b31c29a4af64967d8924f5d18ff0119646`.
+- Correct output artifacts fetched locally and preserved remotely:
+  - `.runtime/mkf_kbucket_local_score_backtest_t20_cumulative_20260923.json` sha256 `3acf3774b7d4e1239aa14b0372461b867dd71dc1fc0308012be7c389dc25fb58`.
+  - `.runtime/mkf_kbucket_local_score_backtest_t20_cumulative_20260923.csv` sha256 `4949c8c799d778fa3cefa21bc7c55981ddbd97b6a4fdb5075921ac91b29a14b9`.
+- Correct cumulative T+20 key answers for stable combinations:
+  - K9 + local 8.0-8.4 + lag0: 3% T+10 74.1379% -> T+20 83.9080% (+9.7701pp); 4% T+10 64.7510% -> T+20 77.3946% (+12.6437pp).
+  - K8 + local 6.0-6.4 + lag2: 3% T+10 67.2065% -> T+20 78.8934% (+11.6870pp); 4% T+10 60.5263% -> T+20 72.9508% (+12.4245pp).
+  - K4 + local <6.0 + lag1: 3% T+10 68.3653% -> T+20 78.0795% (+9.7141pp); 4% T+10 61.0854% -> T+20 72.9801% (+11.8948pp).
+  - Best stable K4 at T+20 used lag3, not lag1: 3% 79.0297% (1010/1278), 4% 73.4742% (939/1278).
+
+### Risks / Review Notes
+- This is still one-off research/paper backtest only; no selector change was made.
+- The best interpretation is not monotonic: K9 pairs best with mid-high local score 8.0-8.4, K8 pairs best with lower local score 6.0-6.4, and K4's positive effect appears concentrated in low local score rows.
+- T+20 materially improves K9/K4 and 4% K8, but best hit timing shifts later: K9 around T+16, K8 around T+17, K4 at T+20.
+
+## Completed Task: MKF AI K线分/本地分 one-off Doris backtest (2026-09-23)
+
+### Task
+- User asked to reference `../../200` AI display fields and only run a backtest/analysis, without modifying the program: compare `K线分：高到低`, `K线分：低到高`, and `本地分：高到低` for MKF lag0-5, T+1..T+10, targets 3%/4%.
+
+### Changed Files
+- `HANDOFF.md`: added this evidence entry.
+- No source, test, selector, watchlist, SMC, broker, or production program files were modified for this task.
+- One-off analysis artifact only: Doris `.runtime/mkf_score_sort_backtest.py` (sha256 `f625cea79306671662fb3a9315e9cb52a1b1d08da7e30fac773dd0a682569ec5`).
+
+### Method / Field Mapping
+- Reference from `../../200/ncn-deploy/publish_web.py`: AI card displays `本地分` from `local_score` and `K线` from `candle_confirm_score`; current card order is review state first, then `local_score` descending.
+- Backtest signal sample: MKF red/blue cross20 parent, lag0..5 signal rows, existing production hard gates, entry on next tradable day open, T+N target hit by future high from entry+1 through entry+N; entry-day high excluded.
+- `candle_confirm_score` computed at signal row using only historical OHLCV through signal row.
+- `local_score` reused `mkf_ai_review._local_score(candidate, context)` with signal-row context.
+- Stable gate used for interpretation: `n>=300`, `entry_dates>=120`, `codes>=50`.
+
+### Doris Validation
+- Read `remote-server.md` before Doris use. Ran on Doris in `$HOME/NCN` with `$HOME/NCN/.venv-doris/bin/python`, not system `python3`; BLAS/OpenMP threads set to 1; workers=12; data root `PFrontStockData`; config `yaml/edge_scout_v1.yaml`.
+- Full run processed 3197 parquet codes and 117555 lag events.
+- Output artifacts fetched to local `.runtime/` and preserved remotely under Doris `.runtime/`:
+  - `.runtime/mkf_score_sort_backtest_lag0_5_t1_10_target3_4_20260923.json` sha256 `c5aca582c3496fbe62d5cbbc7876e9bab671545599d3e94ca45d2ba833ee3bcd` size 60258.
+  - `.runtime/mkf_score_sort_backtest_by_score_20260923.csv` sha256 `886bb54a38eb840615aa12c774bb00e6e5686de04c2cac92661d6efea78e1e7d` size 1191364.
+  - `.runtime/mkf_score_sort_backtest_sort_modes_20260923.csv` sha256 `004a2ebff61b73ef0f1196f084129e33a0f6f04e8779becca56607a64ab71012` size 73750.
+
+### Key Results
+- Exact score groups, raw maxima were tiny samples and should not be used as thresholds: K线分 1.0 had 1/1 for 3% and 4%; local_score 2.7 had 5/5 for 3%, local_score 3.0 had 2/2 for 4%.
+- Exact score groups, stable-gated best:
+  - K线分 target 3%: score 8.5, lag2, T+9, n=991, hits=490, hit rate 49.4450%, Wilson lower 46.3403%, entry_dates=410, codes=697.
+  - K线分 target 4%: score 8.5, lag2, T+9, n=991, hits=422, hit rate 42.5832%, Wilson lower 39.5391%, entry_dates=410, codes=697.
+  - 本地分 target 3%: score 8.1, lag0, T+9, n=512, hits=271, hit rate 52.9297%, Wilson lower 48.6004%, entry_dates=231, codes=428.
+  - 本地分 target 4%: score 8.1, lag0, T+9, n=512, hits=240, hit rate 46.8750%, Wilson lower 42.5918%, entry_dates=231, codes=428.
+- Sort-mode stable-gated best:
+  - `K线分：高到低`: top5000 score range 9.0..10.0, T+10; 3% n=4988 hits=2152 rate=43.1435%; 4% n=4988 hits=1935 rate=38.7931%.
+  - `K线分：低到高`: top5000 score range 0.0..2.0, T+10; 3% n=4999 hits=2103 rate=42.0684%; 4% n=4999 hits=1868 rate=37.3675%.
+  - `本地分：高到低`: top500 score range 8.3..9.6, T+10; 3% n=499 hits=251 rate=50.3006%; 4% n=499 hits=229 rate=45.8918%.
+
+### Risks / Review Notes
+- This is a one-off research/paper backtest, not a production selector change and not live trading advice.
+- Exact raw best values are dominated by tiny samples; stable-gated results are the relevant conclusion.
+- Within the requested three sort directions, `本地分：高到低` was strongest on stable-gated hit probability; K线分 high-to-low was slightly better than K线分 low-to-high, but much weaker than local_score sorting.
+
 ## Completed Task: MKF shared ge4 chop filter Doris backtest consistency check (2026-09-22)
 
 ### Task

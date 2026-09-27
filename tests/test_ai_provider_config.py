@@ -48,13 +48,13 @@ def test_repository_ai_provider_inventory() -> None:
     config = load_ai_provider_config(ROOT / "yaml" / "ai_providers.yaml")
 
     assert config.schema_version == "ncn_ai_providers_v1"
-    assert config.provider == "local_finance"
+    assert config.provider == "aliweek"
     selected = config.providers[config.provider]
-    assert selected["base_url"] == "http://ts.dorisw.kdns.fr:18090/v1"
-    assert selected["model"] == "Ornith-1.5-35B-A3B-oQ4e-mtp"
-    assert selected["key_file"] == str(ROOT / "Key" / "ts.key")
-    assert selected["api_key_env"] == "EDGE_SCOUT_LOCAL_AI_API_KEY"
-    assert selected["timeout_seconds"] == 120
+    assert selected["base_url"] == "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    assert selected["model"] == "qwen3.8-max"
+    assert selected["key_file"] == str(ROOT / "Key" / "aliw.key")
+    assert selected["api_key_env"] == ""
+    assert selected["timeout_seconds"] == 240
     assert selected["enabled"] is True
     assert config.providers["nvidia_kimi"]["enabled"] is True
     assert config.providers["nvidia_kimi"]["model"] == "moonshotai/kimi-k3"
@@ -157,22 +157,23 @@ def test_chat_400_retries_without_response_format_and_seed(monkeypatch: pytest.M
     assert "response_format" not in calls[1] and "seed" not in calls[1]
 
 
-def test_mkf_and_news_resolve_same_repository_provider(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_mkf_and_news_resolve_same_repository_provider(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     from ashare_edge_scout.mkf_ai_review import load_mkf_ai_config, build_ai_client as build_mkf_client
     from ashare_edge_scout.news_ai_review import load_review_config, build_ai_client as build_news_client
 
     monkeypatch.setenv("EDGE_SCOUT_LOCAL_AI_API_KEY", "test-secret")
+    monkeypatch.setenv("EDGE_SCOUT_AI_PROVIDERS_CONFIG", str(_write_config(tmp_path)))
     mkf = load_mkf_ai_config(ROOT / "yaml" / "mkf_ai_review.yaml")
     news = load_review_config(ROOT / "yaml" / "news_ai_review.yaml")
     mkf_client = build_mkf_client(mkf)
     news_client = build_news_client(news)
     assert mkf["ai_config_path"] == news["ai_config_path"]
     assert mkf["ai_config_sha256"] == news["ai_config_sha256"]
-    assert mkf["ai"]["provider"] == news["ai"]["provider"] == "local_finance"
+    assert mkf["ai"]["provider"] == news["ai"]["provider"] == "test"
     assert mkf_client is not None and news_client is not None
-    assert mkf_client.base_url == news_client.base_url == "http://ts.dorisw.kdns.fr:18090/v1"
-    assert mkf_client.model == news_client.model == "Ornith-1.5-35B-A3B-oQ4e-mtp"
-    assert mkf_client.timeout_seconds == news_client.timeout_seconds == 120
+    assert mkf_client.base_url == news_client.base_url == "http://example.test/v1"
+    assert mkf_client.model == news_client.model == "test-model"
+    assert mkf_client.timeout_seconds == news_client.timeout_seconds == 10
 
 
 def test_provider_override_selects_gsykj_gpt6_without_changing_default() -> None:
@@ -181,7 +182,7 @@ def test_provider_override_selects_gsykj_gpt6_without_changing_default() -> None
         ROOT / "yaml" / "ai_providers.yaml", provider_override="gsykj_gpt6"
     )
 
-    assert default_config.provider == "local_finance"
+    assert default_config.provider == "aliweek"
     assert gpt6_config.provider == "gsykj_gpt6"
     selected = gpt6_config.providers[gpt6_config.provider]
     assert selected["base_url"] == "https://ai.gsykj.com/v1"

@@ -19,3 +19,6 @@ Key/
 CNstock-main/
 CNstock-main.zip
 session-ses_*.md
+
+# SMC pipeline output data (regenerable)
+smc-output/
