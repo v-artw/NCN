@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from ashare_edge_scout.human_review_summary import (
+from ashare_smc.human_review_summary import (
     load_news_reviews,
     load_selection_candidates,
 )

@@ -22,7 +22,9 @@ from .data.daily_bars import DataValidationError
 from .data.data_sources import get_parquet_codes, get_parquet_latest_date_coverage, load_stock_records
 from .research_futu_ranking import tradable_indicator_values
 from .research_precision70 import production_gate_mask
-from .stock_selector import _range_position_pct, _return_pct, _safe_float
+from .selection_helpers import range_position_pct as _range_position_pct
+from .selection_helpers import return_pct as _return_pct
+from .selection_helpers import safe_float as _safe_float
 
 SCHEMA_VERSION = "ncn_a_class_selector_v1"
 SELECTION_RULE = "a_class_base_breakout_v1_and_existing_hard_gates"

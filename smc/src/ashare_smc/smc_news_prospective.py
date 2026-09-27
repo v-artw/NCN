@@ -16,7 +16,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .research_v2 import summarize_counts
+from ashare_edge_scout.research_v2 import summarize_counts
 
 SNAPSHOT_SCHEMA = "ncn_smc_news_prospective_v1"
 AUDIT_SCHEMA = "ncn_smc_news_prospective_audit_v1"

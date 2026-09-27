@@ -16,13 +16,16 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .signals.candle_confirm import compute_candle_confirmation_features
-from .config import compute_config_sha256, load_config, validate_config
-from .data.daily_bars import DataValidationError
-from .data.data_sources import get_parquet_codes, get_parquet_latest_date_coverage, load_stock_records
-from .research_nextday_validation import candlestick_masks, expanded_futu_masks_from_values
-from .research_futu_ranking import tradable_indicator_values
-from .research_precision70 import production_gate_mask
+from ashare_edge_scout.signals.candle_confirm import compute_candle_confirmation_features
+from ashare_edge_scout.config import compute_config_sha256, load_config, validate_config
+from ashare_edge_scout.data.daily_bars import DataValidationError
+from ashare_edge_scout.data.data_sources import get_parquet_codes, get_parquet_latest_date_coverage, load_stock_records
+from ashare_edge_scout.research_nextday_validation import candlestick_masks, expanded_futu_masks_from_values
+from ashare_edge_scout.research_futu_ranking import tradable_indicator_values
+from ashare_edge_scout.research_precision70 import production_gate_mask
+from ashare_edge_scout.selection_helpers import range_position_pct as _range_position_pct
+from ashare_edge_scout.selection_helpers import return_pct as _return_pct
+from ashare_edge_scout.selection_helpers import safe_float as _safe_float
 
 
 @dataclass(frozen=True)
@@ -69,36 +72,6 @@ def _finite_float(value: Any) -> float:
     if not np.isfinite(result):
         raise ValueError("non-finite selector value")
     return result
-
-
-def _safe_float(value: Any, default: float = 0.0) -> float:
-    try:
-        result = float(value)
-    except (TypeError, ValueError):
-        return default
-    return result if np.isfinite(result) else default
-
-
-def _range_position_pct(history: pd.DataFrame, window: int) -> float:
-    sample = history.tail(window)
-    if sample.empty:
-        return 100.0
-    close = _safe_float(sample.iloc[-1].get("close"), 0.0)
-    high = _safe_float(pd.to_numeric(sample["high"], errors="coerce").max(), close)
-    low = _safe_float(pd.to_numeric(sample["low"], errors="coerce").min(), close)
-    if high <= low:
-        return 100.0
-    return float(np.clip((close - low) / (high - low) * 100.0, 0.0, 100.0))
-
-
-def _return_pct(history: pd.DataFrame, current_offset: int, prior_offset: int) -> float:
-    if len(history) <= max(current_offset, prior_offset):
-        return 0.0
-    current = _safe_float(history.iloc[-1 - current_offset].get("close"), 0.0)
-    prior = _safe_float(history.iloc[-1 - prior_offset].get("close"), 0.0)
-    if current <= 0.0 or prior <= 0.0:
-        return 0.0
-    return (current / prior - 1.0) * 100.0
 
 
 def _compute_start_diagnostic(

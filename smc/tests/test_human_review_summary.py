@@ -7,11 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from ashare_edge_scout.post_smc_recommendation import (
-    BOUNDARY_NOTE,
-    build_post_smc_recommendation_rows,
-    format_post_smc_recommendation,
-    write_post_smc_recommendation_csv,
+from ashare_smc.human_review_summary import (
+    build_human_review_summary_rows,
+    write_human_review_summary_csv,
 )
 
 
@@ -78,56 +76,54 @@ def _news_run(root: Path, reviews: list[dict[str, object]], source_sha: str) -> 
     return run
 
 
-def test_smc_only_recommendation_rows_are_read_only_and_ordered() -> None:
-    rows = build_post_smc_recommendation_rows([
-        _candidate("sh.600001", amount=300_000_000),
+def test_smc_only_grouping_preserves_smc_order_and_marks_source_mode() -> None:
+    rows = build_human_review_summary_rows([
+        _candidate("sh.600001", diagnostic="pullback_reacceleration", label="B", amount=300_000_000),
         _candidate("sh.600002", diagnostic="high_position_chase", label="高位追涨", amount=500_000_000),
         _candidate("sh.600003", diagnostic="unclassified_start_diagnostic", label="未分类", amount=400_000_000),
         _candidate("sh.600004", warnings=["mkf_bearcluster"], amount=600_000_000),
     ])
 
     by_code = {row["code"]: row for row in rows}
-    assert by_code["sh.600001"]["analysis_bucket"] == "priority_manual_review"
-    assert by_code["sh.600003"]["analysis_bucket"] == "cautious_observation"
-    assert by_code["sh.600002"]["analysis_bucket"] == "defer_for_risk"
-    assert by_code["sh.600004"]["analysis_bucket"] == "defer_for_risk"
+    assert by_code["sh.600001"]["group"] == "priority_human_review"
+    assert by_code["sh.600003"]["group"] == "cautious_review"
+    assert by_code["sh.600002"]["group"] == "temporary_skip_or_risk_excluded"
+    assert by_code["sh.600004"]["group"] == "temporary_skip_or_risk_excluded"
     assert by_code["sh.600004"]["smc_order"] == 4
-    assert {row["source_mode"] for row in rows} == {"smc_only"}
-    assert all(row["boundary_note"] == BOUNDARY_NOTE for row in rows)
+    assert {row["source_mode"] for row in rows} == {"smc_only_degraded"}
 
 
-def test_news_merged_recommendation_is_conservative() -> None:
+def test_news_ai_merge_groups_by_review_state_and_conservative_smc_risk() -> None:
     candidates = [
         _candidate("sh.600001"),
         _candidate("sh.600002", diagnostic="high_position_chase", label="高位追涨"),
         _candidate("sh.600003"),
         _candidate("sh.600004", warnings=["mkf_bearcluster"]),
     ]
-    rows = build_post_smc_recommendation_rows(candidates, [
-        _review("sh.600001", "standard_review", assessment="favorable", event_risk="medium"),
-        _review("sh.600002", "standard_review", assessment="favorable", event_risk="low"),
+    rows = build_human_review_summary_rows(candidates, [
+        _review("sh.600001", "priority_review"),
+        _review("sh.600002", "standard_review"),
         _review("sh.600003", "risk_excluded", assessment="adverse", event_risk="high"),
-        _review("sh.600004", "priority_review", assessment="favorable", event_risk="low"),
+        _review("sh.600004", "priority_review"),
     ])
 
     by_code = {row["code"]: row for row in rows}
-    assert by_code["sh.600001"]["analysis_bucket"] == "priority_manual_review"
-    assert by_code["sh.600002"]["analysis_bucket"] == "cautious_observation"
-    assert by_code["sh.600003"]["analysis_bucket"] == "defer_for_risk"
-    assert by_code["sh.600004"]["analysis_bucket"] == "defer_for_risk"
-    assert by_code["sh.600001"]["review_state"] == "standard_review"
+    assert by_code["sh.600001"]["group"] == "priority_human_review"
+    assert by_code["sh.600002"]["group"] == "cautious_review"
+    assert by_code["sh.600003"]["group"] == "temporary_skip_or_risk_excluded"
+    assert by_code["sh.600004"]["group"] == "temporary_skip_or_risk_excluded"
+    assert by_code["sh.600001"]["review_state"] == "priority_review"
     assert {row["source_mode"] for row in rows} == {"news_ai_merged"}
 
 
-def test_write_csv_validates_binding_and_formats_empty_candidates(tmp_path: Path) -> None:
+def test_write_csv_validates_news_binding_and_handles_empty_candidates(tmp_path: Path) -> None:
     selection = _selection_run(tmp_path / "selections", [])
-    path, rows = write_post_smc_recommendation_csv(selection)
+    path, rows = write_human_review_summary_csv(selection)
     assert rows == []
-    assert path == selection / "post_smc_recommendation_analysis.csv"
+    assert path == selection / "human_review_summary.csv"
     assert list(csv.DictReader(path.open(encoding="utf-8"))) == []
-    assert "不构成买卖建议" in format_post_smc_recommendation(rows)
 
     selection = _selection_run(tmp_path / "selections2", [_candidate("sh.600001")])
     wrong_news = _news_run(tmp_path / "news", [_review("sh.600001", "priority_review")], "bad-sha")
     with pytest.raises(ValueError, match="not bound"):
-        write_post_smc_recommendation_csv(selection, wrong_news)
+        write_human_review_summary_csv(selection, wrong_news)

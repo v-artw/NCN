@@ -5,13 +5,13 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from ashare_edge_scout.pmkf_mkf.mkf_smc_annual_comparison import (
+from ashare_smc.mkf_smc_annual_comparison import (
     aggregate_mkf_smc_comparison,
     build_mkf_smc_report,
     build_smc_next_open_panel,
     production_smc_mask,
 )
-from ashare_edge_scout.stock_selector import evaluate_stock
+from ashare_smc.stock_selector import evaluate_stock
 
 
 CONFIG = {
@@ -78,7 +78,7 @@ def test_smc_next_open_and_t1_alignment(monkeypatch) -> None:
     fake = pd.Series(False, index=frame.index)
     fake.iloc[69] = True
     monkeypatch.setattr(
-        "ashare_edge_scout.pmkf_mkf.mkf_smc_annual_comparison.production_smc_mask",
+        "ashare_smc.mkf_smc_annual_comparison.production_smc_mask",
         lambda code, data, config: fake.reindex(data.index, fill_value=False),
     )
 
@@ -100,7 +100,7 @@ def test_suspension_is_skipped_for_entry_and_horizon(monkeypatch) -> None:
     fake = pd.Series(False, index=frame.index)
     fake.iloc[69] = True
     monkeypatch.setattr(
-        "ashare_edge_scout.pmkf_mkf.mkf_smc_annual_comparison.production_smc_mask",
+        "ashare_smc.mkf_smc_annual_comparison.production_smc_mask",
         lambda code, data, config: fake.reindex(data.index, fill_value=False),
     )
 

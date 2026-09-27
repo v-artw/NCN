@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from ashare_edge_scout.smc_news_replay import build_smc_news_replay, publish_smc_news_replay
+from ashare_smc.smc_news_replay import build_smc_news_replay, publish_smc_news_replay
 
 
 def _sha256(path: Path) -> str:

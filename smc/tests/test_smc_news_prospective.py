@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from ashare_edge_scout.smc_news_prospective import (
+from ashare_smc.smc_news_prospective import (
     build_smc_news_prospective_audit,
     canonical_smc_news_snapshots,
     find_canonical_smc_news_snapshot,
@@ -313,7 +313,7 @@ def test_duplicate_signal_date_archive_cli_skips_second_publish(tmp_path: Path) 
 
     completed = subprocess.run(
         [
-            str(Path(__file__).parents[1] / ".venv/bin/python"),
+            str(Path(__file__).parents[2] / ".venv/bin/python"),
             str(Path(__file__).parents[1] / "scripts/archive_smc_news_prospective.py"),
             "--selection-run",
             str(selection),
@@ -346,7 +346,7 @@ def test_archive_cli_preflight_reports_duplicate_signal_date(tmp_path: Path) -> 
 
     completed = subprocess.run(
         [
-            str(Path(__file__).parents[1] / ".venv/bin/python"),
+            str(Path(__file__).parents[2] / ".venv/bin/python"),
             str(Path(__file__).parents[1] / "scripts/archive_smc_news_prospective.py"),
             "--selection-run",
             str(selection),
@@ -375,7 +375,7 @@ def test_archive_cli_preflight_reports_no_duplicate_signal_date(tmp_path: Path) 
 
     completed = subprocess.run(
         [
-            str(Path(__file__).parents[1] / ".venv/bin/python"),
+            str(Path(__file__).parents[2] / ".venv/bin/python"),
             str(Path(__file__).parents[1] / "scripts/archive_smc_news_prospective.py"),
             "--selection-run",
             str(selection),

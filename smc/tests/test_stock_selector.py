@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from ashare_edge_scout.research_futu_ranking import tradable_indicator_values
-from ashare_edge_scout.stock_selector import (
+from ashare_smc.stock_selector import (
     StockSelectionRow,
     _atomic_publish,
     _compute_start_diagnostic,
@@ -93,7 +93,7 @@ def test_selector_is_causal_at_manual_as_of() -> None:
 
 def test_risk_annotations_do_not_remove_primary_candidate(monkeypatch: pytest.MonkeyPatch) -> None:
     records = _records()
-    import ashare_edge_scout.stock_selector as selector
+    import ashare_smc.stock_selector as selector
 
     original = selector.expanded_futu_masks_from_values
 

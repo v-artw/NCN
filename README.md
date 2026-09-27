@@ -48,21 +48,26 @@ All candidates are research-only. `production_enabled=false` is enforced fail-cl
 
 ## Read-Only Stock Selection
 
+Since 2026-09-27 the SMC selector, news AI review, prospective archive, and
+replay live in the separate `smc/` subproject (`./smc/smc.sh`,
+`./smc/aismc.sh`, and the hub `./smc/scripts/smc_scan.sh`). Deleting or moving
+`smc/` has zero effect on MKF. Data updates still delegate to the main hub.
+
 Run the standalone SMC selector with existing local daily bars. This command
 does not require minute data or a paid data service:
 
 ```bash
-./main.sh select-local
-./main.sh select-local --as-of 2026-08-11 --top 20
+./smc/smc.sh smc-select-local
+./smc/smc.sh smc-select-local --as-of 2026-08-11 --top 20
 ```
 
-Use `./main.sh select` to check and incrementally update BaoStock daily research
-data before selection. The selector keeps unchanged `smc_medium_buy` as its
-primary signal, applies the configured Main Board/ST/listing/price/liquidity/
+Use `./smc/smc.sh smc-select` to check and incrementally update BaoStock daily
+research data before selection. The selector keeps unchanged `smc_medium_buy` as
+its primary signal, applies the configured Main Board/ST/listing/price/liquidity/
 suspension/limit gates, and publishes every candidate under:
 
 ```text
-output/edge_scout/selections/<run-id>/
+smc-output/selections/<run-id>/
 ```
 
 `candidates.csv` and `candidates.json` contain the complete selected set;
@@ -78,8 +83,8 @@ not fetch T open, place an opening order, or track that target.
 Run the experimental second review after a successful SMC selection:
 
 ```bash
-./main.sh select-review [--as-of DATE] [--top 20]
-./main.sh review-news --top 20  # --top limits terminal display only
+./smc/scripts/smc_scan.sh select-review [--as-of DATE] [--top 20]
+./smc/scripts/smc_scan.sh review-news --top 20  # --top limits terminal display only
 ```
 
 It downloads recent Google News RSS titles and Eastmoney announcement metadata,
@@ -89,20 +94,24 @@ OpenAI-compatible endpoint selected in `yaml/ai_providers.yaml`. The K-line cont
 read-only Japanese-candlestick-style OHLC/volume summary, not an execution feed.
 All AI-backed features use this central file: edit its top-level `provider`, or add/update a
 backend there, to switch MKF and SMC/news review together. Business configs such as
-`yaml/news_ai_review.yaml` and `yaml/mkf_ai_review.yaml` cannot override provider/model settings.
+`yaml/mkf_ai_review.yaml` and `smc/yaml/news_ai_review.yaml` cannot override provider/model
+settings. The SMC side reads `smc/yaml/ai_providers.yaml`, a maintained copy of the canonical
+file whose relative paths are rewritten for `project_root = smc/` (`key_file: ../Key/...`);
+refresh that copy whenever the canonical provider/model/key list changes.
 Provider credentials are read from the configured environment variable first, then ignored key
 files such as `Key/ts.key` and `Key/deepseek.key`; key contents are never copied into review output. Results are immutable under
-`output/edge_scout/news_reviews/<run-id>/` and are bound to the source
+`smc-output/news_reviews/<run-id>/` and are bound to the source
 `candidates.json` hash. `priority_review` is an experimental human-review order,
 not a validated probability or buy instruction; API/news failures fail closed,
 and code-level material-risk terms override favorable AI text.
-News is cached per stock under ignored `.runtime/news_cache/`. A fresh cache is
+News is cached per stock under ignored `smc/.runtime/news_cache/` (the shared
+MKF news context cache remains `Message/`). A fresh cache is
 reused without network access; refreshes merge and deduplicate new observations,
 delete entries older than seven days, and send every remaining seven-day item
 to the selected AI provider.
 Every AI review writes `news_ai_reviews_YYYYMMDD_HHMMSS.csv` alongside its JSON
-evidence. In the interactive menu, `SMC 选股（自动更新数据）` automatically runs
-`SMC 新闻 AI 二次复核` after a successful selection; `SMC 新闻 AI 二次复核` remains
+evidence. In the SMC interactive menu (`./smc/smc.sh`), `SMC一键流程（自动更新/SMC原生新闻AI复核+前瞻归档）`
+runs selection and the news AI review in one pass; `review-news` remains
 available as a separate manual action for reruns. Do not treat `ai_unavailable`
 results as an AI-derived filter: they mean the configured provider could not
 serve analysis.
@@ -116,12 +125,12 @@ Eastmoney `1m/5m/15m/30m/60m` research candles:
 ./scripts/edge_scout_web.sh
 ```
 
-Interactive control: run `./main.sh`, use the up/down arrow keys, and press Enter. The menu asks
-for stock codes and optional dates when needed, so normal use does not require command arguments.
-The menu includes `SMC 选股（自动更新数据）` and `SMC 选股（仅本地数据）`.
-Pressing Enter on either starts selection immediately with the latest complete
-daily data; the first option checks for BaoStock daily-data updates and then
-runs the news AI review automatically after successful selection. Both run the
+Interactive control: run `./main.sh` for Web/MKF/a-class flows, or `./smc/smc.sh`
+for the SMC menu (both use the up/down arrow keys, Enter to confirm; the menus ask
+for stock codes and optional dates when needed, so normal use does not require
+command arguments). The SMC menu includes `SMC选股（自动更新数据）` and
+`SMC选股（仅本地数据）`; the native one-key review option adds the news AI review
+and prospective archive. Both run the
 same selector whose historical T-open plus-3% target-touch rate was 59.74%;
 that figure is a classification-only target-touch observation, not realized
 profit, execution, fill, P&L, or a guarantee.
@@ -137,13 +146,15 @@ Direct commands remain available for automation:
 ./main.sh scan
 ./main.sh scan --as-of 2026-08-04
 ./main.sh scan-local
-./main.sh select
-./main.sh select-local --top 20
-./main.sh select-review [--as-of DATE] [--top 20]
-./main.sh review-news --top 20  # --top limits terminal display only
 ./main.sh single 600519
 ./main.sh single-local 600519
 ./main.sh update
+
+# SMC flows (smc/ subproject; same BaoStock data via delegation):
+./smc/smc.sh smc-select
+./smc/smc.sh smc-select-local --top 20
+./smc/scripts/smc_scan.sh select-review [--as-of DATE] [--top 20]
+./smc/scripts/smc_scan.sh review-news --top 20  # --top limits terminal display only
 
 # Equivalent lower-level control:
 ./scripts/edge_scout_web_control.sh

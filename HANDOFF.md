@@ -1,6 +1,43 @@
 # Reviewer Handoff
 
-## Completed Task: aismc.sh — SMC 候选 × MKF 同款小资金一键流程 + SMC 专用 AI 委员会 (2026-09-26)
+## Completed Task: SMC 完整分离到 smc/ 子项目（删除/移走 smc 对 MKF 零影响）(2026-09-27)
+
+### Task
+- 用户要求：将 SMC 功能分离到 `smc/` 目录，当前目录只保留 MKF 使用的文件；深度选择"完整分离"（SMC 专属模块迁出 `ashare_edge_scout` 包、hub 拆分、main.sh 去 SMC 入口）；`aismc.sh` 一并移入；**验收标准：删除或移走 `smc/` 对 MKF 零影响**。
+- 中途口径修正：SMC 独有 yaml（`news_ai_review.yaml`、`smc_ai_review.yaml`）**移动**入 `smc/yaml/`；MKF 也需要的 yaml（`ai_providers.yaml`、`mkf_news_context.yaml`、`edge_scout_v1.yaml`）canonical 留主仓、**复制**一份进 smc（副本重写相对路径）；`baostock_config.yaml` 不复制（数据更新委托主仓 hub）。
+- 依赖方向仅允许 smc → main；进行中工作已于 `0702da9` checkpoint 提交后再分离。
+
+### Changed Files
+- 新增 `smc/src/ashare_smc/`：迁入 `stock_selector、news_ai_review、smc_news_replay、smc_news_prospective、post_smc_recommendation、human_review_summary、mkf_smc_annual_comparison、smc_news_prospective 等`；相对导入改绝对（继续复用主仓 `ashare_edge_scout.{signals,config,data,research_*}`）；`smc_news_replay._guard_output_root` 同时保护新 `smc-output/smc_news_prospective` 与旧 `output/edge_scout/smc_news_prospective`。
+- 新增主仓 `src/ashare_edge_scout/selection_helpers.py`（safe_float/range_position_pct/return_pct 上提）：`candidates.py`、`a_class_selector.py`、`evaluate_mkf_ai_score_rotation_backtest.py` 改用主仓 helper，消除主仓→SMC 模块的反向 import。
+- 新增 `smc/scripts/smc_scan.sh`（SMC 自有 hub：select/daily/select-review/review-news/post-smc-analysis/archive/audit/replay-smc-news/test/help；`update` 委托主仓 hub；未知命令 exit 2）。`scripts/edge_scout_scan.sh` 剥离全部 SMC 命令（1395→905 行，MKF/web/a 类保留；两条"不改变 SMC 入选"边界字符串原样保留）。
+- `main.sh`：删除 SMC 菜单/别名/help（加一行指向 `./smc/smc.sh` 与 `./smc/aismc.sh`）；`smc/smc.sh`、`smc/aismc.sh`：SMC 操作走 `SMC_CONTROL`（可被 `SMC_SCAN_SCRIPT` 覆盖），`review-mkf-ai/export-mkf-web-ai` 仍委托主仓 hub（允许方向）。
+- `smc/yaml/`：2 个移动 + 3 个带说明头的副本（`ai_providers.yaml` 的 `key_file: ../Key/...`、`mkf_news_context.yaml` 的 `NEWS_CACHE_DIR: ../Message` 均按 `project_root=smc/` 重写，密钥/新闻缓存仍指向仓库根实体）。
+- `smc/scripts/*.py` bootstrap：`SMC_ROOT=parents[1]; REPO_ROOT=SMC_ROOT.parent`，双 src 注入 sys.path；`evaluate_mkf_smc_annual_comparison.py` 默认 `--data-root/--config` 改绝对解析（任意 CWD 可跑）。
+- 测试：主仓 7 个 SMC 测试文件移入 `smc/tests/`（conftest.py 负责路径注入；根 pyproject 的 testpaths/pythonpath 从不引用 smc/）；parity 测试移植为 `smc/tests/test_smc_ai_provider_parity.py`；`tests/test_main_script.py` 删除 SMC 断言/用例（help 反向断言 + `test_main_script_rejects_separated_smc_aliases`；MKF 菜单下移次数 17→11）；移植 9 个 hub 用例 + smc.sh 菜单 2 例 + unknown-command 1 例到 `smc/tests/test_smc_scan_script.py`。新增 `smc/README.md`（隔离契约/副本刷新义务/环境变量表）；`README.md` SMC 段落全部改为 smc 路径与新缓存/输出位置。
+- 有意未改：`audit/replay/archive` 裸跑 CLI 的旧默认值（hub 恒显式传 root，遗留兼容）；`output/edge_scout/` 历史数据与 `smc-output/` 位置（gitignore 模式任意层级匹配）；`experiments/`、T1 worktree。
+
+### Behavior
+- `./smc/smc.sh`（菜单/别名）与 `./smc/scripts/smc_scan.sh <cmd>` 为 SMC 唯一入口；`./main.sh`、主 hub 仅剩 Web/MKF/a 类/update/audit/test。
+- SMC 输出默认 `仓库根/smc-output/`；SMC 原生新闻缓存迁到 `smc/.runtime/news_cache/`（可再生）；MKF 新闻缓存 `Message/` 不变且被 smc 副本共享。
+- 主仓 hub 未知命令仍按"单股代码"回退（cmd_single catch-all，旧行为，勿误当 bug）。
+
+### Validation
+- 主仓全量 `pytest -q`：**527 passed, 3 skipped**；`pytest smc/tests -q`：**81 passed**（含移植用例）。
+- **删除验收实测**：`mv smc /tmp` 后主仓 527 全绿、`main.sh/mkf.sh/edge_scout_scan.sh help` 均 OK、SMC 别名 rc=2，随后恢复 smc/ 并复测通过。
+- 真实链路 smoke：`EDGE_SCOUT_AUTO_UPDATE=0 smc_scan.sh audit-smc-news`（tmp roots）rc=0，JSON 产出正常（证明 smc 包 import/venv/bootstrap 全通）；8 个 shell 入口 `bash -n` 全 OK；aismc.sh 在 `/tmp` CWD 下 `--help` OK。
+- 关键假设已实证：smc 副本 yaml 经 `load_mkf_ai_config`/`load_review_config` 解析出 ai_config→`smc/yaml/ai_providers.yaml`、key→仓库根 `Key/aliw.key`、NEWS_CACHE_DIR→仓库根 `Message/`、SMC 原生缓存→`smc/.runtime/news_cache`（smc_ai_review.yaml 必须用 MKF 式 loader，非 news loader）。
+
+### Next Exact Action
+- `git add`（含 smc/ 全部新路径与删除路径）并提交本分离 commit（不 push）。
+- 可选补充：用户方便时跑一次真实 `smc_scan.sh select --top 5` 全市场扫描冒烟（本次未跑，仅 CLI --help 与 audit 真链路验证）。
+
+### Risks / Do-Not-Repeat
+- **yaml 副本漂移**：主仓 `yaml/ai_providers.yaml`（provider/model/key 变更）或 `mkf_news_context.yaml` 更新后必须手动同步 `smc/yaml/` 副本（只改相对路径前缀，语义保持一致）；parity 测试只护住 MKF↔SMC-news 同 provider，不护副本内容等值。
+- 不要再往主仓任何文件加 `smc/` 路径引用（含 pyproject、conftest、tests）——零影响契约靠"主仓永远不 import、不 glob smc/"维持。
+- `from scripts import select_stocks` 类测试依赖 smc/tests/conftest 把 `SMC_ROOT` 注入 sys.path（命名空间包合并），新 smc 测试勿删 conftest。
+- hub 的 `--top` 语义、前瞻归档 fail-closed、`production_enabled=false` 边界全部原样迁移，未在分离中改任何策略/研究语义；如发现行为差异按回归 bug 处理，不要顺手"改进"。
+- T1 worktree 未动；若后续在 T1 同步此结构，须在 T1 内重建（见 [[feedback_t1_strict_isolation]]）。
 
 ### Task
 - 用户要求：新建 `aismc.sh`，把 MKF 的小资金一键流程（自动更新/AI分层/MD，ADV20 5000万）应用到 SMC 扫描结果；股票数据下载、新闻公报抓取、AI 分析、md 生成逻辑完全复制 mkf.sh 的成熟实现；输出在 smc-output；交互方式为方向键菜单（与 mkf.sh 一致）。

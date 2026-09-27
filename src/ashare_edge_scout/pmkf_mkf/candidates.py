@@ -33,7 +33,7 @@ from .research import (
     mkf_red_blue_cross20_post_lag_mask,
 )
 from ..research_precision70 import production_gate_mask
-from ..stock_selector import _safe_float
+from ..selection_helpers import safe_float as _safe_float
 
 SCHEMA_VERSION = "ncn_mkf_candidate_selector_v6"
 DEFAULT_MKF_POST_CROSS_LAGS = parse_mkf_post_cross_lag_range(DEFAULT_MKF_POST_CROSS_LAG_RANGE)

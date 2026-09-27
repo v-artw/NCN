@@ -22,7 +22,7 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from .ai_providers import (
+from ashare_edge_scout.ai_providers import (
     AIProviderConfig,
     AIRequestError,
     OpenAICompatibleClient as SharedOpenAICompatibleClient,
@@ -31,8 +31,8 @@ from .ai_providers import (
     load_ai_provider_config,
     resolve_ai_config_path,
 )
-from .data.data_sources import load_stock_records
-from .research_nextday_validation import candlestick_masks
+from ashare_edge_scout.data.data_sources import load_stock_records
+from ashare_edge_scout.research_nextday_validation import candlestick_masks
 
 
 HARD_RISK_TERMS = (

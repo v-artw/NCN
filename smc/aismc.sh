@@ -2,27 +2,35 @@
 set -euo pipefail
 
 # aismc.sh — SMC 候选源 + MKF 同款一键流程（完全复制 mkf.sh 的成熟逻辑）：
-#   股票数据下载  = edge_scout_scan.sh 的 BaoStock 自动更新（与 mkf.sh 完全同一代码路径）
+#   股票数据下载  = 主仓 edge_scout_scan.sh 的 BaoStock 自动更新（与 mkf.sh 完全同一代码路径）
 #   新闻/公报抓取 = mkf_news_context（Google News RSS / 东财新闻 / 东财公告，Message/ 缓存）
-#   AI 分析       = yaml/smc_ai_review.yaml SMC 专用委员会提示词 + yaml/ai_providers.yaml 同一模型，走与 MKF 同一 review-mkf-ai 管线
-#   MD 文件       = scripts/export_scan_csv_for_web_ai.py（与 MKF "候选CSV导出Web AI Markdown" 同一逻辑）
-#   小资金口径    = ADV20 降为 5000 万（复用 yaml/edge_scout_v1.yaml 全部内容，仅覆盖 universe.min_adv20_cny）
-# 所有输出保存在 smc-output/；不修改 src/、scripts/、yaml/ 与任何生产逻辑。
+#   AI 分析       = smc/yaml/smc_ai_review.yaml SMC 专用委员会提示词 + smc/yaml/ai_providers.yaml 同一模型，走与 MKF 同一 review-mkf-ai 管线
+#   MD 文件       = 主仓 scripts/export_scan_csv_for_web_ai.py（与 MKF "候选CSV导出Web AI Markdown" 同一逻辑）
+#   小资金口径    = ADV20 降为 5000 万（复用 smc/yaml/edge_scout_v1.yaml 全部内容，仅覆盖 universe.min_adv20_cny）
+# 所有输出保存在仓库根 smc-output/；smc/ 子项目对主仓仅单向只读依赖（smc -> main）。
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCAN_CONTROL="${EDGE_SCOUT_SCAN_SCRIPT:-${PROJECT_ROOT}/scripts/edge_scout_scan.sh}"
-VENV="${VENV_PYTHON:-${PROJECT_ROOT}/.venv/bin/python}"
-AI_SMC_OUTPUT_ROOT="${EDGE_SCOUT_AI_SMC_OUTPUT_ROOT:-${PROJECT_ROOT}/smc-output}"
-BASE_CONFIG="${EDGE_SCOUT_CONFIG:-${PROJECT_ROOT}/yaml/edge_scout_v1.yaml}"
+SMC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SMC_ROOT}/.." && pwd)"
+# 主仓 hub：仅用于 review-mkf-ai / export-mkf-web-ai / update（smc -> main 允许方向）。
+SCAN_CONTROL="${EDGE_SCOUT_SCAN_SCRIPT:-${REPO_ROOT}/scripts/edge_scout_scan.sh}"
+# SMC 自有控制脚本：select 走这里（smc/scripts/select_stocks.py + smc/src/ashare_smc）。
+SMC_CONTROL="${SMC_SCAN_SCRIPT:-${SMC_ROOT}/scripts/smc_scan.sh}"
+VENV="${VENV_PYTHON:-${REPO_ROOT}/.venv/bin/python}"
+AI_SMC_OUTPUT_ROOT="${EDGE_SCOUT_AI_SMC_OUTPUT_ROOT:-${REPO_ROOT}/smc-output}"
+BASE_CONFIG="${EDGE_SCOUT_CONFIG:-${SMC_ROOT}/yaml/edge_scout_v1.yaml}"
 SMALL_ADV20_CNY="50000000"
 SMALL_CONFIG="${AI_SMC_OUTPUT_ROOT}/config/edge_scout_v1_small_adv20_${SMALL_ADV20_CNY}.yaml"
-# SMC 专用 AI 委员会：与 mkf.sh 使用 yaml/mkf_ai_review.yaml 同样的方式，使用 yaml/smc_ai_review.yaml。
-AI_SMC_REVIEW_CONFIG="${EDGE_SCOUT_SMC_AI_CONFIG:-${PROJECT_ROOT}/yaml/smc_ai_review.yaml}"
+# SMC 专用 AI 委员会：与 mkf.sh 使用 yaml/mkf_ai_review.yaml 同样的方式，使用 smc/yaml/smc_ai_review.yaml。
+AI_SMC_REVIEW_CONFIG="${EDGE_SCOUT_SMC_AI_CONFIG:-${SMC_ROOT}/yaml/smc_ai_review.yaml}"
 export EDGE_SCOUT_OUTPUT_ROOT="${AI_SMC_OUTPUT_ROOT}"
 ACTION="${1:-menu}"
 
 if [ ! -x "${SCAN_CONTROL}" ]; then
     printf 'ERROR: 底层扫描脚本不存在或不可执行：%s\n' "${SCAN_CONTROL}" >&2
+    exit 1
+fi
+if [ ! -x "${SMC_CONTROL}" ]; then
+    printf 'ERROR: SMC 控制脚本不存在或不可执行：%s\n' "${SMC_CONTROL}" >&2
     exit 1
 fi
 if [ ! -f "${AI_SMC_REVIEW_CONFIG}" ]; then
@@ -163,7 +171,7 @@ run_layer() {
         printf '\nSMC 候选数为 0，跳过 MKF 同款 AI 分层调用。\n'
         return 0
     fi
-    printf '\nSMC 候选 AI 研究分层：MKF 同款新闻/公报抓取 + SMC 专用 AI 委员会（yaml/smc_ai_review.yaml，只读）...\n'
+    printf '\nSMC 候选 AI 研究分层：MKF 同款新闻/公报抓取 + SMC 专用 AI 委员会（smc/yaml/smc_ai_review.yaml，只读）...\n'
     EDGE_SCOUT_MKF_AI_CONFIG="${AI_SMC_REVIEW_CONFIG}" "${SCAN_CONTROL}" review-mkf-ai --selection-run "${bridge_dir}" "${top_args[@]}"
 }
 
@@ -184,9 +192,9 @@ run_select() {
         config="${SMALL_CONFIG}"
     fi
     if [ "${auto_update}" = "1" ]; then
-        EDGE_SCOUT_CONFIG="${config}" "${SCAN_CONTROL}" select "${pass_args[@]+"${pass_args[@]}"}"
+        EDGE_SCOUT_CONFIG="${config}" "${SMC_CONTROL}" select "${pass_args[@]+"${pass_args[@]}"}"
     else
-        EDGE_SCOUT_AUTO_UPDATE=0 EDGE_SCOUT_CONFIG="${config}" "${SCAN_CONTROL}" select "${pass_args[@]+"${pass_args[@]}"}"
+        EDGE_SCOUT_AUTO_UPDATE=0 EDGE_SCOUT_CONFIG="${config}" "${SMC_CONTROL}" select "${pass_args[@]+"${pass_args[@]}"}"
     fi
 }
 
@@ -468,20 +476,20 @@ case "${ACTION}" in
         ;;
     help|-h|--help)
         printf '%s\n' \
-            'NCN AI-SMC 研究入口（SMC 候选源 × MKF 同款一键流程）' \
+            'NCN AI-SMC 研究入口（smc/ 子项目；SMC 候选源 × MKF 同款一键流程）' \
             '' \
-            '用法：' \
-            '  ./aismc.sh                                打开方向键交互菜单' \
-            '  ./aismc.sh aismc-small [--as-of DATE] [--top N]  SMC小资金一键：自动更新+选股(ADV20 5000万)+AI分层+MD' \
-            '  ./aismc.sh aismc-review [--as-of DATE] [--top N] SMC标准一键：自动更新+选股+AI分层+MD（门槛复用yaml）' \
-            '  ./aismc.sh select [--as-of DATE] [--top N]        仅 SMC 选股（自动更新，标准门槛）' \
-            '  ./aismc.sh select-small ...                        仅 SMC 选股（自动更新，ADV20 5000万）' \
-            '  ./aismc.sh select-local / select-small-local       同上但跳过联网更新' \
-            '  ./aismc.sh layer [--selection-run DIR] [--top N]   MKF同款新闻/公报抓取 + AI 委员会分层（最新SMC候选）' \
-            '  ./aismc.sh export-md [--csv PATH]                  SMC 候选 CSV 导出 Web AI Markdown（MKF 同一 md 逻辑）' \
+            '用法（仓库根执行）：' \
+            '  ./smc/aismc.sh                                打开方向键交互菜单' \
+            '  ./smc/aismc.sh aismc-small [--as-of DATE] [--top N]  SMC小资金一键：自动更新+选股(ADV20 5000万)+AI分层+MD' \
+            '  ./smc/aismc.sh aismc-review [--as-of DATE] [--top N] SMC标准一键：自动更新+选股+AI分层+MD（门槛复用yaml）' \
+            '  ./smc/aismc.sh select [--as-of DATE] [--top N]        仅 SMC 选股（自动更新，标准门槛）' \
+            '  ./smc/aismc.sh select-small ...                        仅 SMC 选股（自动更新，ADV20 5000万）' \
+            '  ./smc/aismc.sh select-local / select-small-local       同上但跳过联网更新' \
+            '  ./smc/aismc.sh layer [--selection-run DIR] [--top N]   MKF同款新闻/公报抓取 + AI 委员会分层（最新SMC候选）' \
+            '  ./smc/aismc.sh export-md [--csv PATH]                  SMC 候选 CSV 导出 Web AI Markdown（MKF 同一 md 逻辑）' \
             '' \
-            '输出目录：smc-output/{selections, smc_ai_layer_runs, mkf_ai_reviews, mdfile, config}（全部未跟踪）' \
-            '数据下载/股票信息与 mkf.sh 完全相同（BaoStock 自动更新，PFrontStockData）；AI 委员会使用 yaml/smc_ai_review.yaml（SMC 专用提示词，同构于 mkf_ai_review.yaml），模型/新闻复用 yaml/ai_providers.yaml + yaml/mkf_news_context.yaml；小资金口径复用 yaml/edge_scout_v1.yaml 全部内容，仅覆盖 universe.min_adv20_cny=50000000。' \
+            '输出目录：仓库根 smc-output/{selections, smc_ai_layer_runs, mkf_ai_reviews, mdfile, config}（全部未跟踪）' \
+            '数据下载/股票信息与 mkf.sh 完全相同（BaoStock 自动更新，PFrontStockData）；AI 委员会使用 smc/yaml/smc_ai_review.yaml（SMC 专用提示词，同构于 yaml/mkf_ai_review.yaml），模型/新闻复用 smc/yaml/ai_providers.yaml + smc/yaml/mkf_news_context.yaml（主仓共享 yaml 的分离副本，路径已按 smc/ 根改写）；小资金口径复用 smc/yaml/edge_scout_v1.yaml 全部内容，仅覆盖 universe.min_adv20_cny=50000000。' \
             '只读研究：不改 SMC/MKF 入选、排序、watchlist、前瞻归档或生产逻辑；不连接券商、不提交订单。'
         ;;
     *)

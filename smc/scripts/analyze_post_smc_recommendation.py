@@ -7,12 +7,13 @@ import argparse
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SRC_ROOT = PROJECT_ROOT / "src"
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
+SMC_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = SMC_ROOT.parent
+for _src in (REPO_ROOT / "src", SMC_ROOT / "src"):
+    if str(_src) not in sys.path:
+        sys.path.insert(0, str(_src))
 
-from ashare_edge_scout.post_smc_recommendation import (  # noqa: E402
+from ashare_smc.post_smc_recommendation import (  # noqa: E402
     format_post_smc_recommendation,
     write_post_smc_recommendation_csv,
 )

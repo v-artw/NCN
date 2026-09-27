@@ -42,7 +42,7 @@ from ashare_edge_scout.pmkf_mkf.candidates import (
 from ashare_edge_scout.pmkf_mkf.quality import normalise_stock_frame
 from ashare_edge_scout.pmkf_mkf.research import mkf_red_blue_cross20_lines, mkf_red_blue_cross20_post_lag_mask
 from ashare_edge_scout.research_precision70 import production_gate_mask
-from ashare_edge_scout.stock_selector import _safe_float
+from ashare_edge_scout.selection_helpers import safe_float as _safe_float
 
 SCHEMA_VERSION = "ncn_mkf_ai_score_rotation_backtest_v1"
 DETERMINISTIC_LANE = "deterministic_local_score_x10"

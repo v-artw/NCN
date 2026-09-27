@@ -6,11 +6,11 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ..research_nextday_validation import candidate_masks
-from ..research_precision70 import production_gate_mask
-from .mkf_dxbd_annual_comparison import build_mkf_next_open_panel
-from .mkf_dxbd_profitability import HORIZONS
-from .quality import _numeric, normalise_stock_frame
+from ashare_edge_scout.research_nextday_validation import candidate_masks
+from ashare_edge_scout.research_precision70 import production_gate_mask
+from ashare_edge_scout.pmkf_mkf.mkf_dxbd_annual_comparison import build_mkf_next_open_panel
+from ashare_edge_scout.pmkf_mkf.mkf_dxbd_profitability import HORIZONS
+from ashare_edge_scout.pmkf_mkf.quality import _numeric, normalise_stock_frame
 
 SCHEMA_VERSION = "ncn_mkf_smc_annual_comparison_v1"
 

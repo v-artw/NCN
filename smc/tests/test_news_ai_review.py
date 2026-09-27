@@ -10,7 +10,7 @@ import pytest
 
 from scripts.review_smc_news import _format_review_card, main as review_smc_news_main
 
-from ashare_edge_scout.news_ai_review import (
+from ashare_smc.news_ai_review import (
     AIRequestError,
     DEFAULT_NEWS_AI_SYSTEM_PROMPT,
     OpenAICompatibleClient,
@@ -187,7 +187,9 @@ def test_ai_json_parser_rejects_invalid_contract() -> None:
 
 
 def test_repository_news_ai_config_defaults_to_aliweek() -> None:
-    root = Path(__file__).parents[1]
+    smc_root = Path(__file__).parents[1]
+    repo_root = smc_root.parent
+    root = smc_root
     config = load_review_config(root / "yaml" / "news_ai_review.yaml")
     ai = config["ai"]
     provider = ai["providers"][ai["provider"]]
@@ -197,7 +199,8 @@ def test_repository_news_ai_config_defaults_to_aliweek() -> None:
     assert provider["model"] == "qwen3.8-max"
     assert provider["api_key_env"] == ""
     assert provider["timeout_seconds"] == 240
-    assert Path(provider["key_file"]) == root / "Key" / "aliw.key"
+    # smc/yaml/ai_providers.yaml 的 key_file 以 smc/ 为根（"../Key/..."），密钥仍在仓库根 Key/。
+    assert Path(provider["key_file"]) == repo_root / "Key" / "aliw.key"
     assert config["prompt"]["source"] == "business_yaml_prompt.system"
     assert config["prompt"]["system"]
     assert "A股短周期复核员" in config["prompt"]["system"]
@@ -266,7 +269,7 @@ def test_news_cache_reuses_all_recent_items_without_network(tmp_path: Path, monk
         calls.append(code)
         return NewsFetchResult(tuple(items), {"source_a": "success:12"})
 
-    monkeypatch.setattr("ashare_edge_scout.news_ai_review._fetch_news_remote", first_remote)
+    monkeypatch.setattr("ashare_smc.news_ai_review._fetch_news_remote", first_remote)
     config = {"days": 7, "cache_dir": str(cache_dir), "refresh_hours": 6, "per_source_limit": 100, "timeout_seconds": 1}
     first = fetch_news("sh.600001", config)
     assert len(first.items) == 12
@@ -275,7 +278,7 @@ def test_news_cache_reuses_all_recent_items_without_network(tmp_path: Path, monk
     def no_network(*args, **kwargs):
         raise AssertionError("fresh cache must not access network")
 
-    monkeypatch.setattr("ashare_edge_scout.news_ai_review._fetch_news_remote", no_network)
+    monkeypatch.setattr("ashare_smc.news_ai_review._fetch_news_remote", no_network)
     second = fetch_news("sh.600001", config)
     assert len(second.items) == 12
     assert second.source_status == {"local_cache": "hit:12"}
@@ -287,7 +290,7 @@ def test_news_cache_removes_items_older_than_seven_days(tmp_path: Path, monkeypa
     recent = NewsItem("source_a", "七日内", "https://example.test/recent", (now - timedelta(days=6)).isoformat(), now.isoformat())
     expired = NewsItem("source_a", "超过七日", "https://example.test/old", (now - timedelta(days=8)).isoformat(), now.isoformat())
     monkeypatch.setattr(
-        "ashare_edge_scout.news_ai_review._fetch_news_remote",
+        "ashare_smc.news_ai_review._fetch_news_remote",
         lambda code, config, *, retrieved_at: NewsFetchResult((recent, expired), {"source_a": "success:2"}),
     )
     result = fetch_news("sh.600001", {"days": 7, "cache_dir": str(cache_dir), "refresh_hours": 6, "per_source_limit": 100})
@@ -299,7 +302,7 @@ def test_news_cache_removes_items_older_than_seven_days(tmp_path: Path, monkeypa
 def test_failed_initial_refresh_does_not_create_empty_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     cache_dir = tmp_path / "cache"
     monkeypatch.setattr(
-        "ashare_edge_scout.news_ai_review._fetch_news_remote",
+        "ashare_smc.news_ai_review._fetch_news_remote",
         lambda code, config, *, retrieved_at: NewsFetchResult((), {"source_a": "error:TimeoutError"}),
     )
     result = fetch_news("sh.600001", {"days": 7, "cache_dir": str(cache_dir), "refresh_hours": 6, "per_source_limit": 100})

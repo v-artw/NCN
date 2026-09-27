@@ -30,13 +30,6 @@ run_menu() {
         "单股扫描（自动更新数据）"
         "单股扫描（仅本地数据）"
         "仅更新研究数据"
-        "── SMC / 新闻 ──"
-        "每日 SMC+新闻一键流程（自动更新/去重/AI委员会CSV/审计）"
-        "SMC 选股（自动更新数据）"
-        "SMC 选股（仅本地数据）"
-        "SMC 新闻 AI 二次复核"
-        "SMC+新闻前瞻成熟度审计"
-        "SMC+新闻回放检查（simulation only）"
         "── A 类扫描 ──"
         "A类低位启动扫描（自动更新数据）"
         "A类低位启动扫描（仅本地数据）"
@@ -58,13 +51,6 @@ run_menu() {
         "single-auto"
         "single-local"
         "update-data"
-        ""
-        "daily"
-        "smc-auto"
-        "smc-local"
-        "review-news"
-        "audit-smc-news"
-        "replay-smc-news"
         ""
         "a-class-auto"
         "a-class-local"
@@ -151,16 +137,6 @@ execute_menu_choice() {
             as_of="${PROMPTED_AS_OF}"
             if [ -n "${as_of}" ]; then EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" market --as-of "${as_of}"; else EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" market; fi
             ;;
-        daily) "${SCAN_CONTROL}" daily ;;
-        smc-auto)
-            if prompt_default_yes "是否进行 SMC 后人工复核建议分析（只读，默认Y）？"; then
-                "${SCAN_CONTROL}" select-review --post-smc-analysis
-            else
-                "${SCAN_CONTROL}" select-review --no-post-smc-analysis
-            fi
-            ;;
-        smc-local) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select ;;
-        review-news) "${SCAN_CONTROL}" review-news ;;
         a-class-auto) "${SCAN_CONTROL}" select-a-class ;;
         a-class-local) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select-a-class ;;
         mkf-menu) "${MKF_CONTROL}" menu ;;
@@ -177,8 +153,6 @@ execute_menu_choice() {
             fi
             ;;
         update-data) "${SCAN_CONTROL}" update ;;
-        audit-smc-news) "${SCAN_CONTROL}" audit-smc-news ;;
-        replay-smc-news) "${SCAN_CONTROL}" replay-smc-news --dry-run ;;
         test) "${SCAN_CONTROL}" test ;;
         exit) printf '已退出。\n' ;;
     esac
@@ -187,20 +161,6 @@ execute_menu_choice() {
 prompt_as_of() {
     printf '请输入 T 信号日 YYYY-MM-DD（直接回车使用自动日期）：'
     IFS= read -r PROMPTED_AS_OF
-}
-
-prompt_default_yes() {
-    local message="$1"
-    local answer
-    while true; do
-        printf '%s [Y/n]：' "${message}"
-        IFS= read -r answer
-        case "${answer}" in
-            ""|y|Y|yes|YES|Yes) return 0 ;;
-            n|N|no|NO|No) return 1 ;;
-            *) printf '请输入 y 或 n；直接回车表示 yes。\n' ;;
-        esac
-    done
 }
 
 case "${ACTION}" in
@@ -218,31 +178,6 @@ case "${ACTION}" in
         shift
         export EDGE_SCOUT_AUTO_UPDATE=0
         exec "${SCAN_CONTROL}" market "$@"
-        ;;
-    select)
-        shift
-        exec "${SCAN_CONTROL}" select "$@"
-        ;;
-    daily)
-        shift
-        exec "${SCAN_CONTROL}" daily "$@"
-        ;;
-    select-review)
-        shift
-        exec "${SCAN_CONTROL}" select-review "$@"
-        ;;
-    post-smc-analysis)
-        shift
-        exec "${SCAN_CONTROL}" post-smc-analysis "$@"
-        ;;
-    select-local)
-        shift
-        export EDGE_SCOUT_AUTO_UPDATE=0
-        exec "${SCAN_CONTROL}" select "$@"
-        ;;
-    review-news)
-        shift
-        exec "${SCAN_CONTROL}" review-news "$@"
         ;;
     mkf|mkf-menu)
         shift
@@ -267,18 +202,6 @@ case "${ACTION}" in
     review-mkf-ai)
         shift
         exec "${MKF_CONTROL}" review-mkf-ai "$@"
-        ;;
-    archive-smc-news)
-        shift
-        exec "${SCAN_CONTROL}" archive-smc-news "$@"
-        ;;
-    audit-smc-news)
-        shift
-        exec "${SCAN_CONTROL}" audit-smc-news "$@"
-        ;;
-    replay-smc-news)
-        shift
-        exec "${SCAN_CONTROL}" replay-smc-news "$@"
         ;;
     select-a-class)
         shift
@@ -326,12 +249,6 @@ case "${ACTION}" in
             '  ./main.sh scan                         更新数据并执行全市场扫描' \
             '  ./main.sh scan --as-of YYYY-MM-DD     指定 T 日执行全市场扫描' \
             '  ./main.sh scan-local                   跳过联网更新，使用本地数据扫描' \
-            '  ./main.sh select [--as-of DATE]       运行 SMC 只读选股程序' \
-            '  ./main.sh daily [--top N]             每日 SMC+新闻一键流程：自动更新/去重/AI委员会CSV/审计' \
-            '  ./main.sh select-review [--as-of DATE] [--top N] [--post-smc-analysis]  自动日期会冻结前瞻证据；手动日期仅复核' \
-            '  ./main.sh post-smc-analysis --selection-run DIR [--news-run DIR] [--top N]  生成只读人工复核建议分析CSV' \
-            '  ./main.sh select-local                仅用本地数据运行 SMC 选股' \
-            '  ./main.sh review-news [--top N]       新闻 AI 二次复核；--top 仅限制终端展示' \
             '  ./main.sh mkf                         打开 MKF 对话入口（包含原 main.sh 全部 MKF 功能）' \
             '  ./mkf.sh                              打开 MKF 方向键菜单；自动化参数请用下方 MKF 命令追加' \
             '  ./main.sh mkf-review                  兼容旧 MKF 一键流程命令；高级自动化参数仍可追加' \
@@ -339,9 +256,6 @@ case "${ACTION}" in
             '  ./main.sh select-mkf                  兼容旧 MKF 候选源实验命令；高级自动化参数仍可追加' \
             '  ./main.sh select-mkf-local            兼容旧本地 MKF 候选源实验命令；高级自动化参数仍可追加' \
             '  ./main.sh review-mkf-ai               兼容旧 MKF AI 分层命令；高级自动化参数仍可追加' \
-            '  ./main.sh archive-smc-news            冻结最新 SMC 选股和新闻复核前瞻证据' \
-            '  ./main.sh audit-smc-news              审计 SMC 选股 + 新闻复核前瞻成熟度' \
-            '  ./main.sh replay-smc-news             生成 simulation_only SMC+新闻回放，不是前瞻证据' \
             '  ./main.sh select-a-class [--as-of DATE] 运行 A 类低位启动只读扫描' \
             '  ./main.sh select-a-class-local        仅用本地数据运行 A 类低位启动扫描' \
             '  ./main.sh single 600519                更新数据并执行单股扫描' \
@@ -350,6 +264,8 @@ case "${ACTION}" in
             '  ./main.sh update                       仅检查并增量更新研究数据' \
             '  ./main.sh audit                        生成新的前瞻观察成熟度审计' \
             '  ./main.sh test                         运行 Edge Scout 测试' \
+            '' \
+            '  SMC 选股/新闻复核/前瞻归档等已分离为独立子项目：./smc/smc.sh 与 ./smc/aismc.sh' \
             '' \
             '  ./main.sh help         显示帮助'
         ;;

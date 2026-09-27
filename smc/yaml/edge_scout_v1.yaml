@@ -1,0 +1,156 @@
+# SMC separation copy (2026-09-27) of yaml/edge_scout_v1.yaml.
+# Relative paths below are rewritten for project_root = smc/; refresh this copy
+# whenever the canonical file changes (provider/model/key edits). Keep MKF semantics identical.
+# Edge Scout V1 策略配置
+# 所有实际下单功能必须默认关闭；完整策略依赖点时财务、事件和行业数据。
+
+schema_version: edge_scout_v1
+mode: phased_production_adjacent
+allow_demo_portfolio: true
+allow_paper_trading: true
+allow_live_order_submission: false
+production_enabled: false
+
+demo_portfolio:
+  enabled: true
+  state_root: output/edge_scout/demo_portfolios
+  audit_root: output/edge_scout/audit_logs
+  factor_root: output/edge_scout/demo_factors
+  default_portfolio_id: default
+  initial_capital: 20000.0
+  max_portfolios: 5
+  max_positions: 20
+  max_import_positions: 50
+  allow_factor_upload: false
+  max_factor_bytes: 32768
+
+paper_trading:
+  enabled: true
+  state_root: output/edge_scout/paper_trading
+  engine_enabled: false
+  manual_intents_enabled: false
+  max_snapshot_codes: 20
+  max_evaluate_codes: 20
+  price_source: research_snapshot_with_local_fallback
+  allow_live_order_submission: false
+
+paper_risk:
+  max_position_pct: 0.20
+  max_daily_paper_intents: 2
+  max_hold_positions: 5
+  t1_sell_lock: true
+  block_limit_up_entries: true
+  stop_atr_multiple: 1.5
+  take_profit_r: 1.5
+
+paths:
+  data_root: PFrontStockData
+  industry_map: ""
+  output_root: output/edge_scout
+
+universe:
+  market: main_board_a_share
+  include_prefixes: [sh.600, sh.601, sh.603, sh.605, sz.000, sz.001, sz.002, sz.003]
+  exclude_st: true
+  min_listing_days: 252
+  min_close_cny: 5.0
+  max_close_cny: 80.0
+  min_adv20_cny: 100000000.0
+  min_trading_days_60: 55
+  block_limit_up_entries: true
+  block_suspensions: true
+
+# Research metadata only. V1 does not enforce a benchmark regime during scanning.
+research_market_regime:
+  enforcement: none
+  benchmark_code: sh.000001
+  close_above_ma: 20
+  max_5d_benchmark_drawdown: -0.03
+
+features:
+  pmkf_enabled: true
+  pmk_features_enabled: true
+  deploy_alpha_enabled: false  # P1-4 修复：MVP 未实现 Alpha adapter，必须为 false
+  ai_risk_review_enabled: false
+
+setup:
+  trend:
+    fast_ma: 20
+    slow_ma: 60
+    ma_slope_lookback: 5
+    min_return_20d: 0.03
+    max_return_20d: 0.30
+  pullback:
+    high_lookback: 10
+    min_drawdown_from_high: 0.03
+    max_drawdown_from_high: 0.10
+    min_low_to_ma60_ratio: 0.98
+  candle:
+    enabled: [hammer, bullish_engulfing, piercing, morning_star]
+    hammer:
+      max_body_to_range: 0.40
+      min_lower_shadow_to_body: 2.0
+      max_upper_shadow_to_body: 0.50
+      min_close_location: 0.65
+  confirmation:
+    require_close_above_signal_high: true
+    min_volume_to_ma20: 1.05
+    execution_delay_trading_days: 2
+
+hard_gates:
+  require_t1_confirmation_for_production: true
+  risk_distance_min: 0.025
+  risk_distance_max: 0.060
+  reject_negative_pmkf_momentum: true
+  reject_long_upper_shadow: warn
+
+ranking:
+  max_production_candidates: 0
+  max_watchlist_candidates: 30
+  max_near_miss: 100
+
+# CNstock-inspired research discovery filter. This does not grant production eligibility.
+discovery:
+  enabled: true
+  max_price_cny: 20.0
+  min_amount_cny: 15000000.0
+  max_pct_chg: 7.0
+  max_ret_5d: 12.0
+  max_turn: 35.0
+  max_volume_ratio: 5.0
+
+# Native CNstock-compatible research pools. These never grant V1 production eligibility.
+cnstock_discovery:
+  strong_start:
+    min_base_score: 60.0
+    min_amount_cny: 30000000.0
+    max_pct_chg: 7.0
+    max_ret_5d: 12.0
+  profit_shadow:
+    min_base_score: 75.0
+    min_amount_cny: 30000000.0
+    max_pct_chg: 7.0
+    max_ret_5d: 8.0
+  low_position:
+    min_base_score: 75.0
+    min_amount_cny: 30000000.0
+    max_pct_chg: 5.0
+    max_ret_5d: 6.0
+
+risk:
+  atr_period: 14
+  stop_atr_multiple: 1.5
+  stop_signal_low_atr_buffer: 0.10
+  partial_take_profit_r: 1.5
+  final_take_profit_r: 2.0
+
+mkf:
+  candidate_selector:
+    post_cross_lag_range: lag0-lag5
+
+publication:
+  write_csv: true
+  write_json: true
+  write_markdown: true
+  write_manifest: true
+  update_latest_atomically: true

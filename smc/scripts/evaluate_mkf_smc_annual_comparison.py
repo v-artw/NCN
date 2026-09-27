@@ -8,6 +8,7 @@ import concurrent.futures
 import hashlib
 import json
 import os
+import sys
 import tempfile
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -16,10 +17,16 @@ from typing import Any
 for _name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
     os.environ[_name] = "1"
 
+SMC_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = SMC_ROOT.parent
+for _src in (REPO_ROOT / "src", SMC_ROOT / "src"):
+    if str(_src) not in sys.path:
+        sys.path.insert(0, str(_src))
+
 import pandas as pd
 
 from ashare_edge_scout.config import load_config
-from ashare_edge_scout.pmkf_mkf.mkf_smc_annual_comparison import build_mkf_smc_report, build_stock_strategy_panels
+from ashare_smc.mkf_smc_annual_comparison import build_mkf_smc_report, build_stock_strategy_panels
 from ashare_edge_scout.research_precision70 import PREFIXES
 
 REQUIRED_COLUMNS = ["date", "open", "high", "low", "close", "preclose", "volume", "amount", "tradestatus", "isST"]
@@ -27,8 +34,9 @@ REQUIRED_COLUMNS = ["date", "open", "high", "low", "close", "preclose", "volume"
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-root", type=Path, default=Path("PFrontStockData"))
-    parser.add_argument("--config", type=Path, default=Path("yaml/edge_scout_v1.yaml"))
+    # 2026-09-27 SMC 分离：默认值改为绝对解析，任意 CWD 下可运行（config 用 smc/yaml 副本）。
+    parser.add_argument("--data-root", type=Path, default=REPO_ROOT / "PFrontStockData")
+    parser.add_argument("--config", type=Path, default=SMC_ROOT / "yaml" / "edge_scout_v1.yaml")
     parser.add_argument("--start-date", default="2021-01-01")
     parser.add_argument("--end-date", default=None)
     parser.add_argument("--workers", type=int, default=min(os.cpu_count() or 1, 8))

@@ -8,12 +8,13 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SRC_ROOT = PROJECT_ROOT / "src"
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
+SMC_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = SMC_ROOT.parent
+for _src in (REPO_ROOT / "src", SMC_ROOT / "src"):
+    if str(_src) not in sys.path:
+        sys.path.insert(0, str(_src))
 
-from ashare_edge_scout.smc_news_prospective import (
+from ashare_smc.smc_news_prospective import (
     find_canonical_smc_news_snapshot,
     publish_smc_news_snapshot,
     resolve_latest_news_run,

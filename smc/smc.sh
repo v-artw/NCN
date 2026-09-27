@@ -1,16 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCAN_CONTROL="${EDGE_SCOUT_SCAN_SCRIPT:-${PROJECT_ROOT}/scripts/edge_scout_scan.sh}"
-VENV="${VENV_PYTHON:-${PROJECT_ROOT}/.venv/bin/python}"
-# 与 mkf.sh 相同的底层扫描/新闻/AI 机制；所有输出改落 smc-output 目录。
-SMC_OUTPUT_ROOT="${EDGE_SCOUT_SMC_OUTPUT_ROOT:-${PROJECT_ROOT}/smc-output}"
+SMC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SMC_ROOT}/.." && pwd)"
+# 主仓 hub（review-mkf-ai 复用；smc -> main 单向依赖，删除 smc/ 对主仓零影响）。
+SCAN_CONTROL="${EDGE_SCOUT_SCAN_SCRIPT:-${REPO_ROOT}/scripts/edge_scout_scan.sh}"
+# SMC 自有控制脚本：select / select-review / review-news 等全部走这里。
+SMC_CONTROL="${SMC_SCAN_SCRIPT:-${SMC_ROOT}/scripts/smc_scan.sh}"
+VENV="${VENV_PYTHON:-${REPO_ROOT}/.venv/bin/python}"
+# 与 mkf.sh 相同的底层扫描/新闻/AI 机制；所有输出改落仓库根 smc-output 目录。
+SMC_OUTPUT_ROOT="${EDGE_SCOUT_SMC_OUTPUT_ROOT:-${REPO_ROOT}/smc-output}"
 export EDGE_SCOUT_OUTPUT_ROOT="${SMC_OUTPUT_ROOT}"
 ACTION="${1:-menu}"
 
 if [ ! -x "${SCAN_CONTROL}" ]; then
     printf 'ERROR: 底层扫描脚本不存在或不可执行：%s\n' "${SCAN_CONTROL}" >&2
+    exit 1
+fi
+if [ ! -x "${SMC_CONTROL}" ]; then
+    printf 'ERROR: SMC 控制脚本不存在或不可执行：%s\n' "${SMC_CONTROL}" >&2
     exit 1
 fi
 
@@ -105,7 +113,7 @@ run_smc_layer() {
 run_smc_review() {
     local selection_output selection_status selection_run candidate_count
     set +e
-    selection_output="$("${SCAN_CONTROL}" select "$@")"
+    selection_output="$("${SMC_CONTROL}" select "$@")"
     selection_status=$?
     set -e
     printf '%s\n' "${selection_output}"
@@ -203,9 +211,9 @@ execute_menu_choice() {
     local action="$1"
     case "${action}" in
         smc-review) run_smc_review ;;
-        smc-review-native) "${SCAN_CONTROL}" select-review ;;
-        smc-select) "${SCAN_CONTROL}" select ;;
-        smc-select-local) EDGE_SCOUT_AUTO_UPDATE=0 "${SCAN_CONTROL}" select ;;
+        smc-review-native) "${SMC_CONTROL}" select-review ;;
+        smc-select) "${SMC_CONTROL}" select ;;
+        smc-select-local) EDGE_SCOUT_AUTO_UPDATE=0 "${SMC_CONTROL}" select ;;
         smc-layer) run_smc_layer ;;
         exit) printf '已退出。\n' ;;
     esac
@@ -221,16 +229,16 @@ case "${ACTION}" in
         ;;
     smc-review-native)
         shift
-        exec "${SCAN_CONTROL}" select-review "$@"
+        exec "${SMC_CONTROL}" select-review "$@"
         ;;
     smc-select)
         shift
-        exec "${SCAN_CONTROL}" select "$@"
+        exec "${SMC_CONTROL}" select "$@"
         ;;
     smc-select-local)
         shift
         export EDGE_SCOUT_AUTO_UPDATE=0
-        exec "${SCAN_CONTROL}" select "$@"
+        exec "${SMC_CONTROL}" select "$@"
         ;;
     smc-layer)
         shift
@@ -238,23 +246,23 @@ case "${ACTION}" in
         ;;
     review-news)
         shift
-        exec "${SCAN_CONTROL}" review-news "$@"
+        exec "${SMC_CONTROL}" review-news "$@"
         ;;
     help|-h|--help)
         printf '%s\n' \
-            'NCN SMC 研究入口（输出全部保存在 smc-output/）' \
+            'NCN SMC 研究入口（smc/ 子项目；输出全部保存在仓库根 smc-output/）' \
             '' \
-            '用法：' \
-            '  ./smc.sh                              打开方向键交互菜单' \
-            '  ./smc.sh smc-review [--as-of DATE] [--top N]  SMC选股+MKF同款新闻抓取+AI委员会分层 一键流程（自动更新）' \
-            '  ./smc.sh smc-review-native            SMC一键流程（SMC原生新闻AI复核+前瞻归档）' \
-            '  ./smc.sh smc-select [--as-of DATE]    仅运行 SMC 选股（自动更新数据）' \
-            '  ./smc.sh smc-select-local             仅用本地数据运行 SMC 选股' \
-            '  ./smc.sh smc-layer [--selection-run DIR] [--top N]  对最新（或指定）SMC 选股运行 MKF 同款 AI 分层' \
-            '  ./smc.sh review-news [--selection-run DIR] [--top N]  SMC 原生新闻 AI 复核（Google新闻+东财公告）' \
+            '用法（仓库根执行）：' \
+            '  ./smc/smc.sh                              打开方向键交互菜单' \
+            '  ./smc/smc.sh smc-review [--as-of DATE] [--top N]  SMC选股+MKF同款新闻抓取+AI委员会分层 一键流程（自动更新）' \
+            '  ./smc/smc.sh smc-review-native            SMC一键流程（SMC原生新闻AI复核+前瞻归档）' \
+            '  ./smc/smc.sh smc-select [--as-of DATE]    仅运行 SMC 选股（自动更新数据）' \
+            '  ./smc/smc.sh smc-select-local             仅用本地数据运行 SMC 选股' \
+            '  ./smc/smc.sh smc-layer [--selection-run DIR] [--top N]  对最新（或指定）SMC 选股运行 MKF 同款 AI 分层' \
+            '  ./smc/smc.sh review-news [--selection-run DIR] [--top N]  SMC 原生新闻 AI 复核（Google新闻+东财公告）' \
             '' \
             '机制说明：' \
-            '  AI 使用 yaml/ai_providers.yaml（与 mkf.sh 的分层同一 provider/model 选择）；' \
+            '  AI 使用 smc/yaml/ai_providers.yaml（与 mkf.sh 的分层同一 provider/model 选择）；' \
             '  新闻抓取使用与 mkf.sh 相同的 MKF 新闻通道（Google News RSS/东财，Message/ 缓存），SMC 原生复核走 review-news 同款来源。' \
             '输出目录：' \
             '  smc-output/selections           SMC 选股不可变 run' \

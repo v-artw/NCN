@@ -16,7 +16,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .research_v2 import summarize_counts
+from ashare_edge_scout.research_v2 import summarize_counts
 
 SCHEMA_VERSION = "ncn_smc_news_replay_v1"
 OBSERVATION_SCHEMA = "ncn_smc_news_replay_observation_v1"
@@ -521,9 +521,15 @@ def build_smc_news_replay(
 
 def _guard_output_root(output_root: Path) -> None:
     resolved = output_root.resolve()
-    prospective = (Path("output/edge_scout/smc_news_prospective")).resolve()
-    if resolved == prospective or resolved.is_relative_to(prospective):
-        raise ValueError("simulation outputs cannot write into the prospective archive root")
+    # 分离后 SMC 前瞻归档默认在仓库根 smc-output/；旧 output/edge_scout/ 路径继续保护。
+    repo_root = Path(__file__).resolve().parents[3]
+    prospective_roots = (
+        (repo_root / "smc-output" / "smc_news_prospective").resolve(),
+        Path("output/edge_scout/smc_news_prospective").resolve(),
+    )
+    for prospective in prospective_roots:
+        if resolved == prospective or resolved.is_relative_to(prospective):
+            raise ValueError("simulation outputs cannot write into the prospective archive root")
 
 
 def publish_smc_news_replay(output_root: Path, run_id: str, report: Mapping[str, Any]) -> Path:
