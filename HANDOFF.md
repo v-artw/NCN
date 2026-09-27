@@ -21,6 +21,7 @@
 - ~~等用户决定提交~~ 已提交 `5e5dfa1`。
 - ~~Pi 未动~~ **用户授权后已同步 Pi（2026-09-27 22:43）**：原件备份于 `/opt/ncn/backups/qfq_selfheal_20260927_224326/`（含 MD5SUMS.txt）。`Autobaostock_download.py` 整文件覆盖（Pi 原版与本地改前逐字节一致，md5 `664f26e7…` 两边相等）；hub 因 Pi 端是 9-7 老基座（与主仓差 ~500 行，含已退役 SMC select-review 段）而做**外科手术补丁**——只替换 auto_update_data 的 check→echo 段，其余未动，Pi 端 md5 `1db3c9e2…`。验证：Pi `bash -n` ✓、`py_compile` ✓、`resolve_download_window`×2 ✓、"跳过下载"残留 0 ✓、Pi yaml 无 overlap 键（走默认 120）。
 - 下一次 Pi 调度 `update` 阶段起自动自愈（含"已最新"场景）；观察 600660 是否在下一轮消失（预期两边同为 22 只）。回滚方法：备份目录内 `cp` 回原位即可。
+- **本地数据也已首次自愈（9-27 22:5x）**：发现本地 600660（9-26 全量件）自身带 09-21 接缝——baostock 除息回补是渐进的，9-26 快照只补到 09-21 行。单只跑 `process_one_stock(end=2026-09-24, overlap=120)` 后 9-18..9-24 窗口全连续（原件备份 `/tmp/sh.600660.parquet.bak_preheal`）。残留 04-03 接缝经 smoke 证实为当前快照共性（两台机器同拿同结果），在窗口内每日重写，服务端收敛后自愈；MKF 动量窗口 ≤60 行不受其影响。其余约 8% 有接缝标的将由每日 update 阶段逐步自愈，无需手工干预。
 - 遗留（已定位、未获批）：sh.603737 ai_unavailable = `杠杆` 裸词误伤研究性引文（`src/ashare_edge_scout/mkf_ai_review.py:269`），两个收窄方案已呈报，等用户拍板，勿擅动 fail-closed 治理护栏。
 
 ### Risks / Do-Not-Repeat
