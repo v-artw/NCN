@@ -28,6 +28,18 @@ providers:
       chat_template_kwargs:
         enable_thinking: false
 
+  local_qwen:
+    enabled: true
+    name: Doris Local Finance AI
+    base_url: http://ts.dorisw.kdns.fr:18090/v1
+    model: Qwen3.8-27B-MTPLX-Optimized-Speed
+    key_file: Key/ts.key
+    api_key_env: EDGE_SCOUT_LOCAL_AI_API_KEY
+    timeout_seconds: 120
+    extra_options:
+      chat_template_kwargs:
+        enable_thinking: false
+
   deepseek:
     enabled: true
     name: DeepSeek

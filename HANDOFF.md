@@ -1,5 +1,30 @@
 # Reviewer Handoff
 
+## Completed Task: Qwen3.8-27B AI 分层适配评估 + 默认 provider 回切 (2026-09-28 午)
+
+### Task
+- 用户新增 `local_qwen`（`Qwen3.8-27B-MTPLX-Optimized-Speed` @ 同一 Doris oMLX 18090）并一度把顶层默认从 local_finance 切到它；随后要求评估"qwen3.8 是否更适合本项目"，并明确**不要重复跑推理浪费资源**——评估全部离线复用冻结产物。
+
+### 评估设计（5 个冻结 pass，零新增推理）
+- Ornith@9-26(22)/@9-27晚(23)/@9-28午(23) + Pi-Ornith@9-28晨(23) + Qwen 全量重放@9-28下午(23，`output/回测结果/qwen27b_replay_20260928_145815/`，输入 sha 与生产 run 核对一致)。
+- **噪声地板先行**：Ornith 同候选隔 13h 自一致仅 20/23=87%（跨机 16/23=70%）——低于此线的"模型差异"都是假信号。
+
+### 关键发现
+- 分层：Qwen vs Ornith 一致 18/23=78%，**在 Ornith 自身噪声带内，无法分出优劣**；四方投票显示 Qwen 无系统性跑偏。
+- **conf 模式坍缩（决定性）**：Qwen 20/23 全给 0.65（Ornith 至少 0.38/0.42/0.52 三档）；`evaluate_mkf_ai_score_rotation_backtest.py:167` 用 `confidence×100` 作 standard 层门控分——换 Qwen 会废掉当前分支 score-gated-selector 研究的输入分辨率。两模型同层 conf 秩相关 **-0.45**：conf 不是校准概率，勿当独立证据。
+- 失败率打平（5 pass 共 5 次，全是杠杆 guard 误伤/瞬时故障，与模型选型无关；sh.603737 两个模型都绊倒）。
+- 摘要数值断言密度 Ornith 3.0 条/476字 > Qwen 1.1 条/214字（与观感相反，待人工盲评定夺）。
+- 延迟 Qwen ~66s/只 vs Ornith ~25s（Pi 调度窗可容纳，非否决项）。
+
+### Changed Files
+- `yaml/ai_providers.yaml`：顶层 `provider` 回切 `local_finance`；保留用户的 `local_qwen` 条目（enabled）作日后对照。canary `tests/test_ai_provider_config.py` 13 passed。
+- 未动：任何 review 代码、Pi（200 的 yaml 顶层仍是 local_finance，两台重新同尺）。
+
+### Next Actions / 遗留
+- 人工盲评：`output/回测结果/qwen27b_replay_20260928_145815/盲评对照表_20260928.csv`（9 只重点标的两模型摘要并排）待用户填写，是唯一能超出噪声地板的判定通道；回收后汇总再议默认。
+- 杠杆 guard 收窄仍未拍板（两模型每年各自承受 ~2-4% 误伤；再议时以本条数据为论据）。
+- **勿重复跑**已存在的 5 个冻结 pass；日后对照实验直接复用 `output/回测结果/qwen27b_replay_20260928_145815/replay_raw.json`。
+
 ## Completed Task: SMC 子项目归档移出主仓（方案 A）(2026-09-28)
 
 ### Task
