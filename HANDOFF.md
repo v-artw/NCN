@@ -1,5 +1,24 @@
 # Reviewer Handoff
 
+## Completed Task: SMC 子项目归档移出主仓（方案 A）(2026-09-28)
+
+### Task
+- 用户确认代码/数据跨机零差异后拍板"方案 A（最省事）"：`git rm` 移除 `smc/`，git 历史即归档；盘上唯一副本（`smc-output/`，gitignored）搬到仓库外保管。
+
+### Changed Files
+- 删除：`smc/`（36 个 tracked 文件，最后一次包含它的 commit=`87015d0` 之前范围，随时可恢复）；工作树删除 gitignored 的 `smc-output/`（108 文件已先搬走）。
+- 归档位置：`../NCN-smc-archive/smc/`（rsync 排除 `__pycache__`/`.DS_Store`，diff -rq 核验 36 文件一致）+ `../NCN-smc-archive/smc-output/`（diff -rq 核验 108 文件一致）。注意归档内 `smc_scan.sh` 的 `${REPO_ROOT}/scripts/edge_scout_scan.sh` 委托与 `smc/yaml/ai_providers.yaml` 的 `../Key/*.key` 相对路径在新位置会断——冷存不跑则无碍，若日后要在归档位重跑需各改一行。
+- 陈旧文案清理（纯文字、无分派逻辑）：`scripts/edge_scout_scan.sh` usage 中 `archive-smc-news` 行（无对应 case 分支，未知命令由 `*)` 兜底）；`main.sh` help 的 SMC 指引改为归档去向说明；README SMC 段落改为"已归档、文档留作归档副本说明"。
+- `tests/test_main_script.py`：原"help 必须列出 ./smc/smc.sh 指引"的钉桩断言改为钉"归档移出本仓"文案 + 反向断言不再出现 `./smc/smc.sh`。
+
+### Validation
+- 主仓对 smc 无任何真实依赖（grep 全量核对：src/tests 命中均为注释、边界文案或反向断言；依赖方向单向 smc→主仓；无 cron/LaunchAgents 引用；MKF 活动输出在 `output/edge_scout/`，与被删的 `smc-output/` 无关）。
+- 全量测试 `./.venv/bin/python -m pytest -q`：539 passed / 3 skipped。
+- 未动 Pi（10.0.0.200）：其旧 hub 内含 SMC 时代残留代码属 200 部署自有内容，不在本次范围。
+
+### Next Actions
+- 无待办。若日后复活 SMC：`git checkout <87015d0 后的任一含 smc 的 commit> -- smc/` 或直接用归档副本，并按上面"归档位置"注修复两条相对路径。
+
 ## Completed Task: 前复权历史自愈·重叠重写窗口（方案①）实现 + 回归测试 (2026-09-27 深夜)
 
 ### Task

@@ -801,7 +801,6 @@ A 股多因子 + 15 日蜡烛图短线研究系统
   edge_scout_scan.sh review-mkf-ai --selection-run <DIR>    # MKF 候选源 AI 研究分层
   edge_scout_scan.sh export-mkf-web-ai --latest --top 10    # MKF 候选 CSV 转 Web AI Markdown
   edge_scout_scan.sh test
-  edge_scout_scan.sh archive-smc-news
 
 边界：
   - 只读研究扫描

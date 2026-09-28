@@ -49,9 +49,11 @@ All candidates are research-only. `production_enabled=false` is enforced fail-cl
 ## Read-Only Stock Selection
 
 Since 2026-09-27 the SMC selector, news AI review, prospective archive, and
-replay live in the separate `smc/` subproject (`./smc/smc.sh`,
-`./smc/aismc.sh`, and the hub `./smc/scripts/smc_scan.sh`). Deleting or moving
-`smc/` has zero effect on MKF. Data updates still delegate to the main hub.
+replay lived in the separate `smc/` subproject. On 2026-09-28 the subproject
+and its `smc-output/` were archived out of this working tree: recover them
+from git history (last commit containing `smc/`) or from `../NCN-smc-archive/`.
+The SMC docs below are retained for that archived copy; MKF has zero runtime
+dependency on them.
 
 Run the standalone SMC selector with existing local daily bars. This command
 does not require minute data or a paid data service:

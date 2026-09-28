@@ -36,8 +36,9 @@ def test_main_script_help_lists_control_commands() -> None:
     assert "./main.sh single 600519" in completed.stdout
     assert "./main.sh update" in completed.stdout
     assert "方向键交互菜单" in completed.stdout
-    # 2026-09-27 SMC 分离：SMC 命令只保留子项目入口指引，不再出现在主仓 help。
-    assert "已分离为独立子项目：./smc/smc.sh" in completed.stdout
+    # 2026-09-28 SMC 归档：主仓 help 只保留归档去向指引，不再暴露 SMC 命令入口。
+    assert "归档移出本仓" in completed.stdout
+    assert "./smc/smc.sh" not in completed.stdout
     assert "./main.sh daily" not in completed.stdout
     assert "./main.sh select-review" not in completed.stdout
     assert "./main.sh review-news" not in completed.stdout

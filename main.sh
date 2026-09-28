@@ -265,7 +265,7 @@ case "${ACTION}" in
             '  ./main.sh audit                        生成新的前瞻观察成熟度审计' \
             '  ./main.sh test                         运行 Edge Scout 测试' \
             '' \
-            '  SMC 选股/新闻复核/前瞻归档等已分离为独立子项目：./smc/smc.sh 与 ./smc/aismc.sh' \
+            '  SMC 子项目已于 2026-09-28 归档移出本仓（git 历史或 ../NCN-smc-archive 可查）' \
             '' \
             '  ./main.sh help         显示帮助'
         ;;
