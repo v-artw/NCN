@@ -1,0 +1,23 @@
+{
+  "files": {
+    "mkf_ai_reviews_20260930_203621.csv": {
+      "sha256": "503e1b903896e091f8398c61249b267dd955c0cbd9d3d0c69141e431d087c45f"
+    },
+    "news_contexts.json": {
+      "sha256": "743f644d32aa6c9ae35c75c1d183627303dc09d4daafb917ee34226537abbf31"
+    },
+    "reviews.json": {
+      "sha256": "2134d71cd0dd7f82276e2ff012494c8754f98b8ff5c13867a7dbced67e475535"
+    },
+    "summary.json": {
+      "sha256": "68225bbcae26c18fbf2e0e033a12ecfe9ea9ebb038840b0424ac624fbae9ffaf"
+    },
+    "technical_contexts.json": {
+      "sha256": "1f0b0b8cfda87612c490871a357cd98d75f24e29e85aae6d8bf6faef42cad50a"
+    }
+  },
+  "run_id": "mkf-ai-review-20260930_162748-local-ornith-network-retest",
+  "schema_version": "ncn_mkf_ai_review_v3",
+  "source_candidates_sha256": "1bedc13a9533435822110f9f87c0d2c839dd4fe78dc001bdb2f564afa36249a0",
+  "timestamped_reviews_csv": "mkf_ai_reviews_20260930_203621.csv"
+}

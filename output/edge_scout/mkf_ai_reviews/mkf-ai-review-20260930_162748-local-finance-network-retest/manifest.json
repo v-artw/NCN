@@ -1,0 +1,23 @@
+{
+  "files": {
+    "mkf_ai_reviews_20260930_202403.csv": {
+      "sha256": "7dfd020521287f28a7fe2898d3ef38ea5f5b5dc1df5f8ef9b507f5a2bb136612"
+    },
+    "news_contexts.json": {
+      "sha256": "743f644d32aa6c9ae35c75c1d183627303dc09d4daafb917ee34226537abbf31"
+    },
+    "reviews.json": {
+      "sha256": "31c6db263b87506355e1e234fa9224f9e2b14c4d39f8472d97a101acae46a0fd"
+    },
+    "summary.json": {
+      "sha256": "b3e89286beff7c7cf95fe201b4d0d6749b87274388b4ca28b2ab702652af9bfb"
+    },
+    "technical_contexts.json": {
+      "sha256": "1f0b0b8cfda87612c490871a357cd98d75f24e29e85aae6d8bf6faef42cad50a"
+    }
+  },
+  "run_id": "mkf-ai-review-20260930_162748-local-finance-network-retest",
+  "schema_version": "ncn_mkf_ai_review_v3",
+  "source_candidates_sha256": "1bedc13a9533435822110f9f87c0d2c839dd4fe78dc001bdb2f564afa36249a0",
+  "timestamped_reviews_csv": "mkf_ai_reviews_20260930_202403.csv"
+}

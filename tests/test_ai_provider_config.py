@@ -55,6 +55,11 @@ def test_repository_ai_provider_inventory() -> None:
     aliweek = config.providers["aliweek"]
     assert aliweek["base_url"] == "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
     assert aliweek["model"] == "qwen3.8-max"
+    assert config.provider == "local_finance"
+    assert config.providers["local_finance"]["model"] == "Ornith-1.5-35B-A3B-oQ4e-mtp"
+    qwen_flash = load_ai_provider_config(ROOT / "yaml" / "mkf_ai_providers_aliweek_qwen38_flash.yaml")
+    assert qwen_flash.provider == "aliweek"
+    assert qwen_flash.providers["aliweek"]["model"] == "qwen3.8-flash"
     assert aliweek["key_file"] == str(ROOT / "Key" / "aliw.key")
     assert aliweek["api_key_env"] == ""
     assert aliweek["timeout_seconds"] == 240

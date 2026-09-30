@@ -1,5 +1,281 @@
 # Reviewer Handoff
 
+## Completed Task: local_finance 与 local_ornith 网络恢复后的严格冻结输入重测 (2026-09-30)
+
+### Task
+- 用户在共享 inventory 新增 `local_ornith`（`Ornith-1.5-9B-MLX`）后，要求在本地重新测试它与 `local_finance`；两者复用 Qwen `mkf-ai-review-20260930_162748` 的相同 11 个候选、技术和新闻上下文，不下载行情或刷新新闻。
+
+### Changed Files
+- 新增 `yaml/mkf_ai_providers_local_finance_retest.yaml`、`yaml/mkf_ai_providers_local_ornith_retest.yaml`：每份仅包含对应 enabled provider，固定共享 transport/JSON/seed/thinking 设置，未改 `yaml/ai_providers.yaml` 顶层默认。
+- 新增 `yaml/mkf_ai_review_local_finance_retest.yaml`、`yaml/mkf_ai_review_local_ornith_retest.yaml`：从本地 committee 派生，仅替换 `ai_config`。
+- `tests/test_mkf_ai_review.py`：断言两个 retest committee 分别解析到预期 provider/model，且 prompt/news/review 配置与默认 local committee 一致。
+- 新只读 run：`output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260930_162748-local-finance-network-retest/` 与 `...-local-ornith-network-retest/`。
+
+### Behavior / Logic Changes
+- 未改 replay runner、selector、共享默认 provider、候选、数据或新闻缓存。测试配置通过既有 `--config` 选择隔离 provider inventory，保持业务 YAML 禁止 provider/model/endpoint override 的 fail-closed 边界。
+- 两份 run 均验证来源 selection SHA=`1bedc13a…36249a0`，11 candidates/11 technical/11 news identity 一一对应，`technical_context_rebuilt=false`、`news_refresh_performed=false`、`news_context.refresh_performed=false`；各自 manifest 所列全部文件 hash 已复核通过。
+
+### Validation
+- 本地 `./.venv/bin/python -m pytest tests/test_mkf_ai_review.py tests/test_ai_provider_config.py -q`：48 passed；`git diff --check` 通过；真实 frozen input loader 预检通过（11/11/11）。
+- 本地 bounded smoke 均通过：`local_finance` 35B `/models`=13、configured model listed、JSON chat=ok（0.589s）；`local_ornith` 9B 同样通过（chat=10.322s）。
+- `local_finance`：11 attempts / 10 success / 1 `ValueError` fallback（`sh.601666`）；standard=7、risk=3、priority=0、unavailable=1。
+- `local_ornith`：11 attempts / 9 success / 2 `ValueError` fallbacks（`sh.601666`、`sh.603301`）；standard=2、risk=6、priority=1（`sh.603906`）、unavailable=2。
+- 共同有效 9 只，分层一致 5/9：`sh.603899`、`sh.603916`=standard；`sz.000680`、`sz.002311`、`sz.002840`=risk。分歧：`sh.600132`、`sh.600458`、`sh.600660` 为 finance standard vs ornith risk；`sh.603906` 为 finance standard vs ornith priority。
+
+### Risks / Review Notes
+- 这是网络恢复后的单次、固定输入可用性/输出合约重测，不是模型质量、收益、胜率或默认 provider 切换证据；9B 覆盖率较低（9/11 vs 10/11），且双方同样在 `sh.601666` 触发 fail-closed `ValueError`。
+- 两模型 raw confidence 分布不可跨模型解释：finance 为 0.38/0.42/0.52，ornith 为 0.52/0.58/0.62/0.72；不得将其当作校准概率或模型优劣。
+- 输出中 `news_context_status/cache_status=refreshed` 保留自冻结来源的历史证据字段，并非本次刷新；以 summary/replay provenance 的 false 字段为准。不要选择性重跑失败标的以掩盖不稳定性；若需决定默认 provider，应预先登记多轮固定输入覆盖/分层稳定性与真实纸面研究质量门槛。
+
+## Completed Task: local_finance 与 Qwen Flash 严格冻结输入委员会对比 (2026-09-30)
+
+### Task
+- 用户要求以 `local_finance` 对 Qwen Flash run `mkf-ai-review-20260930_162748` 做同一候选、技术上下文和新闻上下文的委员会对比；用户明确 AI 测试应在本地执行，Doris 不适合此类测试。
+
+### Changed Files
+- `src/ashare_edge_scout/mkf_ai_review.py`：新增 `load_persisted_mkf_review_inputs()` 与 `run_mkf_ai_review_replay()`；逐文件 manifest SHA、source candidate SHA、schema、候选/技术/新闻 `(code, signal_date)` 一一映射 fail-closed 校验；replay 绝不调用 `_mkf_technical_context()` 或 `build_mkf_news_context()`。
+- `scripts/review_mkf_ai.py`：新增 `--replay-input-run`，与 fresh selection/data 参数互斥，并显示“读取已发布技术/新闻上下文（不重建、不刷新）”。
+- `tests/test_mkf_ai_review.py`：覆盖精确持久化上下文 replay、禁止重建/刷新、context 篡改、identity set 不匹配，以及 canonical `source_selection_run` 元数据。
+- 新产物（只读）：有效比较 run `output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260930_162748-local-finance-frozen-v2/`；首轮 `...-local-finance-frozen/` 的 `source_selection_run` 审计字段错误，保留但**不得用于比较**。
+
+### Behavior / Logic Changes
+- 新 replay 的 `summary.json.replay_provenance` 记录 Qwen 来源目录/manifest/技术与新闻 hash、输入 provider/prompt metadata、11/11 identity 校验，以及 `technical_context_rebuilt=false`、`news_refresh_performed=false`；本次 actual scorer 保持 active `local_finance/Ornith`。
+- selector 未切换；未下载行情、未刷新新闻、未改候选/watchlist/生产开关。来源 Qwen 与 local run 都使用 selection SHA256=`1bedc13a…36249a0`。
+
+### Validation
+- WSL `./scripts/remote_test_env.sh check` 不可达；随后尝试 Doris 环境检查成功但 `.venv-doris` 缺 `pytest`，未在 Doris 运行测试；按用户后续明确指示，AI 测试固定本地。
+- 本地：`./.venv/bin/python -m pytest tests/test_mkf_ai_review.py -q` = 34 passed；`py_compile` 与 `git diff --check` 通过。
+- 真实来源预检：11 candidates / 11 technical / 11 news，全部通过 manifest 与 identity 校验。
+- 有效 local run：11 次请求、9 成功、2 fallback（`sh.601666`=`ValueError`，`sz.002840`=`connection_error:TimeoutError`），状态 `partial`；standard=7、risk=2、priority=0、unavailable=2。
+- Qwen 基线：10 成功、`sh.603301` unavailable，standard=2、risk=8、priority=0。两方共同成功 8 只，state 一致 4/8：`sh.603899`/`sh.603916` standard，`sz.000680`/`sz.002311` risk；Qwen risk→local standard：`sh.600132`、`sh.600458`、`sh.600660`、`sh.603906`。
+
+### Risks / Review Notes
+- 覆盖率 Qwen 10/11 vs local 9/11 仅是这一次请求的可用性观察；两边未评分集合不同，不得解释为稳定优劣。
+- confidence 不校准且跨模型不可比较：Qwen 多集中 0.58–0.65，local 多为 0.38/0.42/0.52；不能当胜率、质量或跨模型排序证据。
+- local 输出的 `news_context_status/cache_status=refreshed` 是冻结 Qwen 输入中保留的原始证据状态，而不是本次运行发生刷新；应以 summary 的 `refresh_performed=false` 和 replay provenance 为准。
+- 下一步如需对比，应只离线分析这两份 immutable run 的覆盖与分层；不要重跑推理、不要基于该 8 只共同样本切换默认 provider。
+
+## Review Note: 冻结已发布上下文回放的审计要求 (2026-09-30)
+
+### Task
+- 审核 proposed `local_finance` 对 Qwen `mkf-ai-review-20260930_162748` 的严格冻结上下文回放入口；未修改业务代码。
+
+### Changed Files
+- `HANDOFF.md`：记录审核结论。
+
+### Behavior / Logic Changes
+- 回放入口除候选源校验外，必须先验证来源 AI run 的 `manifest.json` schema/run_id、`technical_contexts.json`、`news_contexts.json`、`summary.json` 的 SHA-256；并逐项按唯一 `(code, signal_date)` 关联来源 candidates、technical 与 news，候选集合/顺序/日期/重复项/非对象均 fail closed。
+- 回放不得调用 `_mkf_technical_context()`、`build_mkf_news_context()` 或读取行情/Message 缓存；应只把已验证的持久化对象传入现有 client/解析/fallback 路径。输出 summary/manifest 要记录 `context_mode=frozen_replay`、source run、三个输入 hash、来源 `source_candidates_sha256`、`news_refreshed=false`，并保留只读边界。
+
+### Validation
+- 已核验 Qwen 来源 manifest 覆盖 technical/news/summary/reviews/CSV hash；当前常规 runner 仅校验 selection candidates hash，且必然重建技术上下文并调用在线新闻构建器。
+- 待新增测试：happy path 的 exact object 传递与无新闻调用；来源 manifest hash 失配；来源 summary/schema/run-id 失配；候选集合/日期/重复/缺 technical 或 news；AI `ValueError` 回退；输出审计字段、manifest 完整性和临时目录清理。
+
+### Risks / Review Notes
+- 来源上下文含绝对 cache 路径与在线新闻文本；复制到输出会保留可审计快照，但不能把路径重新解释为可读或新鲜数据。不要用来源 Qwen `reviews.json` 作为回放输入或质量标签，也不要宣称 confidence 可跨模型比较。
+
+## Pending Task: local_finance 与 Qwen Flash 同输入委员会对比 (2026-09-30)
+
+### Task
+- 用户要求以 `local_finance` 运行 AI 委员会并与刚完成的 Qwen Flash 结果比较。
+
+### Changed Files
+- None.
+
+### Behavior / Logic Changes
+- None. 当前 Qwen 对比目标为 `output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260930_162748/`，候选源为 11 只 `mkf-select-20260930_093606`。
+
+### Validation
+- 尚未启动 local_finance 请求。当前常规 `review-mkf-ai` 会在线刷新新闻；若直接运行，将不能与 Qwen 的新闻输入严格对齐。
+
+### Risks / Review Notes
+- 等待用户确认对比口径：推荐复用 Qwen run 的候选、技术与新闻上下文，仅替换模型；不要把常规新闻刷新后的单次层级/confidence 差异解释为模型质量或胜率差异。
+
+## Completed Task: 修正提示词后的 Qwen3.8 Flash 全量委员会复测 (2026-09-30)
+
+### Task
+- 用户要求以修正后的 Qwen 专用提示词再次运行完整 MKF AI 委员会；结束后 selector 已恢复本地 `local_finance/Ornith`。
+
+### Changed Files
+- `yaml/mkf_ai_committee_selector.yaml`：运行期间切至 Qwen，完成后恢复默认本地行。
+- 新增只读运行产物：`output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260930_162748/`。
+
+### Behavior / Logic Changes
+- 使用 `aliweek/qwen3.8-flash` 及提示词 SHA256=`9072e08c…4472fb`，候选源保持 `mkf-select-20260930_093606`（11 只、SHA256=`1bedc13a…36249a0`）；未改候选、watchlist、生产配置或下单状态。
+
+### Validation
+- 11 次请求中 10 次有效，1 次 `ValueError`，状态 `partial`：`standard_research=2`（sh.603899/sh.603916）、`risk_attention=8`、`priority_research=0`、`ai_unavailable=1`（sh.603301）。
+- 上轮因 `杠杆` 禁词而失败的 `sh.601666` 本轮成功：`risk_attention` / 0.60；证明新提示词未在此例复现该禁词问题。
+- `EDGE_SCOUT_AUTO_UPDATE=0` 未更新行情或候选，但当前新闻配置仍在线刷新，11 只的 `news_context_status`/`news_cache_status` 均为 `refreshed`，因此不可与固定新闻运行作严格模型比较。
+
+### Risks / Review Notes
+- `sh.603301` 已按用户要求完成同输入脱敏审计：`output/edge_scout/mkf_ai_reviews/qwen3_8_flash_sh603301_audit_20260930_164935/audit.json`。来源为 `mkf-ai-review-20260930_162748`，input SHA256=`1bee0d…90d89`；Qwen 129.488s 返回完整 7 字段、7 角色 JSON，`standard_research` / 0.65，`parse_status=ok`、禁词命中为空。由于完整 run 未保存原失败响应，无法反推其 `ValueError` 的具体词；仅能确认它不是稳定、必现的输入或结构失败。
+- 本轮全量结果的离线解读：有效评分 10/11，较上一轮 Qwen 专用提示词运行同为 10/11；`sh.601666` 从 `ai_unavailable` 变为 `risk_attention`，但 `sh.603301` 反向成为 `ai_unavailable`，说明护栏误伤是随机输出层面的残留问题而非已彻底消除。分层从上一轮 `standard=3/risk=7` 变为 `standard=2/risk=8`，没有 `priority_research`；本轮 Qwen 主要根据量能不足、滞后信号、K线确认弱、新闻时效与风险事件做保守降级。confidence 集中在 0.60/0.65（8/10 有效行），仅适合本轮排序辅助，未校准且不适合跨模型/跨运行比较。新闻 11/11 刷新，因此不能把分层变化归因于提示词或模型。
+- 单次全量复测只证明 `sh.601666` 的提示词问题得到缓解，不证明 Qwen 所有候选的护栏稳定性或模型质量；不应据此切换默认 provider。
+
+## Completed Task: Qwen3.8 Flash 禁词规避提示词修正 (2026-09-30)
+
+### Task
+- 用户要求修正 Qwen 专用委员会提示词，避免模型输出 `杠杆` 等会触发 fail-closed 解析器的禁词；不放宽解析器、不改变本地默认委员会。
+
+### Changed Files
+- `yaml/mkf_ai_review_aliweek_qwen38_flash.yaml`：在使用边界增加输出前自检，禁止讨论系统化执行、券商/成交状态、资金倍数或借贷放大、收益承诺和真实资金结果；即使作为风险提示、否定句或免责声明也不输出；要求用中性研究风险措辞替代。
+- `tests/test_mkf_ai_review.py`：Qwen 隔离委员会测试新增对 `杠杆` 缺失及中性替代表述存在的断言。
+- `scripts/audit_qwen_flash_contract.py`：默认审计目标现为本轮 `sh.601666` / `mkf-ai-review-20260930_155435`，并加载 Qwen 专用委员会 YAML，以便复现本次问题；脚本仍只保存脱敏元数据。
+
+### Behavior / Logic Changes
+- 只改变外部 Qwen 的业务提示词；`FORBIDDEN_EXECUTION_PATTERN`、`parse_ai_response()` 和 fail-closed 行为未修改。selector 继续启用 `local_finance/Ornith`。
+
+### Validation
+- `./.venv/bin/python -m pytest tests/test_mkf_ai_review.py tests/test_ai_provider_config.py -q`：44 passed。
+- 无网络解析检查：Qwen committee → `aliweek/qwen3.8-flash`；prompt 不包含 `自动交易`、`真实下单`、`杠杆`；`git diff --check` 通过。
+- 受限单标的复测（不刷新行情/新闻）：`./.venv/bin/python scripts/audit_qwen_flash_contract.py --timeout-seconds 180`，来源/输入 SHA256 与失败审计一致（`edd43f…d374f`），69.779s 返回完整 7 字段、7 角色 JSON，`standard_research` / 0.58，`parse_status=ok`、禁词命中为空；产物 `output/edge_scout/mkf_ai_reviews/qwen3_8_flash_sh601666_audit_20260930_162446/audit.json`。
+
+### Risks / Review Notes
+- 单次复测证明该次输出可避开护栏，不证明所有候选或未来运行稳定；禁止因此放宽安全解析或宣称模型质量提升。若要验证覆盖率，只能经用户明确同意后以固定输入、有限样本运行，且要避免刷新新闻。
+
+## Completed Task: Qwen3.8 Flash MKF AI 委员会运行 (2026-09-30)
+
+### Task
+- 用户要求使用 `qwen3.8-flash` 运行 AI 委员会；执行后 selector 已恢复默认本地 `local_finance/Ornith`。
+
+### Changed Files
+- `yaml/mkf_ai_committee_selector.yaml`：运行期间切至互联网 Qwen，完成后恢复本地默认；无其他业务代码或候选变更。
+- 新增只读运行产物：`output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260930_155435/`。
+
+### Behavior / Logic Changes
+- 实际运行使用隔离配置 `yaml/mkf_ai_review_aliweek_qwen38_flash.yaml`，provider=`aliweek`，model=`qwen3.8-flash`，7 角色单次结构化委员会提示词。
+- 使用已有候选 run `mkf-select-20260930_093606`（11 只，SHA256=`1bedc13a…36249a0`）；未更新候选、未提交订单、未修改 watchlist 或生产配置。
+
+### Validation
+- 结果 summary：11 次请求，成功 10，`ValueError` 1，状态 `partial`；`standard_research=3`（sh.603906/sh.603301/sh.603899）、`risk_attention=7`、`priority_research=0`、`ai_unavailable=1`（sh.601666）。
+- `sh.603301` 本次 Qwen 评分成功：`standard_research`，confidence=0.58。
+- `EDGE_SCOUT_AUTO_UPDATE=0 ./mkf.sh review-mkf-ai` 未下载或更新行情候选；但当前 review 流程的新闻配置 `fetch_online_by_default=true`，11 只均显示 `news_context_status=refreshed` / `news_cache_status=refreshed`，因此本次**刷新了新闻上下文**。以后若需严格冻结新闻输入，必须先使用不刷新新闻的显式运行路径，不能只依赖 `EDGE_SCOUT_AUTO_UPDATE=0`。
+
+### Risks / Review Notes
+- `sh.601666` 已完成单标的脱敏复现：`output/edge_scout/mkf_ai_reviews/qwen3_8_flash_sh601666_audit_20260930_162003/audit.json`。使用本次 run 的已刷新技术/新闻上下文和 Qwen 专用提示词，Qwen 在 108.425s 返回 3167 字符的完整 JSON（预期 7 顶层字段、7 角色、`risk_attention`、confidence=0.48），但输出两次命中 `杠杆`，被 `parse_ai_response` 以 `ValueError: AI response contains forbidden execution claim` 拒绝。未保存模型原文；这排除网络、JSON 结构、state、confidence 或角色缺失为该次失败原因。
+- 结果是只读、未验证的人工研究分层，不构成交易、收益或胜率结论。selector 当前已恢复 `local_finance/Ornith`；仅在用户再次明确要求时才切换 Qwen。
+
+## Completed Task: Qwen3.8 Flash 委员会隔离与 YAML 选择开关 (2026-09-30)
+
+### Task
+- 用户提出三项：1) 检查 `sh.603301` AI 分析失败原因；2) 新建仅供互联网大模型 `qwen3.8-flash` 使用的独立 AI 委员会配置；3) 在 YAML 中用注释/取消注释选择本地现有委员会或互联网委员会，默认本地。
+
+### Changed Files
+- 新增 `yaml/mkf_ai_committee_selector.yaml`：唯一运行时选择器；默认启用 `mkf_ai_review.yaml`（local_finance/Ornith），通过注释/取消注释其相邻 `committee_config` 行切至互联网 Qwen。
+- 新增 `yaml/mkf_ai_providers_aliweek_qwen38_flash.yaml`：只包含 `aliweek/qwen3.8-flash` 的专用中央 provider inventory。
+- 新增 `yaml/mkf_ai_review_aliweek_qwen38_flash.yaml`：互联网 Qwen 专用 MKF 委员会；复用相同只读/技术/新闻边界，提示词不复述已知会触发执行护栏的字面短语。
+- `src/ashare_edge_scout/mkf_ai_review.py`：支持 selector schema，fail-closed 验证缺失/自引用目标，并将 selector 与实际委员会的 path/SHA-256 写入 run summary。
+- `scripts/edge_scout_scan.sh`：默认 `MKF_AI_CONFIG` 改为 selector；环境变量 override 仍有效。
+- `yaml/ai_providers.yaml`：共享默认回到 `local_finance`，Aliweek 共享 inventory 回到 `qwen3.8-max`；保留已有未提交 DeepSeek 模型改动（`deepseek-flash`），未做处理。
+- `tests/test_ai_provider_config.py`、`tests/test_mkf_ai_review.py`：增加默认本地、隔离 Qwen、selector 失败关闭测试。
+
+### Behavior / Logic Changes
+- 默认 `./mkf.sh review-mkf-ai` 与一键 MKF 流程现在读取 `yaml/mkf_ai_committee_selector.yaml`，解析为本地 `local_finance` / `Ornith-1.5-35B-A3B-oQ4e-mtp`。
+- 要切互联网模型，只在 selector 中注释本地 `committee_config` 行并取消 Qwen 行；Qwen 委员会严格绑定 `aliweek/qwen3.8-flash`，不污染共享 provider 默认。
+
+### Validation
+- `./.venv/bin/python -m pytest tests/test_ai_provider_config.py tests/test_mkf_ai_review.py tests/test_main_script.py -q`：57 passed。
+- `PYTHONPATH=src ./.venv/bin/python` 配置解析：selector → `local_finance Ornith-1.5-35B-A3B-oQ4e-mtp`；互联网委员会 → `aliweek qwen3.8-flash`（未发起 API 请求）。
+- `./.venv/bin/python -m py_compile src/ashare_edge_scout/mkf_ai_review.py scripts/review_mkf_ai.py`、`bash -n scripts/edge_scout_scan.sh`、`git diff --check`：通过。
+- 已有单标的 Qwen 审计只覆盖 `sz.002840`：完整 JSON 于 104.261s 返回，但因 `自动交易`/`真实下单` 文本触发 fail-closed 护栏而被拒绝；不适用于推断 `sh.603301` 的失败原因。
+- 用户指定的 `sh.603301` 实际位于今日 11:30 的 **Aliweek/Qwen3.8 Flash** run `output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260930_113054/`，不是 local_finance：manifest=`ai_provider=aliweek`、`ai_model=qwen3.8-flash`、11 次调用成功 3 / `ValueError` 8；该股 CSV 为 `ai_unavailable`。其 `technical_context_status=ok`、`news_context_status=refreshed`、`news_cache_status=refreshed`、candle=9.0，故失败在模型响应后的解析/护栏阶段。该 run 未持久化具体异常或原文，无法离线判定。对照的 local_finance 冻结 run `mkf-ai-review-20260930_103616-local-finance-frozen` 中此股成功：`standard_research` / 0.52 / Ornith，证明输入侧无失败。**用户已明确暂时忽略任务 1，不再对此标的发起复现或修复。**
+
+### Risks / Review Notes
+- `sh.603301` 在当天 DeepSeek 对照 run 中是成功行；用户所说“失败”必须对应某个 Qwen 运行目录/日志，否则可能排查到错误的 provider 或错误时段。
+- 以 YAML 注释/取消注释切换整个委员会配置可行但易产生两份可漂移配置、也可能让解析器读取到多个/零个激活值；实施前必须确认具体目标 YAML 与选择语义。更稳妥的最小实现是一个明确的顶层 `active_committee_config` 键，但这与用户指定的“注释切换”有所不同，需先确认。
+- 未获确认前不得把 Qwen 的外部端点设为默认、不得放宽执行安全护栏，也不得刷新/下载行情或新闻。
+
+## Blocked Task: Qwen3.8 Flash 单标的 `sz.002840` 结构化失败复现 (2026-09-30)
+
+### Task
+- 用户授权：使用今日已冻结的 `sz.002840` 候选、技术与新闻上下文，向 `qwen3.8-flash` 仅发起一次请求，记录脱敏后的具体解析失败原因；明确不下载、不刷新新闻、不修改候选、不重跑 11 只。
+
+### Changed Files
+- `HANDOFF.md`：记录阻塞状态。
+- 未生成审计产物，未修改模型/provider/yaml、候选、数据、新闻缓存或业务代码。
+
+### Behavior / Logic Changes
+- None.
+
+### Validation
+- 已核验项目解析路径：`parse_ai_response` 会依次拒绝非 JSON、JSON decode、非 object、禁止执行措辞、无效 `review_state`、以及不在 [0,1] 的 confidence（`src/ashare_edge_scout/mkf_ai_review.py:323-346`）。
+- 准备的单次请求只会读取 `mkf-ai-review-20260930_093755/{technical_contexts,news_contexts}.json` 和 `mkf-select-20260930_093606/candidates.json` 中的 `sz.002840`，调用 Aliweek 的 `qwen3.8-flash`，并仅落盘 `response_char_count`、SHA-256、顶层 key/字段类型、禁止词命中和 `ValueError` 文本；不会保存原始模型回复或输入上下文。
+- 用户随后在终端实际运行脚本；首次请求在模型返回前 90 秒读取超时，完整 traceback 为 `AIRequestError: connection_error:TimeoutError`，不是 `ValueError`，没有响应内容可供结构化解析。用户授权冻结公开上下文发送给外部 AI；此前本会话的自动模式拦截仍未绕过。
+- 脚本随后增强为捕获 `AIRequestError` 并落盘 `request_error`；语法与 `git diff --check` 已通过。
+- **已精确复现（用户终端，`--timeout-seconds 180`）**：产物 `output/edge_scout/mkf_ai_reviews/qwen3_8_flash_sz002840_audit_20260930_131159/audit.json`。Qwen3.8 Flash 在 104.261s 返回 4194 字符的完整 JSON（7 个预期顶层字段、7 个委员会角色、`review_state=risk_attention`、`confidence=0.48`），但 `parse_ai_response` 以 `ValueError: AI response contains forbidden execution claim` 拒绝。脱敏命中词：`自动交易`、`真实下单`、`自动交易`。因此今日 Qwen 的 `ai_unavailable` 至少此例根因是模型在文本中复述/生成未被现有 8 字符否定前缀规则识别的执行禁词，**不是** JSON schema、state 或 confidence 不合规。响应内容未落盘，只有长度、SHA-256、字段形状和命中词。
+
+### Risks / Review Notes
+- 现有完整 11 只运行仅报告 `ValueError`；不能据此断言具体是安全护栏、JSON schema、state 或 confidence 问题。
+- 下一步：已按用户要求创建但**尚未执行** `scripts/audit_qwen_flash_contract.py`；运行 `! ./.venv/bin/python scripts/audit_qwen_flash_contract.py` 会固定使用 `sz.002840` 和 09-30 冻结上下文，调用一次 `qwen3.8-flash`，只保存并打印 `audit.json` 脱敏字段（`parse_error`、`response_shape`、`forbidden_execution_matches`、长度/SHA-256），不保存完整输入、新闻或模型全文。不得绕过本会话已拒绝的自动模式限制；由用户终端显式执行后再读取该审计文件。
+
+## Completed Task: Qwen3.8 Flash provider 冒烟验证 (2026-09-30)
+
+### Task
+- 用户询问是否可测试 Qwen3.8 Flash；只验证当前 Aliweek OpenAI-compatible 端点可发现并调用准确模型 ID，不下载数据、不运行选股或 MKF 分层。
+
+### Changed Files
+- `HANDOFF.md`：记录验证结果。
+- 未修改：`yaml/ai_providers.yaml`、任何默认 provider、扫描/新闻/数据/业务代码；工作树原有改动未触碰。
+
+### Behavior / Logic Changes
+- None.
+
+### Validation
+- `./.venv/bin/python scripts/smoke_ai_provider.py --config yaml/ai_providers.yaml --provider aliweek --models-only --timeout-seconds 60`：Aliweek 模型枚举成功（16 个）。
+- 通过共享 provider 客户端仅读取模型 ID，确认准确模型名为 `qwen3.8-flash`。
+- 单次固定只读 JSON 请求：`qwen3.8-flash` 成功响应，2.311s，`json_object=true`；使用现有 `aliweek` 凭据/端点，调用时临时覆盖 model，未写 YAML。
+
+### Risks / Review Notes
+- 仅证明 Aliweek 凭据、网络、模型名和基础 JSON 合约可用；不代表 MKF 委员会结构化响应通过、稳定性/成本/质量合格，更不应据此切换 `local_finance` 默认 provider。
+- 若用户要求质量对照，必须像 DeepSeek 对照一样冻结同一候选、技术上下文和新闻上下文，并避免刷新/下载；先做一次小样本或单只结构化合同验证，以免产生无效全量推理。
+
+## Completed Task: DeepSeek Flash 与 local_finance 同输入分层对照 (2026-09-30)
+
+### Task
+- 用户先手动运行 `deepseek/deepseek-flash` 的今日 MKF AI 分层；随后要求不下载数据，以 `local_finance/Ornith-1.5-35B-A3B-oQ4e-mtp` 对同一批输入重跑并对比。
+
+### Changed Files
+- 新增忽略产物：`output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260930_103616-local-finance-frozen/`（仅 local_finance 对照 CSV 与 summary）。
+- `HANDOFF.md`：记录可比性边界、结果和未解决的失败可观测性问题。
+- 未修改：扫描选择、Parquet 数据、新闻缓存、provider/yaml、业务代码；工作树原有 `yaml/ai_providers.yaml` 修改及未跟踪 `backups/`、`experiments/` 未触碰。
+
+### Behavior / Logic Changes
+- None. 本次没有调用 `mkf.sh`/下载器/新闻抓取；对照脚本只读取 DeepSeek run 已冻结的候选、`technical_contexts.json` 和 `news_contexts.json`，对每只发起一次 local_finance AI 请求。
+
+### Validation
+- DeepSeek 基线：`output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260930_093755/`，源候选 `mkf-select-20260930_093606/`，固定候选 SHA256=`1bedc13a…36249a0`，11 只，`deepseek-flash`：成功 4、`ValueError` 后保守 `ai_unavailable` 7；分层 `standard=1/risk=3/unavailable=7`。
+- local_finance 冻结输入对照：`mkf-ai-review-20260930_103616-local-finance-frozen/`，11 只，成功 10、`ValueError` 1（sh.601666）；分层 `standard=7/risk=3/unavailable=1`。未更新或下载任何行情/新闻。
+- 共同成功仅 3 只：sh.603301 同为 standard（0.62 vs 0.52）；sh.600132、sh.600660 为 DeepSeek risk（0.64/0.61）但 Ornith standard（0.42/0.52）。因此共同成功层级一致率=1/3，样本过小且无 Ornith 自一致 run，不能判定方向性优劣。
+- DeepSeek 的 7 个 unavailable 中，local_finance 给出 4 standard（sh.600458/sh.603899/sh.603906/sh.603916）和 3 risk（sz.000680/sz.002311/sz.002840）；它们是 DeepSeek 覆盖失败后的补充判断，不是模型意见分歧样本。
+- DeepSeek 成功置信度 0.56–0.64（4 值）；Ornith 成功置信度 0.38–0.52（10 值）。置信度量纲未校准，不能跨模型排名或当胜率证据。
+
+### Risks / Review Notes
+- 当前最强结论是**可用性差异**：DeepSeek Flash 在同一请求合约下仅覆盖 4/11，而 local_finance 覆盖 10/11；DeepSeek 失败产物仅汇总为 `ValueError`，未持久化异常明细，无法在不重跑的情况下判定是 JSON schema、执行护栏还是其它解析原因。
+- 不得因为这一次 3 个共同成功样本中的两次 risk→standard 差异切换默认 provider；此类单次分层差异低于既有 Ornith 运行噪声背景，且当日无 DeepSeek 重复 run。
+- 若用户要继续定位 DeepSeek 失败，最小下一步是为一次单只、固定上下文的复现增加**已脱敏**异常分类/响应形状审计；不得刷新新闻、下载数据、修改候选或重复全量 11 只。
+
+## Completed Task: DeepSeek provider 连通性验证 (2026-09-30)
+
+### Task
+- 用户要求测试 `ai_providers.yaml` 中的 `deepseek` provider 是否可正常工作；仅做单次不发布、不交易的连通性与 JSON 响应验证。
+
+### Changed Files
+- `HANDOFF.md`：记录本次验证结果。
+- 未修改：`yaml/ai_providers.yaml`、provider 实现、扫描或交易相关代码；工作树原有 `yaml/ai_providers.yaml` 修改及未跟踪 `backups/`、`experiments/` 未触碰。
+
+### Behavior / Logic Changes
+- None.
+
+### Validation
+- 本地 Mac，命令：`./.venv/bin/python scripts/smoke_ai_provider.py --config yaml/ai_providers.yaml --provider deepseek --chat --timeout-seconds 60`。
+- 成功：`GET /models` 0.213s，枚举 2 个模型且 `deepseek-flash` 在列表中；`POST /chat/completions` 0.837s，返回模型 `deepseek-flash`，响应可解析为 JSON object。
+- 验证脚本为 bounded no-publication smoke；固定提示词明确 `paper_only=true`、`live_orders=false`，未生成任何研究/扫描产物。
+
+### Risks / Review Notes
+- 此结果只证明当前网络、凭据、端点和 `deepseek-flash` 的基础 OpenAI-compatible JSON 链路可用；不代表 MKF 分层质量、稳定性或成本已评估，也不应据此切换顶层默认 provider（仍为 `local_finance`）。
+- 若需比较模型质量，应复用既有冻结产物并遵循 2026-09-28 Qwen 评估的噪声地板与勿重复推理约束。
+
 ## Completed Task: Qwen3.8-27B AI 分层适配评估 + 默认 provider 回切 (2026-09-28 午)
 
 ### Task

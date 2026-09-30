@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 from ashare_edge_scout import mkf_ai_review
-from ashare_edge_scout.mkf_ai_review import load_mkf_ai_config, parse_ai_response, run_mkf_ai_review, validate_mkf_selection_run
+from ashare_edge_scout.mkf_ai_review import load_mkf_ai_config, load_persisted_mkf_review_inputs, parse_ai_response, run_mkf_ai_review, run_mkf_ai_review_replay, validate_mkf_selection_run
 from ashare_edge_scout.mkf_candidate_selector import MkfCandidateRow, _atomic_publish
 
 
@@ -217,6 +217,92 @@ def test_mkf_ai_review_publishes_research_labels_and_source_hash(tmp_path: Path,
     for forbidden in ("futu_bonus", "futu_status", "mhpg", "dxbd", "bullcluster", "powerline"):
         assert forbidden not in context_text
     assert result.run_directory.parent.name == "reviews"
+
+
+def test_mkf_ai_review_replay_uses_persisted_contexts_without_rebuilding(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(mkf_ai_review, "build_mkf_news_context", _fake_news_context)
+    selection_root = tmp_path / "selections"
+    selection_run = _mkf_run(selection_root)
+    baseline = run_mkf_ai_review(
+        selection_root=selection_root,
+        selection_run=selection_run,
+        output_root=tmp_path / "reviews",
+        config_path=_config(tmp_path),
+        data_root=_data(tmp_path),
+        ai_client=FakeClient(),
+        run_id="baseline",
+    )
+    expected_context = json.loads(baseline.technical_contexts_path.read_text())[0]["technical_context"]
+    expected_news = json.loads(baseline.news_contexts_path.read_text())[0]["news_context"]
+    monkeypatch.setattr(mkf_ai_review, "_mkf_technical_context", lambda *_: (_ for _ in ()).throw(AssertionError("must not rebuild technical context")))
+    monkeypatch.setattr(mkf_ai_review, "build_mkf_news_context", lambda *_: (_ for _ in ()).throw(AssertionError("must not refresh news")))
+    client = FakeClient()
+
+    replay = run_mkf_ai_review_replay(
+        replay_input_run=baseline.run_directory,
+        output_root=tmp_path / "replays",
+        config_path=_config(tmp_path),
+        ai_client=client,
+        run_id="replay",
+    )
+
+    summary = json.loads(replay.summary_path.read_text())
+    assert client.context == expected_context
+    assert client.news_context == expected_news
+    assert summary["source_selection_run"] == str(selection_run.resolve())
+    assert summary["replay_provenance"]["input_mode"] == "persisted_review_replay"
+    assert summary["replay_provenance"]["technical_context_rebuilt"] is False
+    assert summary["replay_provenance"]["news_refresh_performed"] is False
+    assert summary["news_context"]["refresh_performed"] is False
+
+
+def test_mkf_ai_review_replay_fails_closed_before_ai_call_on_tampered_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(mkf_ai_review, "build_mkf_news_context", _fake_news_context)
+    selection_root = tmp_path / "selections"
+    baseline = run_mkf_ai_review(
+        selection_root=selection_root,
+        selection_run=_mkf_run(selection_root),
+        output_root=tmp_path / "reviews",
+        config_path=_config(tmp_path),
+        data_root=_data(tmp_path),
+        ai_client=FakeClient(),
+        run_id="baseline",
+    )
+    baseline.technical_contexts_path.write_text("[]\n", encoding="utf-8")
+    client = FakeClient()
+
+    with pytest.raises(ValueError, match="hash"):
+        run_mkf_ai_review_replay(
+            replay_input_run=baseline.run_directory,
+            output_root=tmp_path / "replays",
+            config_path=_config(tmp_path),
+            ai_client=client,
+            run_id="replay",
+        )
+    assert client.calls == []
+
+
+def test_mkf_ai_review_replay_loader_validates_source_identity_sets(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(mkf_ai_review, "build_mkf_news_context", _fake_news_context)
+    selection_root = tmp_path / "selections"
+    baseline = run_mkf_ai_review(
+        selection_root=selection_root,
+        selection_run=_mkf_run(selection_root),
+        output_root=tmp_path / "reviews",
+        config_path=_config(tmp_path),
+        data_root=_data(tmp_path),
+        ai_client=FakeClient(),
+        run_id="baseline",
+    )
+    payload = json.loads(baseline.news_contexts_path.read_text())
+    payload[0]["signal_date"] = "2026-04-10"
+    baseline.news_contexts_path.write_text(json.dumps(payload), encoding="utf-8")
+    manifest = json.loads(baseline.manifest_path.read_text())
+    manifest["files"]["news_contexts.json"]["sha256"] = hashlib.sha256(baseline.news_contexts_path.read_bytes()).hexdigest()
+    baseline.manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="do not exactly match"):
+        load_persisted_mkf_review_inputs(baseline.run_directory)
 
 
 def test_mkf_ai_review_limits_ai_calls_from_yaml_but_keeps_all_rows(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -479,6 +565,66 @@ def test_mkf_business_config_rejects_provider_override(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="must not override"):
         load_mkf_ai_config(config)
+
+
+def test_repository_committee_selector_uses_local_finance_by_default() -> None:
+    root = Path(__file__).parents[1]
+    selector = root / "yaml" / "mkf_ai_committee_selector.yaml"
+
+    loaded = load_mkf_ai_config(selector)
+
+    assert loaded["committee_selector_path"] == str(selector.resolve())
+    assert loaded["committee_selector_sha256"]
+    assert loaded["committee_config_path"] == str((root / "yaml" / "mkf_ai_review.yaml").resolve())
+    assert loaded["ai"]["provider"] == "local_finance"
+    assert loaded["ai"]["providers"]["local_finance"]["model"] == "Ornith-1.5-35B-A3B-oQ4e-mtp"
+
+
+def test_repository_local_provider_retest_committees_are_isolated() -> None:
+    root = Path(__file__).parents[1]
+    default = load_mkf_ai_config(root / "yaml" / "mkf_ai_review.yaml")
+    local_finance = load_mkf_ai_config(root / "yaml" / "mkf_ai_review_local_finance_retest.yaml")
+    local_ornith = load_mkf_ai_config(root / "yaml" / "mkf_ai_review_local_ornith_retest.yaml")
+
+    assert local_finance["ai"]["provider"] == "local_finance"
+    assert local_finance["ai"]["providers"]["local_finance"]["model"] == "Ornith-1.5-35B-A3B-oQ4e-mtp"
+    assert local_ornith["ai"]["provider"] == "local_ornith"
+    assert local_ornith["ai"]["providers"]["local_ornith"]["model"] == "Ornith-1.5-9B-MLX"
+    assert local_finance["prompt"] == default["prompt"]
+    assert local_ornith["prompt"] == default["prompt"]
+    for key in ("news_config", "review"):
+        assert local_finance[key] == default[key]
+        assert local_ornith[key] == default[key]
+
+
+def test_repository_internet_committee_uses_isolated_qwen_flash_provider() -> None:
+    root = Path(__file__).parents[1]
+
+    loaded = load_mkf_ai_config(root / "yaml" / "mkf_ai_review_aliweek_qwen38_flash.yaml")
+
+    assert loaded["ai"]["provider"] == "aliweek"
+    assert loaded["ai"]["providers"]["aliweek"]["model"] == "qwen3.8-flash"
+    assert loaded["ai_config_path"] == str((root / "yaml" / "mkf_ai_providers_aliweek_qwen38_flash.yaml").resolve())
+    assert "自动交易" not in loaded["prompt"]["system"]
+    assert "真实下单" not in loaded["prompt"]["system"]
+    assert "杠杆" not in loaded["prompt"]["system"]
+    assert "资金倍数/借贷放大" in loaded["prompt"]["system"]
+
+
+def test_mkf_ai_committee_selector_fails_closed_for_missing_or_self_target(tmp_path: Path) -> None:
+    selector = tmp_path / "selector.yaml"
+    selector.write_text(
+        "schema_version: ncn_mkf_ai_committee_selector_v1\ncommittee_config: missing.yaml\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="does not exist"):
+        load_mkf_ai_config(selector)
+    selector.write_text(
+        "schema_version: ncn_mkf_ai_committee_selector_v1\ncommittee_config: selector.yaml\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="must not reference itself"):
+        load_mkf_ai_config(selector)
 
 
 def test_mkf_ai_config_rejects_forbidden_context_switches(tmp_path: Path) -> None:

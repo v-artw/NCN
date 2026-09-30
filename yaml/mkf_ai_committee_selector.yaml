@@ -1,0 +1,8 @@
+schema_version: ncn_mkf_ai_committee_selector_v1
+
+# MKF AI 委员会选择器：每次只能保留一条未注释的 committee_config。
+# 默认本地委员会（Doris local_finance / Ornith）。
+committee_config: "mkf_ai_review.yaml"
+
+# 互联网委员会（Aliweek / qwen3.8-flash）。切换时注释上面一行，并取消下面一行注释。
+# committee_config: "mkf_ai_review_aliweek_qwen38_flash.yaml"

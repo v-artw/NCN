@@ -13,7 +13,7 @@ SRC_ROOT = PROJECT_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from ashare_edge_scout.mkf_ai_review import run_mkf_ai_review
+from ashare_edge_scout.mkf_ai_review import run_mkf_ai_review, run_mkf_ai_review_replay
 
 STATE_LABELS = {
     "priority_research": "优先研究",
@@ -26,8 +26,9 @@ STATE_LABELS = {
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="NCN optional MKF AI committee read-only review")
-    parser.add_argument("--selection-root", type=Path, required=True)
+    parser.add_argument("--selection-root", type=Path)
     parser.add_argument("--selection-run", type=Path)
+    parser.add_argument("--replay-input-run", type=Path)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--data-root", type=Path)
@@ -36,6 +37,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if args.top is not None and args.top < 1:
         parser.error("--top must be at least 1")
+    if args.replay_input_run is not None:
+        if args.selection_root is not None or args.selection_run is not None or args.data_root is not None:
+            parser.error("--replay-input-run cannot be combined with --selection-root, --selection-run, or --data-root")
+    elif args.selection_root is None:
+        parser.error("--selection-root is required unless --replay-input-run is used")
     return args
 
 
@@ -53,6 +59,7 @@ def main(argv: list[str] | None = None) -> int:
         detail = detail or {}
         labels = {
             "context": "构建本地蜡烛图/OHLCV上下文",
+            "persisted_context": "读取已发布技术/新闻上下文（不重建、不刷新）",
             "news": "抓取/刷新CNstock兼容新闻上下文",
             "ai": "调用AI委员会研究分层",
             "priority_research": "完成：优先研究",
@@ -93,16 +100,26 @@ def main(argv: list[str] | None = None) -> int:
         print(base, flush=True)
 
     try:
-        result = run_mkf_ai_review(
-            selection_root=args.selection_root,
-            selection_run=args.selection_run,
-            output_root=args.output_root,
-            config_path=args.config,
-            run_id=args.run_id,
-            data_root=args.data_root,
-            max_candidates=args.top,
-            progress=progress,
-        )
+        if args.replay_input_run is not None:
+            result = run_mkf_ai_review_replay(
+                replay_input_run=args.replay_input_run,
+                output_root=args.output_root,
+                config_path=args.config,
+                run_id=args.run_id,
+                max_candidates=args.top,
+                progress=progress,
+            )
+        else:
+            result = run_mkf_ai_review(
+                selection_root=args.selection_root,
+                selection_run=args.selection_run,
+                output_root=args.output_root,
+                config_path=args.config,
+                run_id=args.run_id,
+                data_root=args.data_root,
+                max_candidates=args.top,
+                progress=progress,
+            )
     except Exception as exc:
         print(f"mkf_ai_review_failed: {exc}", file=sys.stderr)
         return 2

@@ -1,0 +1,321 @@
+[
+  {
+    "code": "sh.600660",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sh.600660",
+      "normalized_code": "sh.600660",
+      "em_code": "600660",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sh.600660_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:0",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📈 东方财富] 机构风向标 | 福耀玻璃6006602026年二季度已披露持股减少机构超20家\n[📈 东方财富] 汽车行业今日跌1.25%，主力资金净流入5.49亿元\n[📈 东方财富] 福耀玻璃600660.SH)2026年中报净利润为39.70亿元、较去年同期下降17.37%\n[📈 东方财富] 24股今日获机构买入评级 6股上涨空间超20%\n[📈 东方财富] 5.72亿元资金今日流入汽车股\n[📋 公告] 福耀玻璃:福耀玻璃2026年度第四期超短期融资券发行情况公告\n[📋 公告] 福耀玻璃:福耀玻璃2026年半年度A股权益分派实施公告\n[📋 公告] 福耀玻璃:H股市场公告\n[📋 公告] 福耀玻璃:H股市场公告(派付2026年中期股利)\n[📋 公告] 福耀玻璃:H股市场公告",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  },
+  {
+    "code": "sh.603906",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sh.603906",
+      "normalized_code": "sh.603906",
+      "em_code": "603906",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sh.603906_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:0",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📈 东方财富] 固态电池再度大涨，603906涨停\n[📈 东方财富] 龙蟠科技603906.SH)：2026年中报净利润为4.21亿元\n[📈 东方财富] 1111只股短线走稳 站上五日均线\n[📈 东方财富] 今日1095只个股突破五日均线\n[📈 东方财富] 今日990只个股突破五日均线\n[📋 公告] 龙蟠科技:江苏龙蟠科技集团股份有限公司第五届董事会第十七次会议决议公告\n[📋 公告] 龙蟠科技:江苏龙蟠科技集团股份有限公司关于召开2026年半年度业绩说明会的公告\n[📋 公告] 龙蟠科技:江苏龙蟠科技集团股份有限公司关于控股子公司向其全资子公司增资的公告\n[📋 公告] 龙蟠科技:江苏龙蟠科技集团股份有限公司关于部分全资子公司减少注册资本的公告\n[📋 公告] 龙蟠科技:江苏龙蟠科技集团股份有限公司关于投资建设全球总部及新能源新材料人工智能智慧创新中心暨累计对外投资的公告",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  },
+  {
+    "code": "sz.002311",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sz.002311",
+      "normalized_code": "sz.002311",
+      "em_code": "002311",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sz.002311_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:0",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📈 东方财富] 机构风向标 | 海大集团0023112026年二季度已披露持股减少机构超20家\n[📈 东方财富] 海大集团002311.SZ)2026年中报净利润为16.11亿元、较去年同期下降38.95%\n[📈 东方财富] 2.11亿主力资金净流入，猪肉概念涨1.03%\n[📈 东方财富] 2.24亿元资金今日流出农林牧渔股\n[📈 东方财富] 猪肉概念下跌0.25%，5股主力资金净流出超千万元\n[📋 公告] 海大集团:2026年9月15日投资者关系活动记录表\n[📋 公告] 海大集团:关于参加2026年广东辖区投资者集体接待日暨辖区上市公司半年报业绩说明会活动的公告\n[📋 公告] 海大集团:关于调整2026年中期权益分派参数的公告\n[📋 公告] 海大集团:2026年中期权益分派实施公告\n[📋 公告] 海大集团:关于控股股东部分股份质押的公告",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  },
+  {
+    "code": "sh.601666",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sh.601666",
+      "normalized_code": "sh.601666",
+      "em_code": "601666",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sh.601666_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:0",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📈 东方财富] 平煤股份601666.SH)：2026年中报净利润为3.17亿元、同比较去年同期上涨22.84%\n[📈 东方财富] 煤炭行业资金流入榜：郑州煤电等5股净流入资金超千万元\n[📈 东方财富] 两融余额四连降 杠杆资金大幅减仓47股\n[📈 东方财富] 两融余额三连降 累计缩水456.14亿元\n[📈 东方财富] 5.47亿元主力资金今日抢筹煤炭板块\n[📋 公告] 平煤股份:平煤股份2026年第二次临时股东会法律意见书\n[📋 公告] 平煤股份:平煤股份2026年第二次临时股东会决议公告\n[📋 公告] 平煤股份:平煤股份投资者关系活动记录表(2026年8月26日)\n[📋 公告] 平煤股份:平煤股份2026年第二次临时股东会会议资料\n[📋 公告] 平煤股份:平煤股份关于控股股东实施战略重组的进展公告",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  },
+  {
+    "code": "sh.603301",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sh.603301",
+      "normalized_code": "sh.603301",
+      "em_code": "603301",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sh.603301_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:0",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📈 东方财富] 机构风向标 | 振德医疗6033012026年二季度已披露持仓机构仅3家\n[📈 东方财富] 振德医疗603301.SH)：2026年中报净利润为1.44亿元\n[📈 东方财富] 融资客青睐股名单：融资买入占成交额比例最高超三成\n[📈 东方财富] 融资客看好5股 买入占成交比例超三成\n[📈 东方财富] 融资客看好4股 买入占成交比例超三成\n[📋 公告] 振德医疗:振德医疗关于召开2026年半年度业绩说明会的公告\n[📋 公告] 振德医疗:振德医疗2026年半年度报告摘要\n[📋 公告] 振德医疗:振德医疗2026年半年度报告\n[📋 公告] 振德医疗:振德医疗2025年年度权益分派实施公告\n[📋 公告] 振德医疗:振德医疗2025年度可持续发展报告暨ESG(环境、社会及治理)报告(英文版)",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  },
+  {
+    "code": "sz.002840",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sz.002840",
+      "normalized_code": "sz.002840",
+      "em_code": "002840",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sz.002840_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:3",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📰 Google] 多股发布利好 多股提示风险 - 东方财富\n[📰 Google] 华统股份副总被采取强制措施 中欧基金银华前海开源持股 - 中国经济网\n[📰 Google] A 股猪肉概念盘中回暖，东瑞股份涨停 - 搜狐网\n[📈 东方财富] 突发！002840，副总被采取强制措施！\n[📈 东方财富] 002840 副总经理被采取强制措施！\n[📈 东方财富] 突发！002840，副总经理朱文文被公安局采取强制措施\n[📈 东方财富] 华统股份002840.SZ)2026年中报净利润为-4.76亿元，由盈转亏\n[📈 东方财富] 华统股份：控股子公司签署4.38亿元拆迁补偿协议\n[📋 公告] 华统股份:关于控股子公司签署企业拆迁《补偿协议书》的公告\n[📋 公告] 华统股份:第五届董事会第三十二次会议决议公告\n[📋 公告] 华统股份:关于收到高级管理人员被采取强制措施的公告\n[📋 公告] 华统股份:2026-066关于全资子公司引入新股东并增资暨关联交易的进展公告\n[📋 公告] 华统股份:关于对外担保的进展公告",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  },
+  {
+    "code": "sz.000680",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sz.000680",
+      "normalized_code": "sz.000680",
+      "em_code": "000680",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sz.000680_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:1",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📰 Google] 央行下调PSL利率并扩围六张网建设，基建资金与项目端同步落地 - 搜狐网\n[📈 东方财富] 科创综指ETF鹏华(589680交投活跃，海内外催化不断，网络安全、医药逆市上涨\n[📈 东方财富] 科创综指ETF易方达(589800跟踪指数已处近1年估值低位\n[📈 东方财富] 科创综指增强ETF易方达(588550跟踪指数已处近1年估值低位\n[📈 东方财富] 科创综指增强ETF易方达(588550跟踪指数已处近1年估值低位\n[📈 东方财富] 科创综指ETF易方达(589800跟踪指数上证科创板综合指数上涨2.13%，跟踪指数已处近1年估值低位\n[📋 公告] 山推股份:2026年中期权益分派实施公告\n[📋 公告] 山推股份:000680山推股份投资者关系管理信息20260916\n[📋 公告] 山推股份:关于职工代表董事辞职暨增补职工代表董事的公告\n[📋 公告] 山推股份:北京市环球律师事务所上海分所关于山推工程机械股份有限公司2026年第四次临时股东会的法律意见书\n[📋 公告] 山推股份:山推股份公司2026年第四次临时股东会会议决议公告",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  },
+  {
+    "code": "sh.600458",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sh.600458",
+      "normalized_code": "sh.600458",
+      "em_code": "600458",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sh.600458_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:0",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📈 东方财富] 时代新材600458.SH)2026年中报净利润为3.46亿元、较去年同期上涨14.08%\n[📈 东方财富] 时代新材600458.SH)：2026年中报净利润为3.46亿元、同比较去年同期上涨14.08%\n[📈 东方财富] 4.00亿主力资金净流入，有机硅概念涨1.25%\n[📈 东方财富] 综合行业9月21日资金流向日报\n[📈 东方财富] OLED概念上涨0.41%，16股主力资金净流入超亿元\n[📋 公告] 时代新材:2026年半年度业绩说明会回复问题汇总\n[📋 公告] 时代新材:关于参加2026年湖南辖区上市公司投资者网上集体接待日暨半年度业绩说明会活动的公告\n[📋 公告] 时代新材:2026年第二季度主要经营数据公告\n[📋 公告] 时代新材:2026年度“提质增效重回报”行动方案半年度评估报告\n[📋 公告] 时代新材:2026年半年度报告摘要",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  },
+  {
+    "code": "sh.600132",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sh.600132",
+      "normalized_code": "sh.600132",
+      "em_code": "600132",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sh.600132_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:0",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📈 东方财富] 大乌苏席卷成都，重仓布局四川！重庆啤酒（600132）半年报营收净利为何双双下滑？\n[📈 东方财富] 机构风向标 | 重庆啤酒6001322026年二季度已披露前十大机构累计持仓占比68.51%\n[📈 东方财富] 重庆啤酒600132.SH)2026年中报净利润为7.96亿元、较去年同期下降7.98%\n[📈 东方财富] 大本营承压，重庆啤酒被投资者追问“为何跑不赢燕京U8”\n[📈 东方财富] 8.01亿元主力资金今日抢筹食品饮料板块\n[📋 公告] 重庆啤酒:重庆啤酒股份有限公司关于参加“重庆辖区上市公司2026年投资者网上集体接待日暨半年度业绩说明会活动”的公告\n[📋 公告] 重庆啤酒:重庆啤酒股份有限公司关于召开2026年半年度业绩说明会的公告\n[📋 公告] 重庆啤酒:重庆啤酒股份有限公司2026年半年度报告\n[📋 公告] 重庆啤酒:重庆啤酒股份有限公司2026年半年度报告摘要\n[📋 公告] 重庆啤酒:重庆啤酒股份有限公司第十一届董事会第九次会议决议公告",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  },
+  {
+    "code": "sh.603899",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sh.603899",
+      "normalized_code": "sh.603899",
+      "em_code": "603899",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sh.603899_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:0",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📈 东方财富] 晨光股份603899.SH)：2026年中报净利润为5.86亿元\n[📈 东方财富] 机构风向标 | 晨光股份6038992026年二季度已披露前十大机构累计持仓占比72.32%\n[📈 东方财富] 72股今日获机构买入评级\n[📈 东方财富] 晨光股份：已回购29813.19万元\n[📈 东方财富] 87股今日获机构买入评级 24股上涨空间超20%\n[📋 公告] 晨光股份:2026年9月投资者关系活动记录表(2026年半年度业绩说明会)\n[📋 公告] 晨光股份:2026年8月投资者关系活动记录表\n[📋 公告] 晨光股份:上海晨光文具股份有限公司关于以集中竞价交易方式回购公司股份的进展公告\n[📋 公告] 晨光股份:上海晨光文具股份有限公司2026年半年度报告摘要\n[📋 公告] 晨光股份:上海晨光文具股份有限公司2026年半年度报告",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  },
+  {
+    "code": "sh.603916",
+    "signal_date": "2026-09-29",
+    "news_context": {
+      "code": "sh.603916",
+      "normalized_code": "sh.603916",
+      "em_code": "603916",
+      "date": "2026-09-30",
+      "cache_path": "/Users/artx/Local/Git/Stock/NCN/Message/sh.603916_20260930.json",
+      "cache_status": "refreshed",
+      "source_status": {
+        "google_news_rss": "success:0",
+        "eastmoney_stock_news": "success:5",
+        "eastmoney_announcement": "success:5"
+      },
+      "news_txt": "[📈 东方财富] 苏博特603916.SH)：2026年中报净利润为7401.82万元\n[📈 东方财富] 机构风向标 | 苏博特6039162026年二季度已披露持仓机构仅1家\n[📈 东方财富] 苏博特603916.SH)2026年中报净利润为7401.82万元、较去年同期上涨17.03%\n[📈 东方财富] 今日53只股长线走稳 站上年线\n[📈 东方财富] 今日137只股长线走稳 站上年线\n[📋 公告] 苏博特:关于变更持续督导保荐代表人的公告\n[📋 公告] 苏博特:关于“博22转债”可选择回售结果的公告\n[📋 公告] 苏博特:关于“博22转债”可选择回售的第九次提示性公告\n[📋 公告] 苏博特:关于“博22转债”可选择回售的第八次提示性公告\n[📋 公告] 苏博特:关于“博22转债”可选择回售的第七次提示性公告",
+      "fatal_risks": [],
+      "attn_risks": [],
+      "config": {
+        "NEWS_LIMIT": 5,
+        "NEWS_DAYS": 7,
+        "ENABLE_NEWS_CACHE": true,
+        "NEWS_CACHE_DIR": "./Message",
+        "ENABLE_AUTO_CLEANUP": true,
+        "CACHE_RETENTION_DAYS": 7,
+        "FETCH_ONLINE_BY_DEFAULT": true
+      }
+    }
+  }
+]

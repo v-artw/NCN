@@ -28,6 +28,18 @@ providers:
       chat_template_kwargs:
         enable_thinking: false
 
+  local_ornith:
+    enabled: true
+    name: Doris Local Finance AI
+    base_url: http://ts.dorisw.kdns.fr:18090/v1
+    model: Ornith-1.5-9B-MLX
+    key_file: Key/ts.key
+    api_key_env: EDGE_SCOUT_LOCAL_AI_API_KEY
+    timeout_seconds: 120
+    extra_options:
+      chat_template_kwargs:
+        enable_thinking: false
+
   local_qwen:
     enabled: true
     name: Doris Local Finance AI
@@ -44,7 +56,7 @@ providers:
     enabled: true
     name: DeepSeek
     base_url: https://api.deepseek.com/v1
-    model: deepseek-v4-flash
+    model: deepseek-flash
     key_file: Key/deepseek.key
     timeout_seconds: 120
 

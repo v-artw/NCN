@@ -1,0 +1,189 @@
+{
+  "ai_attempt_count": 11,
+  "ai_client_status": "enabled",
+  "ai_config_path": "/Users/artx/Local/Git/Stock/NCN/yaml/mkf_ai_providers_local_ornith_retest.yaml",
+  "ai_config_sha256": "107831be3df6dea2451758c9ce4505f519b26e7129768a989f32bba49ee95d9d",
+  "ai_error_counts": {
+    "ValueError": 2
+  },
+  "ai_model": "Ornith-1.5-9B-MLX",
+  "ai_provider": "local_ornith",
+  "ai_provider_config_style": "ncn_ai_providers_v1",
+  "ai_provider_schema": "ncn_ai_providers_v1",
+  "ai_response_format": {
+    "type": "json_object"
+  },
+  "ai_seed": 42,
+  "ai_skipped_by_max_candidates": 0,
+  "ai_success_count": 9,
+  "ai_temperature": 0.0,
+  "boundaries": {
+    "broker_connected": false,
+    "futu_fields_used": false,
+    "mkf_selection_modified": false,
+    "news_used_only_for_mkf_ai_layer": true,
+    "orders_submitted": false,
+    "pmkf_kalman_used": false,
+    "production_enabled": false,
+    "prospective_archive_modified": false,
+    "read_only": true,
+    "returns_calculated": false,
+    "smc_admission_modified": false,
+    "smc_ranking_modified": false,
+    "watchlist_modified": false
+  },
+  "candidate_count": 11,
+  "committee": {
+    "enabled": true,
+    "execution": "single_llm_call_structured_committee_prompt",
+    "roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ]
+  },
+  "committee_selector_path": null,
+  "committee_selector_sha256": null,
+  "config_path": "/Users/artx/Local/Git/Stock/NCN/yaml/mkf_ai_review_local_ornith_retest.yaml",
+  "config_sha256": "a18dd039f28e21ddf1537f76c7f350d643d386e337e4188006322b39efa2dc34",
+  "configured_max_candidates": 30,
+  "context_records": [
+    {
+      "code": "sh.600660",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    },
+    {
+      "code": "sh.603906",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    },
+    {
+      "code": "sz.002311",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    },
+    {
+      "code": "sh.601666",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    },
+    {
+      "code": "sh.603301",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    },
+    {
+      "code": "sz.002840",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    },
+    {
+      "code": "sz.000680",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    },
+    {
+      "code": "sh.600458",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    },
+    {
+      "code": "sh.600132",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    },
+    {
+      "code": "sh.603899",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    },
+    {
+      "code": "sh.603916",
+      "signal_date": "2026-09-29",
+      "status": "ok"
+    }
+  ],
+  "decision_boundary": "experimental_mkf_committee_research_priority_not_validated_win_probability",
+  "effective_max_candidates": 30,
+  "limitations": [
+    "single_llm_call_structured_committee_prompt_not_true_multi_agent_consensus",
+    "llm_output_can_be_incorrect_or_non_reproducible",
+    "priority_research_has_not_proven_higher_target_touch_precision",
+    "read_only_research_not_investment_advice",
+    "candlestick_context_uses_local_adjusted_daily_bars_only",
+    "news_context_uses_cnstock_compatible_headlines_and_announcements_only",
+    "news_fetch_dependencies_can_fail_closed_without_invented_news"
+  ],
+  "news_context": {
+    "attention_risk_candidate_count": 0,
+    "cache_schema": "Message/{normalized_code}_{YYYYMMDD}.json with date/news_txt/fatal_risks/attn_risks",
+    "cache_status_counts": {
+      "refreshed": 11
+    },
+    "config_path": "/Users/artx/Local/Git/Stock/NCN/yaml/mkf_news_context.yaml",
+    "config_sha256": "ab0b59e9563609b5477e3b35a8d8782961647b6f007c24ab467121be01ec3fd0",
+    "enabled": true,
+    "fatal_risk_candidate_count": 0,
+    "fetch_online_by_default": true,
+    "news_days": 7,
+    "news_limit": 5,
+    "refresh_performed": false,
+    "source": "cnstock_main_pmkf_scan_deterministic_news_fetcher_compatible",
+    "source_error_counts": {},
+    "storage_dir": "/Users/artx/Local/Git/Stock/NCN/Message",
+    "subjective_news_invention_allowed": false,
+    "used_for": "mkf_ai_research_layer_only",
+    "uses_ai_web_analyzer": false
+  },
+  "prompt_sha256": "23b74ef9e7d53a1cf218f1a9704ae457f1bd34baa216b2af24508204ae98b869",
+  "prompt_source": "business_yaml_prompt.system",
+  "published_at_utc": "2026-09-30T12:36:21.229762+00:00",
+  "replay_provenance": {
+    "identity_validation": {
+      "candidate_count": 11,
+      "news_context_count": 11,
+      "technical_context_count": 11
+    },
+    "input_mode": "persisted_review_replay",
+    "news_refresh_performed": false,
+    "replayed_from_manifest_sha256": "9b78d1b9f3eb062aa0cafeafe2599713a9ff0e3c85d852acf1929a79d720f4e1",
+    "replayed_from_run": "/Users/artx/Local/Git/Stock/NCN/output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260930_162748",
+    "replayed_from_run_id": "mkf-ai-review-20260930_162748",
+    "replayed_news_contexts_sha256": "743f644d32aa6c9ae35c75c1d183627303dc09d4daafb917ee34226537abbf31",
+    "replayed_source_candidates_sha256": "1bedc13a9533435822110f9f87c0d2c839dd4fe78dc001bdb2f564afa36249a0",
+    "replayed_technical_contexts_sha256": "1f0b0b8cfda87612c490871a357cd98d75f24e29e85aae6d8bf6faef42cad50a",
+    "source_input_metadata": {
+      "ai_model": "qwen3.8-flash",
+      "ai_provider": "aliweek",
+      "config_path": "/Users/artx/Local/Git/Stock/NCN/yaml/mkf_ai_review_aliweek_qwen38_flash.yaml",
+      "config_sha256": "44ad61aef1e1ccb55174c10448fb05c0befe22c950c7d64b3a094bf663f415c8",
+      "prompt_sha256": "9072e08cd64ccbb7a79f13638e0bfd1f8a96ee366064f04f88af4d763f4472fb"
+    },
+    "technical_context_rebuilt": false
+  },
+  "review_order": "state_priority_then_confidence_desc_then_local_score_desc_then_code",
+  "run_id": "mkf-ai-review-20260930_162748-local-ornith-network-retest",
+  "schema_version": "ncn_mkf_ai_review_v3",
+  "source_candidates_sha256": "1bedc13a9533435822110f9f87c0d2c839dd4fe78dc001bdb2f564afa36249a0",
+  "source_selection_run": "/Users/artx/Local/Git/Stock/NCN/output/edge_scout/mkf_candidate_selections/mkf-select-20260930_093606",
+  "state_counts": {
+    "ai_unavailable": 2,
+    "insufficient_evidence": 0,
+    "priority_research": 1,
+    "risk_attention": 6,
+    "standard_research": 2
+  },
+  "status": "partial",
+  "technical_context": {
+    "type": "ncn_english_japanese_candlestick_ohlcv",
+    "uses_cnstock_context": false,
+    "uses_futu_fields": false,
+    "uses_pmkf_kalman": false
+  },
+  "timestamped_reviews_csv": "mkf_ai_reviews_20260930_203621.csv"
+}

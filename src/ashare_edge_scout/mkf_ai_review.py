@@ -37,6 +37,7 @@ from .mkf_news_context import NO_NEWS_TEXT, build_mkf_news_context, load_mkf_new
 from .research_nextday_validation import candlestick_masks
 
 SCHEMA_VERSION = "ncn_mkf_ai_review_v3"
+COMMITTEE_SELECTOR_SCHEMA_VERSION = "ncn_mkf_ai_committee_selector_v1"
 DEFAULT_MAX_CANDIDATES = 20
 VALID_REVIEW_STATES = {"priority_research", "standard_research", "risk_attention", "insufficient_evidence", "ai_unavailable"}
 FORBIDDEN_EXECUTION_LABELS = {
@@ -145,6 +146,17 @@ class MkfAIReviewResult:
     manifest_path: Path
     priority_research_count: int
     risk_attention_count: int
+
+
+@dataclass(frozen=True)
+class PersistedMkfReviewInputs:
+    source_run: Path
+    source_selection_run: Path
+    candidates: list[dict[str, Any]]
+    candidates_sha256: str
+    technical_contexts: dict[tuple[str, str], dict[str, Any]]
+    news_contexts: dict[tuple[str, str], dict[str, Any]]
+    provenance: dict[str, Any]
 
 
 CSV_FIELDNAMES = (
@@ -347,14 +359,36 @@ def parse_ai_response(content: Any) -> dict[str, Any]:
     return parsed
 
 
+def _resolve_mkf_ai_config_path(path: Path) -> tuple[Path, Path | None]:
+    config_path = path.expanduser().resolve()
+    payload = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, Mapping):
+        raise ValueError("MKF AI config must be a mapping")
+    if payload.get("schema_version") != COMMITTEE_SELECTOR_SCHEMA_VERSION:
+        return config_path, None
+    value = str(payload.get("committee_config") or "").strip()
+    if not value:
+        raise ValueError("MKF AI committee selector requires committee_config")
+    selected = Path(value).expanduser()
+    if not selected.is_absolute():
+        selected = config_path.parent / selected
+    selected = selected.resolve()
+    if selected == config_path:
+        raise ValueError("MKF AI committee selector must not reference itself")
+    if not selected.is_file():
+        raise ValueError(f"MKF AI committee config does not exist: {selected}")
+    return selected, config_path
+
+
 def load_mkf_ai_config(path: Path) -> dict[str, Any]:
-    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    config_path, selector_path = _resolve_mkf_ai_config_path(path)
+    payload = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("MKF AI config must be a mapping")
-    forbid_business_ai_overrides(payload, source=path)
-    project_root = path.resolve().parents[1]
+    forbid_business_ai_overrides(payload, source=config_path)
+    project_root = config_path.parents[1]
     ai_config_path = resolve_ai_config_path(
-        payload.get("ai_config"), business_config_path=path
+        payload.get("ai_config"), business_config_path=config_path
     )
     provider_config = load_ai_provider_config(
         ai_config_path, project_root=project_root
@@ -383,6 +417,11 @@ def load_mkf_ai_config(path: Path) -> dict[str, Any]:
     news_config = load_mkf_news_config(news_config_path, project_root=project_root)
     payload["news_config_path"] = str(news_config_path)
     payload["news_config"] = news_config
+    payload["committee_config_path"] = str(config_path)
+    payload["committee_config_sha256"] = _sha256(config_path)
+    if selector_path is not None:
+        payload["committee_selector_path"] = str(selector_path)
+        payload["committee_selector_sha256"] = _sha256(selector_path)
     return payload
 
 
@@ -443,6 +482,104 @@ def validate_mkf_selection_run(run: Path) -> tuple[list[dict[str, Any]], str]:
     if not isinstance(candidates, list) or any(not isinstance(row, dict) for row in candidates):
         raise ValueError("MKF candidates.json must be a list of objects")
     return candidates, actual
+
+
+def _persisted_context_map(
+    records: Any,
+    *,
+    field: str,
+    expected_keys: set[tuple[str, str]],
+) -> dict[tuple[str, str], dict[str, Any]]:
+    if not isinstance(records, list):
+        raise ValueError(f"persisted {field} records must be a list")
+    mapped: dict[tuple[str, str], dict[str, Any]] = {}
+    for record in records:
+        if not isinstance(record, Mapping):
+            raise ValueError(f"persisted {field} record must be an object")
+        code = str(record.get("code") or "").strip()
+        signal_date = str(record.get("signal_date") or "").strip()
+        value = record.get(field)
+        key = (code, signal_date)
+        if not code or not signal_date or not isinstance(value, dict):
+            raise ValueError(f"persisted {field} record is invalid")
+        if key in mapped:
+            raise ValueError(f"persisted {field} records contain duplicate candidate identity: {code} {signal_date}")
+        if str(value.get("code") or code).strip() != code:
+            raise ValueError(f"persisted {field} record code does not match candidate identity: {code} {signal_date}")
+        mapped[key] = value
+    if set(mapped) != expected_keys:
+        raise ValueError(f"persisted {field} records do not exactly match source candidates")
+    return mapped
+
+
+def load_persisted_mkf_review_inputs(review_run: Path) -> PersistedMkfReviewInputs:
+    source_run = review_run.expanduser().resolve()
+    manifest_path = source_run / "manifest.json"
+    summary_path = source_run / "summary.json"
+    if not manifest_path.is_file() or not summary_path.is_file():
+        raise ValueError("persisted MKF review run is missing manifest.json or summary.json")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    if manifest.get("schema_version") != SCHEMA_VERSION or summary.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError("persisted review run is not an MKF AI review")
+    files = manifest.get("files")
+    if not isinstance(files, Mapping):
+        raise ValueError("persisted review manifest files must be a mapping")
+    required_files = ("reviews.json", "summary.json", "technical_contexts.json", "news_contexts.json")
+    for name, entry in files.items():
+        if not isinstance(entry, Mapping) or not isinstance(entry.get("sha256"), str):
+            raise ValueError(f"persisted review manifest entry is invalid: {name}")
+        path = source_run / str(name)
+        if not path.is_file() or _sha256(path) != entry["sha256"]:
+            raise ValueError(f"persisted review file hash does not match manifest: {name}")
+    if any(name not in files for name in required_files):
+        raise ValueError("persisted review manifest is missing required files")
+    candidates_sha = str(manifest.get("source_candidates_sha256") or "")
+    if not candidates_sha or summary.get("source_candidates_sha256") != candidates_sha:
+        raise ValueError("persisted review source candidate hashes do not match")
+    selection_value = summary.get("source_selection_run")
+    if not isinstance(selection_value, str) or not selection_value.strip():
+        raise ValueError("persisted review summary is missing source selection run")
+    source_selection_run = Path(selection_value).expanduser().resolve()
+    candidates, actual_candidates_sha = validate_mkf_selection_run(source_selection_run)
+    if actual_candidates_sha != candidates_sha:
+        raise ValueError("persisted review source candidates hash does not match current selection run")
+    candidate_keys: set[tuple[str, str]] = set()
+    for candidate in candidates:
+        key = (str(candidate.get("code") or "").strip(), str(candidate.get("signal_date") or "").strip())
+        if not all(key) or key in candidate_keys:
+            raise ValueError("persisted review source candidates contain invalid or duplicate identities")
+        candidate_keys.add(key)
+    technical_records = json.loads((source_run / "technical_contexts.json").read_text(encoding="utf-8"))
+    news_records = json.loads((source_run / "news_contexts.json").read_text(encoding="utf-8"))
+    technical_contexts = _persisted_context_map(technical_records, field="technical_context", expected_keys=candidate_keys)
+    news_contexts = _persisted_context_map(news_records, field="news_context", expected_keys=candidate_keys)
+    return PersistedMkfReviewInputs(
+        source_run=source_run,
+        source_selection_run=source_selection_run,
+        candidates=candidates,
+        candidates_sha256=candidates_sha,
+        technical_contexts=technical_contexts,
+        news_contexts=news_contexts,
+        provenance={
+            "input_mode": "persisted_review_replay",
+            "replayed_from_run": str(source_run),
+            "replayed_from_run_id": manifest.get("run_id"),
+            "replayed_from_manifest_sha256": _sha256(manifest_path),
+            "replayed_technical_contexts_sha256": files["technical_contexts.json"]["sha256"],
+            "replayed_news_contexts_sha256": files["news_contexts.json"]["sha256"],
+            "replayed_source_candidates_sha256": candidates_sha,
+            "identity_validation": {
+                "candidate_count": len(candidates),
+                "technical_context_count": len(technical_contexts),
+                "news_context_count": len(news_contexts),
+            },
+            "source_input_metadata": {
+                key: summary.get(key)
+                for key in ("ai_provider", "ai_model", "config_path", "config_sha256", "prompt_sha256")
+            },
+        },
+    )
 
 
 def _safe_float(value: Any, default: float = 0.0) -> float:
@@ -768,7 +905,7 @@ def _row_from_ai(candidate: Mapping[str, Any], context: Mapping[str, Any], news_
 
 def run_mkf_ai_review(
     *,
-    selection_root: Path,
+    selection_root: Path | None,
     output_root: Path,
     config_path: Path,
     selection_run: Path | None = None,
@@ -777,10 +914,18 @@ def run_mkf_ai_review(
     max_candidates: int | None = None,
     ai_client: Any | None = None,
     progress: Callable[..., None] | None = None,
+    persisted_inputs: PersistedMkfReviewInputs | None = None,
 ) -> MkfAIReviewResult:
     config = load_mkf_ai_config(config_path)
-    source_run = resolve_mkf_selection_run(selection_root, selection_run)
-    candidates, candidates_sha = validate_mkf_selection_run(source_run)
+    if persisted_inputs is None:
+        if selection_root is None:
+            raise ValueError("selection_root is required unless replaying persisted inputs")
+        source_run = resolve_mkf_selection_run(selection_root, selection_run)
+        candidates, candidates_sha = validate_mkf_selection_run(source_run)
+    else:
+        source_run = persisted_inputs.source_selection_run
+        candidates = persisted_inputs.candidates
+        candidates_sha = persisted_inputs.candidates_sha256
     review_config = config.get("review") if isinstance(config.get("review"), Mapping) else {}
     yaml_max_candidates = _normalize_max_candidates(review_config)
     max_candidates = yaml_max_candidates if max_candidates is None else max_candidates
@@ -803,14 +948,24 @@ def run_mkf_ai_review(
             "mkf_near": candidate.get("mkf_near"),
             "turn_pct": candidate.get("turn_pct"),
         }
-        if progress is not None:
-            progress(index, len(candidates), code, "context", detail)
-        context = _mkf_technical_context(candidate, data_root, config)
-        contexts.append({"code": code, "signal_date": candidate.get("signal_date"), "technical_context": context})
+        key = (code, str(candidate.get("signal_date") or ""))
+        if persisted_inputs is None:
+            if progress is not None:
+                progress(index, len(candidates), code, "context", detail)
+            context = _mkf_technical_context(candidate, data_root, config)
+            contexts.append({"code": code, "signal_date": candidate.get("signal_date"), "technical_context": context})
+            news = build_mkf_news_context(code, news_config)
+            news_record = {"code": code, "signal_date": candidate.get("signal_date"), "news_context": news.to_dict()}
+            news_contexts.append(news_record)
+        else:
+            context = persisted_inputs.technical_contexts[key]
+            news_context = persisted_inputs.news_contexts[key]
+            contexts.append({"code": code, "signal_date": candidate.get("signal_date"), "technical_context": context})
+            news_record = {"code": code, "signal_date": candidate.get("signal_date"), "news_context": news_context}
+            news_contexts.append(news_record)
+            if progress is not None:
+                progress(index, len(candidates), code, "persisted_context", detail)
         context_status, patterns, candle_score = _context_summary_fields(context)
-        news = build_mkf_news_context(code, news_config)
-        news_record = {"code": code, "signal_date": candidate.get("signal_date"), "news_context": news.to_dict()}
-        news_contexts.append(news_record)
         news_context = news_record["news_context"]
         news_status, news_cache_status, fatal_news, attention_news = _news_summary_fields(news_context)
         detail = {
@@ -824,7 +979,7 @@ def run_mkf_ai_review(
             "attention_news_risk_count": len(attention_news),
         }
         if progress is not None:
-            progress(index, len(candidates), code, "news", detail)
+            progress(index, len(candidates), code, "persisted_context" if persisted_inputs is not None else "news", detail)
         if client is None or index > max_candidates:
             row = _fallback_row(candidate, context, news_context, state="ai_unavailable")
         else:
@@ -900,8 +1055,10 @@ def run_mkf_ai_review(
             "published_at_utc": _utc_now(),
             "source_selection_run": str(source_run),
             "source_candidates_sha256": candidates_sha,
-            "config_path": str(config_path),
-            "config_sha256": _sha256(config_path),
+            "config_path": str(config.get("committee_config_path") or config_path),
+            "config_sha256": str(config.get("committee_config_sha256") or _sha256(config_path)),
+            "committee_selector_path": config.get("committee_selector_path"),
+            "committee_selector_sha256": config.get("committee_selector_sha256"),
             "ai_config_path": str(config.get("ai_config_path") or config_path),
             "ai_config_sha256": config.get("ai_config_sha256"),
             "prompt_source": str(prompt_config.get("source") or "module_default_prompt.system"),
@@ -938,6 +1095,7 @@ def run_mkf_ai_review(
             },
             "news_context": {
                 "enabled": bool(news_config.get("ENABLED", True)),
+                "refresh_performed": persisted_inputs is None,
                 "source": "cnstock_main_pmkf_scan_deterministic_news_fetcher_compatible",
                 "config_path": str(news_config_path),
                 "config_sha256": _sha256(news_config_path) if news_config_path.is_file() else None,
@@ -979,6 +1137,12 @@ def run_mkf_ai_review(
                 "news_fetch_dependencies_can_fail_closed_without_invented_news",
             ],
         }
+        if persisted_inputs is not None:
+            summary["replay_provenance"] = {
+                **persisted_inputs.provenance,
+                "technical_context_rebuilt": False,
+                "news_refresh_performed": False,
+            }
         summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
         files = {
             name: {"sha256": _sha256(temporary / name)}
@@ -1006,4 +1170,27 @@ def run_mkf_ai_review(
         manifest_path=destination / "manifest.json",
         priority_research_count=sum(row.review_state == "priority_research" for row in rows),
         risk_attention_count=sum(row.review_state == "risk_attention" for row in rows),
+    )
+
+
+def run_mkf_ai_review_replay(
+    *,
+    replay_input_run: Path,
+    output_root: Path,
+    config_path: Path,
+    run_id: str | None = None,
+    max_candidates: int | None = None,
+    ai_client: Any | None = None,
+    progress: Callable[..., None] | None = None,
+) -> MkfAIReviewResult:
+    persisted_inputs = load_persisted_mkf_review_inputs(replay_input_run)
+    return run_mkf_ai_review(
+        selection_root=None,
+        output_root=output_root,
+        config_path=config_path,
+        run_id=run_id,
+        max_candidates=max_candidates,
+        ai_client=ai_client,
+        progress=progress,
+        persisted_inputs=persisted_inputs,
     )

@@ -1,0 +1,1126 @@
+[
+  {
+    "code": "sh.603899",
+    "signal_date": "2026-09-29",
+    "review_state": "standard_research",
+    "confidence": 0.52,
+    "research_summary": "晨光股份(603899)在信号日2026-09-29触发MKF红蓝线向上穿越数值阈值20，且mkf_red_blue_cross_up_20_under_80成立（阈值80以内），post_cross_lag=0为即时确认。技术层面：收盘位于当日区间高位(close_location=0.755)、无长上影、出现bullish_reversal形态(harami/doji/dragonfly_doji组合)，candle_confirm_score=7.0，形态确认偏正面。但量能确认不足(volume_ratio_20d=0.65、candle_volume_confirm=false)，且当日实体极小(body_pct=0.0204)，本质是一根带长下影的十字星，方向动能尚未真正释放。基本面有支撑：2026中报净利润5.86亿元、前十大机构持仓占比72.32%、已回购2.98亿元，机构关注度较高。消息面为中性偏正面，无fatal_risks/attn_risks。综合判断：MKF信号成立且技术形态可解释，但量能弱、实体小、短周期催化不足，不符合priority_research的强确认标准，降为standard_research，建议人工复核确认后再决策。",
+    "technical_observations": [
+      "MKF红蓝线向上穿越数值阈值20，mkf_red_cross_up_20与mkf_blue_cross_up_20同时成立，post_cross_lag=0为即时信号",
+      "mkf_red_blue_cross_up_20_under_80成立，阈值80以内，处于信号活跃区",
+      "信号日收盘21.87位于当日区间高位(close_location=0.755)，无长上影(candle_long_upper_shadow_risk=false)",
+      "出现candle_bullish_harami、candle_doji、candle_dragonfly_doji组合，candle_position_zone=low，candle_confirm_score=7.0，形态偏反转确认",
+      "量能确认不足：volume_ratio_20d=0.65、candle_volume_confirm=false，当日实体仅body_pct=0.0204，动能未真正释放",
+      "close_vs_20d_high_pct=-8.42、close_vs_20d_low_pct=1.72，价格处于20日区间偏下位置，反弹空间存在但近端压力未突破",
+      "5日/10日收益分别为+0.55%、-1.44%，近期走势偏弱，趋势尚未明朗"
+    ],
+    "risk_flags": [
+      "量能确认缺失(volume_ratio_20d=0.65)，信号缺乏成交配合，存在假突破风险",
+      "信号日实体极小(body_pct=0.0204)，本质为十字星，方向动能未确认",
+      "价格仍处20日区间下沿(close_vs_20d_low_pct仅1.72)，近端压力位未突破",
+      "近期10日收益为负(-1.44%)，短周期趋势偏弱，反转持续性待验证",
+      "新闻来源为东方财富公告与资讯，无致命风险但亦无强催化，时效匹配信号日但催化强度有限"
+    ],
+    "local_score": 7.8,
+    "model": "Ornith-1.5-35B-A3B-oQ4e-mtp",
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": {
+      "technical_analyst": {
+        "stance": "neutral_bullish",
+        "notes": [
+          "MKF红蓝线向上穿越数值阈值20且mkf_red_blue_cross_up_20_under_80成立，信号结构完整",
+          "收盘高位、无长上影、反转形态确认，但量能不足且实体极小，动能未释放",
+          "价格处20日区间下沿，近端压力未突破，需后续放量确认"
+        ]
+      },
+      "sentiment_analyst": {
+        "stance": "neutral",
+        "notes": [
+          "机构风向标显示前十大机构持仓占比72.32%，市场关注度较高",
+          "72/87股获机构买入评级中该股未单独突出，无强烈情绪催化",
+          "整体舆情中性，无负面舆情或恐慌信号"
+        ]
+      },
+      "fundamental_analyst": {
+        "stance": "bullish",
+        "notes": [
+          "2026年中报净利润5.86亿元，基本面稳健",
+          "已回购2.98亿元，显示管理层对价值的认可",
+          "机构持仓占比高(72.32%)，长线资金锁定度高"
+        ]
+      },
+      "bullish_researcher": {
+        "stance": "buy_watch",
+        "notes": [
+          "基本面与机构持仓构成中期支撑，中报盈利为正",
+          "反转K线形态+MKF信号共振，具备短周期反弹潜力",
+          "建议等待放量确认后再介入，参考支撑位21.50、压力位22.57"
+        ]
+      },
+      "bearish_researcher": {
+        "stance": "cautious",
+        "notes": [
+          "量能确认缺失，信号缺乏成交配合，假突破概率不可忽略",
+          "当日十字星实体极小，方向动能未释放，可能仅为震荡中的技术扰动",
+          "价格仍处20日区间下沿，近端压力未突破，上行空间受限"
+        ]
+      },
+      "chief_strategist": {
+        "stance": "standard_research_confirm_pending",
+        "notes": [
+          "信号成立但确认强度不足，不符合priority_research的强量价共振标准",
+          "建议人工复核：等待次日放量收阳确认，或回踩21.50不破再介入",
+          "参考失效位：若跌破21.50且量能持续萎缩，信号失效"
+        ]
+      },
+      "risk_manager": {
+        "stance": "monitor",
+        "notes": [
+          "无fatal_risks与attn_risks，风险事件层面干净",
+          "主要风险为量能不足导致的信号弱化，需盯盘确认",
+          "建议人工设定参考止盈22.57、参考止损21.40，失效位21.50"
+        ]
+      }
+    },
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [
+      "candle_bullish_harami",
+      "candle_doji",
+      "candle_dragonfly_doji"
+    ],
+    "candle_confirm_score": 7.0,
+    "committee_disagreement_flags": [
+      "technical_analyst与bearish_researcher对量能确认缺失的权重存在分歧：技术面认为形态确认可部分补偿，空头方认为量能缺失是致命弱点",
+      "fundamental_analyst与chief_strategist对基本面支撑能否提升优先级存在分歧：基本面认为机构持仓+回购构成中期支撑，战略层认为不足以突破short周期催化不足的降级门槛"
+    ],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  },
+  {
+    "code": "sh.603301",
+    "signal_date": "2026-09-29",
+    "review_state": "standard_research",
+    "confidence": 0.52,
+    "research_summary": "sh.603301（振德医疗）于2026-09-29触发MKF红蓝线向上穿越数值阈值20（mkf_red_cross_up_20、mkf_blue_cross_up_20、mkf_red_blue_cross_up_20_under_80均成立，post_lag=0），为强信号窗口。技术层面：9-29收出放量阳线（volume_ratio_20d=1.14、bullish_body=true、close_location=0.85、无长上影、candle_confirm_score=9.0、candle_bullish_reversal=true），处于low位置且为底部反转形态，量价配合健康，短周期（1-10交易日）技术复核价值明确。但需注意：近10日收益-7.26%、近5日-5.60%，股价仍处20日区间偏下（close_vs_20d_high_pct=-10.66%），反弹尚处初期；mkf_inter=16.90、mkf_near=21.99、mkf_momentum=32.59，动能与空间尚未充分展开。消息面：news_txt为2026半年报相关公告（净利润1.44亿元、半年度报告、权益分派、业绩说明会），无重大利好催化也无致命风险，属中性偏常规披露，无法提供额外短周期催化。机构持仓仅3家、融资客名单未点名该股，基本面与资金面证据偏弱。综合判定：MKF信号成立、技术证据可解释，但催化与基本面确认不足，降为standard_research，建议人工复核观察而非priority。",
+    "technical_observations": [
+      "2026-09-29触发MKF红蓝线向上穿越数值阈值20（mkf_red_cross_up_20、mkf_blue_cross_up_20、mkf_red_blue_cross_up_20_under_80同时成立，post_lag=0，为信号当日即时确认窗口）",
+      "9-29收出放量实体阳线：open 74.07 → close 75.80，bullish_body=true，body_pct_of_range=0.53，close_location=0.85，无长上影（upper_shadow_pct=0.15），candle_confirm_score=9.0，判定为low位置底部反转形态",
+      "量能确认：volume_ratio_20d=1.14、volume_ratio_5d=0.89，9-29成交额1.24亿，较前几日温和放大，量价配合健康",
+      "但近10日收益-7.26%、近5日-5.60%，股价仍处20日区间偏下（close_vs_20d_high_pct=-10.66%、close_vs_20d_low_pct=3.79%），反弹尚处初期",
+      "MKF指标数值：mkf_inter=16.90、mkf_near=21.99、mkf_momentum=32.59，动能与空间尚未充分展开，需观察后续是否延续穿越",
+      "9-21至9-24连续阴线杀跌（close从82.98→78.48），9-28再破至74.81低点后9-29企稳反弹，结构上为急跌后的技术性修复"
+    ],
+    "risk_flags": [
+      "近10日-7.26%、近5日-5.60%，股价仍处20日区间偏下，反弹初期，上方套牢盘压力需观察",
+      "mkf_inter=16.90、mkf_momentum=32.59，动能尚未充分展开，若后续MKF指标回落至阈值下方，信号可能失效",
+      "机构持仓仅3家，流动性与机构关注度偏低，短期资金承接力存疑",
+      "news_txt为常规半年报公告，无重大利好催化，无法提供额外短周期驱动",
+      "融资客名单未点名该股，资金面证据不足",
+      "基本面（净利润1.44亿）为常规披露，未构成强催化，需人工确认业绩增速与预期差"
+    ],
+    "local_score": 7.6,
+    "model": "Ornith-1.5-35B-A3B-oQ4e-mtp",
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": {
+      "technical_analyst": {
+        "stance": "bullish_with_caution",
+        "notes": [
+          "9-29触发MKF红蓝线向上穿越数值阈值20，信号当日即时确认，post_lag=0为最佳窗口",
+          "K线形态健康：放量阳线、底部反转、无长上影、量价配合，candle_confirm_score=9.0",
+          "但近端收益为负、股价处20日区间偏下，反弹尚处初期，动能指标未充分展开，需后续确认"
+        ]
+      },
+      "sentiment_analyst": {
+        "stance": "neutral",
+        "notes": [
+          "news_txt为半年报、权益分派、业绩说明会等常规公告，无重大利好或利空",
+          "融资客名单未点名该股，市场情绪无明确催化",
+          "attn_risks与fatal_risks均为空，无舆情风险"
+        ]
+      },
+      "fundamental_analyst": {
+        "stance": "neutral_to_weak",
+        "notes": [
+          "2026年中报净利润1.44亿元，为常规披露，未提供同比/环比增速，无法判断业绩弹性",
+          "机构持仓仅3家，基本面关注度偏低",
+          "无诉讼、无业绩暴雷、无行业负面，但也无强催化"
+        ]
+      },
+      "bullish_researcher": {
+        "stance": "buy_on_confirmation",
+        "notes": [
+          "MKF强信号+底部放量反转K线，短周期技术价值明确",
+          "参考支撑位：73.03（9-29当日低点）；参考压力位：78.48（9-24收盘）及80.30（9-21收盘）",
+          "参考止盈区间：78.5-81.0（前密集成交区）；参考止损位：73.0下方（跌破9-29低点则信号失效）",
+          "确认条件：后续MKF指标延续上行、量能维持或放大、收盘站稳76上方"
+        ]
+      },
+      "bearish_researcher": {
+        "stance": "wait_for_confirmation",
+        "notes": [
+          "近10日-7.26%、近5日-5.60%，下跌趋势未完全扭转，反弹可能仅为技术性修复",
+          "股价处20日区间偏下，上方78-82套牢盘压力明显",
+          "mkf_inter=16.90动能偏弱，若回落至阈值下方，信号可能失效",
+          "机构持仓少、资金面弱，缺乏持续上涨的承接基础"
+        ]
+      },
+      "chief_strategist": {
+        "stance": "standard_research_observe",
+        "notes": [
+          "技术信号成立但催化与基本面确认不足，降为standard_research",
+          "建议人工复核观察，等待MKF指标延续+量能确认后再评估升级priority",
+          "短周期（1-10交易日）可关注反弹修复，但需严守73.0止损失效位"
+        ]
+      },
+      "risk_manager": {
+        "stance": "moderate_risk",
+        "notes": [
+          "技术信号可复核，但动能偏弱、下跌趋势未完全扭转，风险事件偏中性",
+          "无致命风险、无预警风险，但消息面催化不足",
+          "建议仓位控制，作为观察仓而非重仓介入，止损位73.0下方"
+        ]
+      }
+    },
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [],
+    "candle_confirm_score": 9.0,
+    "committee_disagreement_flags": [
+      "bullish_researcher倾向买入观察而bearish_researcher倾向等待确认，反映反弹持续性存在分歧",
+      "技术面（强信号+健康K线）与动能/趋势面（近端下跌、mkf_inter偏弱）存在方向性张力，需人工权衡"
+    ],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  },
+  {
+    "code": "sh.603906",
+    "signal_date": "2026-09-29",
+    "review_state": "standard_research",
+    "confidence": 0.52,
+    "research_summary": "技术层面：sh.603906（龙蟠科技）于2026-09-29触发MKF红蓝线向上穿越数值阈值20（mkf_red_cross_up_20、mkf_blue_cross_up_20、mkf_red_blue_cross_up_20_under_80均成立），post_cross_lag=0，为信号当日即时确认。mkf_inter=15.04、mkf_near=20.96、mkf_momentum=40.0，动能中性偏多但尚未进入强势区。消息面：固态电池题材催化（涨停）、2026年中报净利润4.21亿元、董事会决议及新能源新材料/AI创新中心投资公告，题材与基本面均有正面支撑。风险面：K线形态显示长上影线（upper_shadow_pct=0.593）、收盘位于当日区间偏下（close_location=0.407）、bullish_body虽为真但实体占比仅0.4071，属弱实体突破；近5日/10日收益为负（-5.05%/-2.97%），且close_vs_20d_high_pct=-14.31%显示距20日高点仍有明显距离。综合判定：MKF信号成立、技术证据可解释、消息面与基本面证据可得且时效匹配（news_date=2026-09-30，与signal_date=2026-09-29相邻），但K线形态偏弱、量能确认一般（volume_ratio_20d=1.30）、短周期动能未强化，故降为standard_research，建议人工复核观察确认。",
+    "technical_observations": [
+      "MKF红蓝线向上穿越数值阈值20于2026-09-29当日确认（post_cross_lag=0），mkf_red_cross_up_20、mkf_blue_cross_up_20、mkf_red_blue_cross_up_20_under_80三者同时成立，信号即时有效。",
+      "mkf_inter=15.04、mkf_near=20.96，指标处于阈值20附近但未进入强势区（未达80），动能确认不足。",
+      "mkf_momentum=40.0，动能中性偏多，尚未形成加速上行确认。",
+      "2026-09-29当日K线为实体阳线但实体占比仅0.4071，属弱实体突破，上影线占比0.593偏高，显示上方抛压存在。",
+      "收盘位于当日区间0.407位置（偏下），close_location偏低，突破力度存疑。",
+      "volume_ratio_20d=1.30、volume_ratio_5d=1.65，量能温和放大但非显著放量，量能确认一般。",
+      "近5日收益-5.05%、近10日收益-2.97%，短期趋势仍偏弱；close_vs_20d_high_pct=-14.31%显示距20日高点有约14%空间。",
+      "candle_confirm_score=4.0、candle_confirm_reason=low+healthy_volume，K线确认评分偏低，仅属低位置健康量能级别。"
+    ],
+    "risk_flags": [
+      "K线上影线占比0.593偏高，突破当日上方存在明显抛压，追高回落风险需警惕。",
+      "弱实体突破（body_pct_of_range=0.4071）叠加收盘偏下，突破有效性需次日放量确认。",
+      "短期趋势偏弱（近5日-5.05%），与涨停消息形成背离，需防消息兑现后获利回吐。",
+      "mkf_momentum=40.0未进入强势区，动能未有效强化，若次日量能萎缩易形成假突破。",
+      "距20日高点仍有-14.31%空间，上方套牢盘压力区间需关注。",
+      "固态电池题材为情绪驱动型催化，波动大、持续性存疑，需防题材退潮。"
+    ],
+    "local_score": 6.0,
+    "model": "Ornith-1.5-35B-A3B-oQ4e-mtp",
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": {
+      "technical_analyst": {
+        "stance": "中性偏多，需确认",
+        "notes": [
+          "MKF红蓝线向上穿越数值阈值20于信号当日即时确认，技术信号本身成立。",
+          "但K线为弱实体长上影线，收盘偏下，突破力度不足，需次日放量阳线确认。",
+          "动能指标未进入强势区，短期趋势偏弱，技术空间有限。"
+        ]
+      },
+      "sentiment_analyst": {
+        "stance": "正面但需防情绪透支",
+        "notes": [
+          "固态电池题材涨停催化，市场关注度提升，情绪面短期偏暖。",
+          "题材为情绪驱动型，持续性存疑，需防消息兑现后情绪退潮。",
+          "近5日下跌与涨停形成背离，情绪与价格存在分歧。"
+        ]
+      },
+      "fundamental_analyst": {
+        "stance": "基本面中性偏正面",
+        "notes": [
+          "2026年中报净利润4.21亿元，业绩有正面支撑。",
+          "董事会决议及全球总部/新能源新材料/AI创新中心投资公告显示公司战略向新能源新材料方向布局。",
+          "控股子公司增资、全资子公司减资等公告属常规资本运作，无重大负面。"
+        ]
+      },
+      "bullish_researcher": {
+        "stance": "建议观察确认后再介入",
+        "notes": [
+          "MKF信号成立+题材催化+业绩支撑，三重正面因素具备研究价值。",
+          "若次日放量站稳并收复上影线区域，可视为突破有效。",
+          "参考关注区间：突破确认后回踩不破16.85（信号日低点）为健康结构。"
+        ]
+      },
+      "bearish_researcher": {
+        "stance": "提示突破质量与追高风险",
+        "notes": [
+          "弱实体长上影线突破，质量偏低，假突破概率不可忽视。",
+          "短期趋势偏弱且与消息背离，追高易被套。",
+          "题材情绪驱动属性强，一旦退潮回调幅度可能放大。"
+        ]
+      },
+      "chief_strategist": {
+        "stance": "standard_research，等待确认",
+        "notes": [
+          "信号成立但K线形态、量能、动能三者确认均不足，不宜给予priority_research。",
+          "消息面与基本面证据可得且时效匹配，不构成insufficient_evidence。",
+          "建议人工复核以'次日放量确认'为介入前提，未确认前以观望为主。"
+        ]
+      },
+      "risk_manager": {
+        "stance": "风险需优先提示",
+        "notes": [
+          "上影线抛压+短期趋势偏弱+题材情绪属性，三重风险叠加。",
+          "建议人工复核参考失效位：跌破16.85（信号日低点）视为突破失败。",
+          "参考止盈关注上方套牢盘压力区（20日高点附近），参考止损参考16.73（近两日低点）。"
+        ]
+      }
+    },
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [],
+    "candle_confirm_score": 4.0,
+    "committee_disagreement_flags": [
+      "technical_analyst与bullish_researcher对'是否具备研究价值'存在分歧：前者强调确认不足，后者认为三重正面因素已足够。",
+      "bearish_researcher与fundamental_analyst对'消息与价格背离'的风险权重判断不同：前者视为重大风险，后者认为属常规波动。",
+      "chief_strategist与risk_manager在'是否应直接提示参考止盈止损'上口径不同，前者侧重确认条件，后者侧重风险失效位。"
+    ],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  },
+  {
+    "code": "sh.600660",
+    "signal_date": "2026-09-29",
+    "review_state": "standard_research",
+    "confidence": 0.52,
+    "research_summary": "福耀玻璃(600660)在2026-09-29出现MKF红蓝线向上穿越数值阈值20信号，且mkf_red_blue_cross_up_20_under_80成立（阈值80以内），post_cross_lag=5处于允许滞后区间。技术层面信号成立，但K线形态呈现spinning_top与tweezer_top组合，量能确认缺失（volume_ratio_20d=0.9681，未放量），近5日收益为负（-0.25%），且收盘价位于20日高点下方-7.67%。消息面方面，2026年中报净利润39.70亿元同比下降17.37%，机构持股减少超20家，构成基本面压力；同时有汽车板块主力资金净流入5.49亿元、机构买入评级等中性偏多催化。综合判断：MKF信号成立且技术证据可解释，但量价确认弱、基本面催化不足、K线形态偏弱，故降为standard_research，建议人工复核观察，等待放量确认。",
+    "technical_observations": [
+      "MKF红蓝线向上穿越数值阈值20信号成立，mkf_inter=15.90，mkf_red_blue_cross_up_20_under_80成立，处于阈值80以内，post_cross_lag=5在允许滞后区间内",
+      "mkf_momentum=64.71、mkf_near=68.30，动量与近端数值处于中性偏上区间，但尚未进入强势区",
+      "K线形态为spinning_top与tweezer_top组合，candle_confirm_score=5.0，close_location=0.767，收盘偏强但形态显示多空分歧",
+      "量能确认缺失：volume_ratio_20d=0.9681、volume_ratio_5d=1.0672，未出现有效放量，量价配合不足",
+      "近5日收益-0.25%、近10日收益0.23%，收盘价较20日高点-7.67%、较20日低点+2.10%，处于中低位区间",
+      "2026-09-21当日出现bullish_body且lower_shadow_pct=0.6296，为近期唯一放量上攻日，但后续量能未能延续",
+      "近期K线实体普遍偏小（body_pct_of_range多在0.1-0.4区间），显示震荡整理特征，方向性不足"
+    ],
+    "risk_flags": [
+      "2026年中报净利润39.70亿元同比下降17.37%，基本面增速转负，构成估值压力",
+      "机构持股减少超20家，主力资金层面偏谨慎，与板块资金净流入形成背离",
+      "量能确认缺失，MKF信号缺乏成交量配合，突破有效性存疑",
+      "K线spinning_top+tweezer_top组合显示上方抛压与多空分歧，短期方向不明",
+      "收盘价较20日高点仍有-7.67%距离，反弹空间尚未打开",
+      "新闻来源为东方财富与公告，google_news_rss抓取成功0条，信息覆盖有限"
+    ],
+    "local_score": 4.9,
+    "model": "Ornith-1.5-35B-A3B-oQ4e-mtp",
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": {
+      "technical_analyst": {
+        "stance": "neutral_bullish",
+        "notes": [
+          "MKF红蓝线向上穿越数值阈值20信号成立，post_cross_lag=5在允许区间内",
+          "但量能确认缺失（volume_ratio_20d=0.9681），K线形态偏弱（spinning_top+tweezer_top），需等待放量确认",
+          "信号技术上可复核，但有效性需人工二次确认"
+        ]
+      },
+      "sentiment_analyst": {
+        "stance": "neutral",
+        "notes": [
+          "汽车板块主力资金净流入5.49亿元、5.72亿元流入汽车股，板块情绪中性偏暖",
+          "机构买入评级24股中有覆盖，但个股未明确列入强买入名单",
+          "google_news_rss抓取0条，舆情覆盖不足，情绪面证据有限"
+        ]
+      },
+      "fundamental_analyst": {
+        "stance": "bearish_pressure",
+        "notes": [
+          "2026年中报净利润39.70亿元同比下降17.37%，增速转负构成基本面压力",
+          "机构持股减少超20家，主力持仓层面偏谨慎",
+          "超短期融资券发行与中期股利派付为常规资本运作，不构成重大催化"
+        ]
+      },
+      "bullish_researcher": {
+        "stance": "wait_for_confirmation",
+        "notes": [
+          "MKF信号成立且处于阈值80以内，动量64.71中性偏上，具备短周期复核价值",
+          "汽车板块资金净流入提供情绪支撑，派息公告体现股东回报",
+          "但需放量突破53.30前高并站稳方可确认上行空间打开"
+        ]
+      },
+      "bearish_researcher": {
+        "stance": "cautious",
+        "notes": [
+          "净利润同比-17.37%为硬伤，基本面拐点未现",
+          "机构减持超20家，主力资金与板块资金流入形成背离",
+          "量能缺失+K线形态偏弱，突破可靠性不足，存在假突破风险"
+        ]
+      },
+      "chief_strategist": {
+        "stance": "standard_research_observe",
+        "notes": [
+          "综合技术信号成立但量价确认弱、基本面催化不足，判定为standard_research",
+          "建议人工复核观察，等待放量突破53.30或回踩52.00支撑确认",
+          "短周期（1-10交易日）复核价值中等，不宜作为priority_research"
+        ]
+      },
+      "risk_manager": {
+        "stance": "risk_attention_flagged",
+        "notes": [
+          "基本面增速转负+机构减持构成中期风险，需纳入risk_flags持续跟踪",
+          "建议参考失效位52.00（近期低点密集区），跌破则信号失效",
+          "新闻来源时效为2026-09-30，与信号日2026-09-29匹配，但信息覆盖有限，置信度不宜过高"
+        ]
+      }
+    },
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [
+      "candle_spinning_top",
+      "candle_tweezer_top"
+    ],
+    "candle_confirm_score": 5.0,
+    "committee_disagreement_flags": [
+      "fundamental_analyst持bearish_pressure而bullish_researcher持wait_for_confirmation，双方对基本面压力与信号有效性的权重存在分歧",
+      "risk_manager提示机构减持与基本面转负风险，而chief_strategist仍判定为standard_research可观察，风险与机会评估不一致",
+      "technical_analyst与bearish_researcher均强调量能缺失，但chief_strategist未将量能缺失列为否决项，仅作为确认条件"
+    ],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  },
+  {
+    "code": "sh.603916",
+    "signal_date": "2026-09-29",
+    "review_state": "standard_research",
+    "confidence": 0.42,
+    "research_summary": "人工复核参考：sh.603916（苏博特）于2026-09-29触发MKF红蓝线向上穿越数值阈值20，且mkf_red_blue_cross_up_20_under_80成立（阈值80以内），post_cross_lag=0，信号成立且技术证据可复核。K线形态出现candle_tweezer_bottom（双针底）+bullish_reversal确认，close_location处于mid_low区、无长上影，形态偏多。但量能确认弱（volume_ratio_20d=0.53、candle_volume_confirm=false），近5日收益-4.92%、近10日-1.04%，价格仍处20日区间低位（close_vs_20d_high_pct=-15.68%），属低位反弹而非强势突破。消息面：2026年中报净利润7401.82万元、同比+17.03%，基本面温和改善但机构持仓仅1家（关注度低）；另有转债回售提示及保荐代表人变更公告，无重大利好催化。综合判定为MKF信号成立但量价确认弱、催化不足的standard_research，非priority_research。",
+    "technical_observations": [
+      "MKF红蓝线向上穿越数值阈值20（mkf_red_cross_up_20=true、mkf_blue_cross_up_20=true、mkf_red_blue_cross_up_20_under_80=true），post_cross_lag=0，信号成立且为即时穿越",
+      "mkf_inter=14.43、mkf_near=21.26、mkf_momentum=34.37，指标处于低位回升区，尚未进入强势区",
+      "K线形态candle_tweezer_bottom（双针底）+bullish_reversal确认，candle_confirm_score=7.0，close_location=0.70，无长上影，形态偏多",
+      "量能确认弱：volume_ratio_20d=0.53、candle_volume_confirm=false，amount_ratio_5d=0.91，成交未有效放大",
+      "价格仍处20日区间低位：close_vs_20d_high_pct=-15.68%、close_vs_20d_low_pct=2.15%，属低位反弹",
+      "近5日收益-4.92%、近10日-1.04%，短期动能尚未转正，反弹持续性待确认",
+      "2026-09-29当日bar为bullish_body、body_pct_of_range=0.53、close_location=0.70，收盘相对偏强但上影0.30存在一定抛压"
+    ],
+    "risk_flags": [
+      "量能确认缺失（volume_ratio_20d=0.53、candle_volume_confirm=false），价涨无量配合，反弹有效性存疑",
+      "价格仍处20日区间低位（较20日高点-15.68%），上方套牢盘压力未消化",
+      "机构持仓仅1家，市场关注度低，流动性与资金承接力偏弱",
+      "转债回售提示性公告（博22转债多次回售提示）可能带来潜在供给压力",
+      "保荐代表人变更公告，属常规事项但反映公司治理层面变动",
+      "近5日/近10日收益仍为负，短期动能未转正，追高失败风险存在"
+    ],
+    "local_score": 7.8,
+    "model": "Ornith-1.5-35B-A3B-oQ4e-mtp",
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": {
+      "technical_analyst": {
+        "stance": "偏多但谨慎",
+        "notes": [
+          "MKF红蓝线向上穿越数值阈值20且under_80成立，信号本身有效",
+          "candle_tweezer_bottom+bullish_reversal形态支持低位反弹",
+          "但量能确认缺失、价格仍处20日低位，反弹力度与持续性需观察"
+        ]
+      },
+      "sentiment_analyst": {
+        "stance": "中性偏弱",
+        "notes": [
+          "新闻以中报业绩与公告为主，无重大利好催化",
+          "机构持仓仅1家，市场关注度低，情绪面缺乏支撑",
+          "google_news_rss成功0条，舆情覆盖不足"
+        ]
+      },
+      "fundamental_analyst": {
+        "stance": "温和正面",
+        "notes": [
+          "2026年中报净利润7401.82万元、同比+17.03%，基本面改善但幅度温和",
+          "转债回售及保荐代表人变更属常规事项，无重大基本面冲击",
+          "机构持仓仅1家反映基本面未被主流资金关注"
+        ]
+      },
+      "bullish_researcher": {
+        "stance": "买入观察（人工研判参考）",
+        "notes": [
+          "低位双针底+MKF信号共振，具备反弹结构",
+          "中报同比正增长提供基本面支撑",
+          "参考观察：需量能配合确认，可关注回踩不破信号日低点后的二次启动"
+        ]
+      },
+      "bearish_researcher": {
+        "stance": "等待确认",
+        "notes": [
+          "无量反弹，价涨缺乏资金承接，易形成假突破",
+          "价格仍处20日低位，上方套牢盘压力明显",
+          "转债回售带来潜在供给压力，短期催化不足"
+        ]
+      },
+      "chief_strategist": {
+        "stance": "standard_research",
+        "notes": [
+          "信号成立但量价确认弱、催化不足，不满足priority_research条件",
+          "建议作为标准研究层候选，纳入观察池跟踪量价与催化变化",
+          "短周期（1-10交易日）价值取决于能否放量站稳并突破近端压力"
+        ]
+      },
+      "risk_manager": {
+        "stance": "风险需优先提示",
+        "notes": [
+          "量能确认缺失为核心风险，反弹有效性存疑",
+          "机构关注度低+转债回售构成流动性与供给双重压力",
+          "建议人工复核时设置参考失效位：跌破信号日低点10.22元视为结构走弱"
+        ]
+      }
+    },
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [
+      "candle_tweezer_bottom"
+    ],
+    "candle_confirm_score": 7.0,
+    "committee_disagreement_flags": [
+      "bullish_researcher倾向买入观察而bearish_researcher主张等待确认，对反弹持续性存在分歧",
+      "technical_analyst认可信号有效性但risk_manager强调量能缺失风险，技术确认与风险权重存在张力"
+    ],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  },
+  {
+    "code": "sh.600458",
+    "signal_date": "2026-09-29",
+    "review_state": "standard_research",
+    "confidence": 0.42,
+    "research_summary": "人工复核参考：sh.600458（时代新材）于2026-09-29触发MKF红蓝线向上穿越数值阈值20（mkf_red_cross_up_20、mkf_blue_cross_up_20、mkf_red_blue_cross_up_20_under_80均成立，post_cross_lag=0），属信号当日即时确认。但技术形态层面量价确认弱：candle_confirm_score仅2.0、candle_volume_confirm=false、volume_ratio_20d=0.61（缩量）、candle_long_upper_shadow_risk=true且upper_shadow_pct=0.52（长上影），close_location=0.48处于low区，近5日/10日收益为负（-4.23%/-6.06%），显示反弹力度与资金配合不足。基本面有2026中报净利润3.46亿元、同比+14.08%支撑，但新闻为常规业绩披露与概念资金流（有机硅、OLED），无强催化。综合判定为MKF信号成立、技术证据可解释但量价与催化确认不足的standard_research，非priority_research。所有判断为人工复核参考，非自动交易依据。",
+    "technical_observations": [
+      "MKF红蓝线向上穿越数值阈值20于2026-09-29当日确认（post_cross_lag=0），mkf_inter=10.95、mkf_near=20.33逼近阈值、mkf_momentum=29.03，信号结构成立。",
+      "candle_confirm_score=2.0、candle_confirm_reason=low，K线形态确认强度低。",
+      "candle_volume_confirm=false、volume_ratio_20d=0.61、volume_ratio_5d=0.72，量能明显萎缩，量价配合不足。",
+      "candle_long_upper_shadow_risk=true、candle_upper_shadow_pct=0.52，收盘位于K线上沿偏上影区，上压明显。",
+      "candle_position_zone=low、candle_close_location=0.48、candle_low_position_pct=0.16，价格处于低位但反弹动能弱。",
+      "close_vs_20d_high_pct=-9.05、recent_close_return_5d_pct=-4.23、recent_close_return_10d_pct=-6.06，短期趋势仍偏弱。",
+      "2026-09-29当日bar为bullish_body（body_pct=0.43）但upper_shadow_pct=0.52，属带长上影的弱反弹K线。"
+    ],
+    "risk_flags": [
+      "量能萎缩（volume_ratio_20d=0.61）与长上影K线叠加，反弹持续性存疑，需放量确认。",
+      "短期收益为负且价格处于低位，趋势未有效反转，存在二次探底风险。",
+      "mkf_near=20.33仅略高于阈值20，信号处于临界区，若MKF指标回落可能失效。",
+      "新闻为常规业绩披露与概念资金流，无强事件催化；google_news_rss success:0，部分来源不可得。",
+      "业绩说明会、接待日等公告属常规披露，不构成短期价格催化。"
+    ],
+    "local_score": 5.2,
+    "model": "Ornith-1.5-35B-A3B-oQ4e-mtp",
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": {
+      "technical_analyst": {
+        "stance": "信号成立但形态弱，观望为主",
+        "notes": [
+          "MKF红蓝线向上穿越数值阈值20当日确认，信号结构有效。",
+          "K线确认分仅2.0、量能萎缩、长上影，价量未共振，技术有效性打折。",
+          "需后续放量收阳且MKF指标稳定在阈值上方方可强化。"
+        ]
+      },
+      "sentiment_analyst": {
+        "stance": "中性偏谨慎",
+        "notes": [
+          "新闻以常规业绩与有机硅/OLED概念资金流为主，情绪面平淡。",
+          "4亿主力资金净流入有机硅概念为正面信号，但非个股强催化。",
+          "google_news_rss不可得，舆情覆盖不足。"
+        ]
+      },
+      "fundamental_analyst": {
+        "stance": "基本面稳健，无负面",
+        "notes": [
+          "2026中报净利润3.46亿元、同比+14.08%，盈利正增长。",
+          "无fatal_risks与attn_risks，基本面风险低。",
+          "业绩属稳健型，缺乏超预期弹性。"
+        ]
+      },
+      "bullish_researcher": {
+        "stance": "可纳入观察，等待确认",
+        "notes": [
+          "MKF信号即时确认+中报正增长，具备研究价值。",
+          "有机硅与OLED概念提供题材想象空间。",
+          "参考确认条件：放量收阳、MKF指标站稳阈值上方、突破近端压力。"
+        ]
+      },
+      "bearish_researcher": {
+        "stance": "量价背离，谨慎追高",
+        "notes": [
+          "缩量+长上影显示上方抛压，反弹力度不足。",
+          "短期收益为负，趋势未反转，追高风险大。",
+          "mkf_near逼近阈值临界，指标回落即可能失效。"
+        ]
+      },
+      "chief_strategist": {
+        "stance": "standard_research，等待量价共振",
+        "notes": [
+          "信号成立但缺乏量价与催化共振，不给予priority_research。",
+          "短周期（1-10交易日）复核价值中等，建议等待确认。",
+          "参考失效位：MKF指标回落至阈值下方或放量破位。"
+        ]
+      },
+      "risk_manager": {
+        "stance": "风险可控，提示量价与临界信号",
+        "notes": [
+          "无重大风险事件，fatal_risks/attn_risks为空。",
+          "量能萎缩与长上影为需优先提示的技术风险。",
+          "建议人工设定参考止损于近期低点10.68下方，参考压力位11.14-11.30。"
+        ]
+      }
+    },
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [],
+    "candle_confirm_score": 2.0,
+    "committee_disagreement_flags": [
+      "bullish_researcher与bearish_researcher对反弹持续性存在分歧：前者认为信号+业绩可观察，后者强调量价背离与追高风险。",
+      "chief_strategist与risk_manager对是否给予更高优先级存在分歧，均倾向保守但理由侧重不同（催化不足 vs 量价风险）。"
+    ],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  },
+  {
+    "code": "sh.600132",
+    "signal_date": "2026-09-29",
+    "review_state": "standard_research",
+    "confidence": 0.42,
+    "research_summary": "技术层面：sh.600132（重庆啤酒）于2026-09-21触发MKF红蓝线向上穿越数值阈值20，且mkf_red_blue_cross_up_20_under_80成立（阈值80以下），post_cross_lag=5处于允许滞后窗口内，信号本身可复核成立。但K线形态与量能确认偏弱：signal_date 2026-09-29收盘37.26为近8日最低位附近，close_location仅0.0638，且当日bullish_body=false、volume_ratio_20d=0.68（缩量），量价未形成有效配合。基本面层面：2026年中报净利润7.96亿元、同比下滑7.98%，营收净利双降，机构追问'为何跑不赢燕京U8'，基本面催化偏负面。消息面无致命风险但业绩下滑构成压制。综合判定：MKF信号成立、技术证据可解释，但量能确认弱、业绩催化不足、短周期缺乏正面驱动，符合standard_research层级。建议人工复核方向为'持有观察/等待确认'，需放量突破38.41（近20日高点）方可确认上行，参考失效位37.23。",
+    "technical_observations": [
+      "MKF红蓝线向上穿越数值阈值20于2026-09-21触发，mkf_red_cross_up_20与mkf_blue_cross_up_20同时成立，mkf_red_blue_cross_up_20_under_80在阈值80以下成立，信号可复核。",
+      "post_cross_lag=5，落在选择器允许的滞后交易日范围内，信号时效性可接受。",
+      "mkf_inter=4.42、mkf_momentum=1.83、mkf_near=8.01，动能与位置指标处于中性偏弱区间，未形成强势加速信号。",
+      "signal_date 2026-09-29收盘37.26，close_location=0.0638，为近8日最低收盘位，当日bullish_body=false，K线形态偏弱。",
+      "volume_ratio_20d=0.68、volume_ratio_5d=0.77，量能持续低于20日均量，量价未形成有效配合，candle_volume_confirm=false。",
+      "close_vs_20d_high_pct=-7.50%，距20日高点仍有约7.5%空间，但当前处于20日区间低位（close_vs_20d_low_pct=0.08），上行空间与下行风险并存。",
+      "recent_close_return_10d_pct=-3.42%、5d=-2.23%，短周期价格动能偏弱。"
+    ],
+    "risk_flags": [
+      "2026年中报净利润7.96亿元同比下滑7.98%，营收净利双降，基本面催化偏负面。",
+      "量能持续萎缩（volume_ratio_20d=0.68），价量背离，突破有效性存疑。",
+      "signal_date当日K线为缩量小阴/十字星形态，close_location=0.0638处于低位，短期上行动能不足。",
+      "机构持仓占比虽高（68.51%），但投资者对业绩下滑存在质疑，情绪面存在分歧。",
+      "消息面无致命风险但业绩说明会聚焦业绩下滑话题，短周期缺乏正面催化。"
+    ],
+    "local_score": 4.7,
+    "model": "Ornith-1.5-35B-A3B-oQ4e-mtp",
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": {
+      "technical_analyst": {
+        "stance": "信号成立但确认弱，倾向观望",
+        "notes": [
+          "MKF红蓝线向上穿越数值阈值20信号可复核成立，post_cross_lag=5在允许窗口内。",
+          "但K线形态、量能确认均偏弱，candle_volume_confirm=false，价量背离，需等待放量确认。",
+          "参考确认条件：放量突破38.41（近20日高点）；参考失效位：37.23。"
+        ]
+      },
+      "sentiment_analyst": {
+        "stance": "情绪中性偏谨慎",
+        "notes": [
+          "新闻中'大乌苏席卷成都'等话题偏中性，无正面或负面强催化。",
+          "投资者追问'为何跑不赢燕京U8'反映市场对业绩的担忧情绪。",
+          "主力资金抢筹食品饮料板块为板块性资金动向，非个股独立利好。"
+        ]
+      },
+      "fundamental_analyst": {
+        "stance": "基本面承压，业绩下滑",
+        "notes": [
+          "2026年中报净利润7.96亿元同比下滑7.98%，营收净利双降，基本面支撑不足。",
+          "大本营（四川市场）承压，竞争压力（燕京U8）构成中期压制。",
+          "机构持仓占比68.51%偏高，若业绩持续不及预期存在持仓松动风险。"
+        ]
+      },
+      "bullish_researcher": {
+        "stance": "技术信号成立，等待催化",
+        "notes": [
+          "MKF红蓝线穿越阈值20且位于80以下，属早期启动信号，理论上具备上行潜力。",
+          "当前处于20日区间低位，若板块资金持续流入，存在反弹空间。",
+          "参考参考目标区间：38.41-39.00（需放量确认）。"
+        ]
+      },
+      "bearish_researcher": {
+        "stance": "业绩与量能双重压制",
+        "notes": [
+          "中报业绩下滑叠加缩量，价量背离明显，突破可信度低。",
+          "close_location=0.0638为近8日低位，短期缺乏买盘支撑。",
+          "基本面下行趋势未止，中期估值承压，建议谨慎。"
+        ]
+      },
+      "chief_strategist": {
+        "stance": "standard_research，持有观察",
+        "notes": [
+          "技术信号成立但确认不足，基本面催化缺失，归入standard_research。",
+          "建议人工复核方向为持有观察/等待确认，不给予priority_research。",
+          "确认条件：放量突破38.41；失效条件：跌破37.23且量能持续萎缩。"
+        ]
+      },
+      "risk_manager": {
+        "stance": "风险可控但需跟踪业绩",
+        "notes": [
+          "无致命风险事件，但业绩下滑为中期风险点，需持续跟踪后续季报。",
+          "量能萎缩导致技术信号有效性打折，建议控制仓位。",
+          "参考止盈止损：参考止盈38.41，参考止损37.23。"
+        ]
+      }
+    },
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [],
+    "candle_confirm_score": 3.0,
+    "committee_disagreement_flags": [
+      "bullish_researcher与bearish_researcher对短期方向存在分歧：前者认为早期信号具备反弹潜力，后者强调业绩与量能双重压制。",
+      "technical_analyst与fundamental_analyst在信号有效性上存在张力：技术信号成立但基本面支撑不足，需人工权衡技术面与基本权重。"
+    ],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  },
+  {
+    "code": "sz.000680",
+    "signal_date": "2026-09-29",
+    "review_state": "risk_attention",
+    "confidence": 0.42,
+    "research_summary": "山推股份(000680)在2026-09-21触发MKF红蓝线向上穿越数值阈值20，post_lag=5处于允许滞后窗口内，信号本身可复核成立。但截至信号日2026-09-29，价格自高点持续回落，research_close=8.82较20日高点回落-18.86%，近10日收益-13.10%、近5日收益-6.07%，量能显著萎缩（volume_ratio_20d=0.59、amount_ratio_5d=0.58），最新K线为带长上影线的小阴/假阴K线（upper_shadow_pct=0.4286、close_location=0.1429，处于低位区），candle_confirm_score仅2.0且candle_volume_confirm=false，量价确认弱。消息面方面news_txt中关于个股的实质催化缺失，仅见央行PSL利率调整（宏观、非个股催化）及公司股东会/董事变更/权益分派等常规公告，无明确短周期催化；attn_risks与fatal_risks均为空。综合技术空间不足、量价确认弱、催化不足，且K线形态与量能风险需优先提示，保守降为risk_attention，供人工复核参考。",
+    "technical_observations": [
+      "mkf_red_cross_up_20、mkf_blue_cross_up_20、mkf_red_blue_cross_up_20_under_80三者同时成立，信号可复核，post_lag=5落在允许滞后窗口内。",
+      "mkf_inter=4.27、mkf_near=6.12、mkf_momentum=2.86，指标处于中低区间，动能偏弱。",
+      "research_close=8.82较20日高点回落-18.86%，较20日低点仅+0.23%，价格处于低位区。",
+      "近10日收益-13.10%、近5日收益-6.07%，短期趋势向下。",
+      "volume_ratio_20d=0.59、amount_ratio_5d=0.58，量能持续萎缩，未形成有效放量确认。",
+      "2026-09-29 K线body_pct_of_range=0.4286、bullish_body=false、upper_shadow_pct=0.4286、close_location=0.1429，为带长上影的小实体阴线，上影风险显著。",
+      "candle_confirm_score=2.0、candle_confirm_reason=low、candle_volume_confirm=false，K线与量能确认均弱。",
+      "recent_daily_bars显示自2026-09-18高点9.45-9.50区间连续回落，9-24至9-29为连续阴线，反弹乏力。"
+    ],
+    "risk_flags": [
+      "K线形态偏弱：最新K线长上影、小实体阴线，close_location=0.1429处于低位区，上影风险明显。",
+      "量能萎缩：volume_ratio_20d=0.59、amount_ratio_5d=0.58，未形成放量确认，量价背离风险。",
+      "短期趋势向下：近10日-13.10%、近5日-6.07%，价格自高位持续回落。",
+      "消息面催化不足：news_txt中无个股明确短周期催化，央行PSL为宏观政策，非个股驱动。",
+      "公告层面仅为股东会、董事变更、权益分派等常规事项，无业绩/订单/重组等强催化。",
+      "attn_risks与fatal_risks均为空，风险事件证据不可得，无法确认或证伪风险敞口。",
+      "信号日2026-09-29与新闻日期2026-09-30时效接近，但新闻内容与信号驱动匹配度低。"
+    ],
+    "local_score": 3.6,
+    "model": "Ornith-1.5-35B-A3B-oQ4e-mtp",
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": {
+      "technical_analyst": {
+        "stance": "信号成立但确认弱，倾向risk_attention",
+        "notes": [
+          "MKF红蓝线向上穿越数值阈值20成立，post_lag=5在允许窗口内，技术信号可复核。",
+          "但最新K线长上影、量能萎缩、candle_confirm_score=2.0，量价确认弱，需人工确认有效性。",
+          "价格处于低位区且趋势向下，技术空间不足，不宜给予priority_research。"
+        ]
+      },
+      "sentiment_analyst": {
+        "stance": "中性偏弱",
+        "notes": [
+          "news_txt中个股情绪信号缺失，无明确利好或利空催化。",
+          "市场层面多为科创综指ETF相关报道，与山推股份基本面关联弱。",
+          "turn_pct=0.8055处于低位，市场关注度不高。"
+        ]
+      },
+      "fundamental_analyst": {
+        "stance": "证据不足，无强催化",
+        "notes": [
+          "公告仅涉及股东会、职工代表董事辞职增补、权益分派等常规事项，无业绩或经营重大变化。",
+          "无诉讼、业绩预增/预亏、行业政策等基本面证据可得。",
+          "无法从现有证据形成基本面支撑判断。"
+        ]
+      },
+      "bullish_researcher": {
+        "stance": "可观察但需确认",
+        "notes": [
+          "MKF信号成立且处于低位区，若后续放量企稳可视为反弹观察点。",
+          "央行下调PSL利率并扩围基建相关建设，对工程机械/基建链条存在宏观层面潜在利好。",
+          "需等待放量确认与K线企稳信号，当前不宜主动看多。"
+        ]
+      },
+      "bearish_researcher": {
+        "stance": "提示下行与量价风险",
+        "notes": [
+          "价格自高位持续回落，近10日-13.10%，短期趋势向下。",
+          "最新K线长上影+缩量，反弹乏力，存在进一步下探风险。",
+          "量能未确认，信号有效性存疑，需警惕假突破。"
+        ]
+      },
+      "chief_strategist": {
+        "stance": "risk_attention，人工复核优先",
+        "notes": [
+          "信号可复核但技术空间、量价、催化三者均不足，按分层规则降为risk_attention。",
+          "建议人工复核关注：是否放量企稳、K线是否修复长上影、有无个股催化落地。",
+          "无新闻本身不直接判insufficient_evidence，但需明确提示证据不足。"
+        ]
+      },
+      "risk_manager": {
+        "stance": "风险需优先提示",
+        "notes": [
+          "参考失效位：可关注2026-09-24低点8.81与2026-09-29低点8.80一线，跌破则信号失效。",
+          "参考压力位：9.09（9-28高）与9.34（9-24高）为近端压力，反弹遇阻则偏弱。",
+          "attn_risks与fatal_risks为空，风险敞口不可确认，建议人工补充尽调。"
+        ]
+      }
+    },
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [],
+    "candle_confirm_score": 2.0,
+    "committee_disagreement_flags": [
+      "bullish_researcher与bearish_researcher对短期方向存在分歧：前者认为低位+宏观潜在利好可观察，后者强调量价走弱与假突破风险。",
+      "technical_analyst与chief_strategist在是否给予priority_research上意见一致（均认为不足），但与bearish_researcher对信号有效性的谨慎程度存在差异。",
+      "news_txt证据与信号驱动匹配度低，sentiment_analyst与fundamental_analyst均认为催化不足，与bullish_researcher的宏观利好判断存在张力。"
+    ],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  },
+  {
+    "code": "sz.002840",
+    "signal_date": "2026-09-29",
+    "review_state": "risk_attention",
+    "confidence": 0.38,
+    "research_summary": "华统股份(002840)在2026-09-29出现MKF红蓝线向上穿越数值阈值20信号，且mkf_red_blue_cross_up_20_under_80成立（阈值80以下），post_cross_lag=5处于允许滞后区间。技术上MKF信号成立，但存在多重需优先提示的风险：(1)消息面出现副总经理朱文文被公安局采取强制措施的负面公告，属高管风险事件；(2)2026年中报由盈转亏，净利润为-4.76亿元，基本面恶化；(3)K线层面9-24出现放量长上影阴线（volume_ratio_20d=0.56但当日amount显著放大至3.3亿，close_location仅0.15），随后反弹乏力，9-29收盘7.98仍低于9-24高点8.32；(4)量能确认弱（candle_volume_confirm=false，volume_ratio_5d=0.55），反弹缺乏量能配合。综合判定为技术信号成立但事件与基本面风险明显，需人工优先关注，不宜作为priority_research。",
+    "technical_observations": [
+      "MKF红蓝线向上穿越数值阈值20成立，mkf_inter=22.20，mkf_near=47.00，mkf_momentum=48.94，信号处于80阈值以下区间",
+      "post_cross_lag=5，落在NCN选择器允许的滞后交易日范围内",
+      "9-21出现放量阳线（body_pct=0.65，volume=2263万手），为信号日附近最强K线，但随后9-24冲高回落",
+      "9-24为风险K线：high 8.32、close 7.75、close_location=0.15、upper_shadow=0.55，当日amount放大至3.3亿为近期峰值，形成长上影阴线，抛压明显",
+      "9-28至9-29连续两根小阳线反弹，但volume_ratio_5d=0.55、candle_volume_confirm=false，反弹无量能确认",
+      "research_close=7.98仍显著低于9-24高点8.32（close_vs_20d_high_pct=-15.56%），反弹未突破前高",
+      "candle_long_upper_shadow_risk=true，close_location=0.57处于mid_low区，反弹力度偏弱",
+      "recent_close_return_5d_pct=-5.11%、10d=-4.20%，短期价格动能仍偏弱"
+    ],
+    "risk_flags": [
+      "高管风险：副总经理朱文文被公安局采取强制措施（2026-09-30前后公告），属重大负面事件",
+      "基本面恶化：2026年中报净利润-4.76亿元，由盈转亏",
+      "K线抛压：9-24放量长上影阴线，为近期量价背离信号",
+      "反弹无量：9-28/9-29反弹volume_ratio_5d仅0.55，量能确认缺失",
+      "未突破前高：收盘7.98低于9-24高点8.32，反弹结构未确认",
+      "新闻来源时效：公告与风险事件集中在2026-09-30，与信号日2026-09-29基本同步，时效可对应但属即时负面催化"
+    ],
+    "local_score": 5.3,
+    "model": "Ornith-1.5-35B-A3B-oQ4e-mtp",
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": {
+      "technical_analyst": {
+        "stance": "信号成立但结构偏弱",
+        "notes": [
+          "MKF红蓝线向上穿越数值阈值20成立，滞后5日在允许范围内",
+          "K线形态显示9-24放量冲高回落，反弹无量能确认，技术结构需人工复核确认",
+          "参考支撑位7.52（9-28低点），参考压力位8.32（9-24高点）"
+        ]
+      },
+      "sentiment_analyst": {
+        "stance": "负面，需谨慎",
+        "notes": [
+          "高管被采取强制措施构成短期舆情负面冲击",
+          "新闻中无正面催化，消息面对短周期方向判断不利",
+          "evidence显示情绪面偏空，需人工评估舆情发酵程度"
+        ]
+      },
+      "fundamental_analyst": {
+        "stance": "恶化，由盈转亏",
+        "notes": [
+          "2026年中报净利润-4.76亿元，由盈转亏，基本面显著恶化",
+          "控股子公司签署4.38亿元拆迁补偿协议，属一次性收益，不可持续",
+          "基本面不支持作为priority_research，需人工评估亏损持续性"
+        ]
+      },
+      "bullish_researcher": {
+        "stance": "等待确认",
+        "notes": [
+          "若放量突破8.32并站稳，可视为反弹结构确认",
+          "MKF动量48.94处于中性偏上，若量能配合有短周期修复空间",
+          "参考确认条件：放量突破8.32且量能ratio>1.0"
+        ]
+      },
+      "bearish_researcher": {
+        "stance": "风险优先",
+        "notes": [
+          "高管强制措施+由盈转亏构成基本面与治理双重风险",
+          "9-24放量长上影为短期顶部特征，反弹易受压制",
+          "参考失效位：跌破7.52（9-28低点）则反弹结构证伪"
+        ]
+      },
+      "chief_strategist": {
+        "stance": "risk_attention，人工复核",
+        "notes": [
+          "技术信号成立但事件与基本面风险偏重，降级为risk_attention",
+          "建议人工复核方向：等待放量突破8.32确认，或跌破7.52失效",
+          "参考目标区间：若确认反弹，上看8.32-8.52；参考止盈8.52，参考止损7.52"
+        ]
+      },
+      "risk_manager": {
+        "stance": "重点提示，谨慎参与",
+        "notes": [
+          "高管强制措施为硬性风险事件，需优先提示人工关注",
+          "由盈转亏致基本面支撑缺失，下行风险大于上行空间",
+          "建议人工复核时控制仓位，以观望或等待确认为主，参考失效位7.52"
+        ]
+      }
+    },
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [],
+    "candle_confirm_score": 6.0,
+    "committee_disagreement_flags": [
+      "技术信号成立与基本面恶化之间存在方向分歧：技术派认为MKF动量中性偏上可短周期修复，基本面派强调由盈转亏与高管风险构成下行主导",
+      "量能确认缺失导致反弹结构是否成立存在分歧：bullish_researcher认为突破8.32可确认，bearish_researcher认为无量反弹易受压制",
+      "新闻时效对应但负面催化集中，情绪面与短周期方向判断存在分歧，需人工复核舆情发酵程度"
+    ],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  },
+  {
+    "code": "sz.002311",
+    "signal_date": "2026-09-29",
+    "review_state": "risk_attention",
+    "confidence": 0.38,
+    "research_summary": "MKF红蓝线向上穿越数值阈值20信号于2026-09-28成立，滞后1个交易日，技术信号本身可复核。但K线形态为spinning_top（纺锤线），上影线占比0.43、量能确认缺失（volume_ratio_20=0.74，量能萎缩），收盘位于当日区间下沿（close_location=0.37），近10日与5日收益均为负（-2.97%/-2.88%），量价与动能确认弱。基本面层面2026年中报净利润16.11亿元、同比-38.95%，机构持股减少超20家，资金面出现净流出与概念板块走弱信号。技术信号成立但K线、量能、涨幅、基本面与资金风险明显偏重，需优先提示风险，建议人工复核观察而非优先研究。",
+    "technical_observations": [
+      "MKF红蓝线向上穿越数值阈值20于2026-09-28成立，post_cross_lag=1，mkf_inter=7.36、mkf_momentum=46.71、mkf_near=44.38，信号可复核",
+      "最新日线（2026-09-29）为spinning_top纺锤线形态，body_pct_of_range=0.20，实体弱",
+      "上影线占比0.43、candle_long_upper_shadow_risk=true，显示上方抛压",
+      "收盘位于当日区间下沿（close_location=0.37），candle_position_zone=low",
+      "量能确认缺失：volume_ratio_20=0.74、volume_ratio_5d=0.79，成交金额较前日明显萎缩",
+      "量价背离：2026-09-28放量收阳后，2026-09-29缩量收阴，动能延续性存疑",
+      "近5日收益-2.88%、近10日收益-2.97%，价格处于弱势区间",
+      "close_vs_20d_high_pct=-12.95%，距20日高点仍有明显距离"
+    ],
+    "risk_flags": [
+      "2026年中报净利润16.11亿元，同比下降38.95%，基本面承压",
+      "机构风向标显示二季度持股减少机构超20家，机构态度转弱",
+      "资金面出现净流出信号：2.24亿元资金流出农林牧渔股，猪肉概念走弱",
+      "控股股东部分股份质押公告，存在股权质押风险敞口",
+      "2026年中期权益分派参数调整及实施公告，除权除息可能影响价格连续性",
+      "K线量价确认弱、上影线长、量能萎缩，短周期动能不足",
+      "消息面与资金面风险偏重，与MKF技术信号方向存在分歧"
+    ],
+    "local_score": 4.2,
+    "model": "Ornith-1.5-35B-A3B-oQ4e-mtp",
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": {
+      "technical_analyst": {
+        "stance": "技术信号成立但确认弱，需人工复核",
+        "notes": [
+          "MKF红蓝线向上穿越数值阈值20信号成立且可复核，post_lag=1在允许范围内",
+          "但最新K线为纺锤线、上影线占比0.43、量能萎缩、收盘位于区间下沿，量价确认弱",
+          "mkf_momentum=46.71处于中性偏弱区间，动能未形成有效支撑",
+          "建议人工复核观察，等待放量确认或K线形态转强"
+        ]
+      },
+      "sentiment_analyst": {
+        "stance": "情绪偏谨慎，消息面与资金面风险需优先提示",
+        "notes": [
+          "新闻中猪肉概念走弱、资金净流出、机构减持构成偏负面情绪",
+          "投资者关系活动与半年报业绩说明会属常规披露，无正面催化",
+          "google_news_rss返回0条，外部舆情补充不足",
+          "短周期情绪面缺乏正向催化，不宜作为优先研究标的"
+        ]
+      },
+      "fundamental_analyst": {
+        "stance": "基本面承压，中报利润大幅下滑",
+        "notes": [
+          "2026年中报净利润16.11亿元，同比-38.95%，盈利质量明显走弱",
+          "二季度机构持股减少超20家，机构配置态度转弱",
+          "控股股东部分股份质押，存在潜在风险敞口",
+          "基本面不支持短周期优先研究，需关注后续业绩修复信号"
+        ]
+      },
+      "bullish_researcher": {
+        "stance": "技术信号成立提供观察基础，但需更多确认",
+        "notes": [
+          "MKF红蓝线穿越阈值20且mkf_red_blue_cross_up_20_under_80成立，处于80以下低位区，存在修复空间",
+          "2026-09-28放量收阳（volume 1179万）显示有资金介入迹象",
+          "mkf_near=44.38高于当前research_close=41.2，存在向均值回归的参考空间",
+          "参考观察区间：上方压力参考mkf_near约44.4，下方支撑参考40.4-40.9密集成交区"
+        ]
+      },
+      "bearish_researcher": {
+        "stance": "量价、基本面、资金面多重风险需警惕",
+        "notes": [
+          "最新K线纺锤线+长上影+缩量，动能延续性存疑",
+          "中报利润-38.95%、机构减持、控股股东质押构成基本面与治理风险",
+          "资金净流出、猪肉概念走弱，短周期缺乏资金承接",
+          "参考失效位：若跌破40.4（2026-09-28低点）则技术结构转弱，建议人工复核谨慎"
+        ]
+      },
+      "chief_strategist": {
+        "stance": "降为risk_attention，人工复核观察为主",
+        "notes": [
+          "技术信号可复核但K线、量能、涨幅、事件与数据风险明显偏重，不符合priority_research标准",
+          "建议人工复核观察方向：等待放量阳线确认或K线形态转强再评估",
+          "参考止盈止损：参考止盈观察44.4附近（mkf_near），参考止损参考40.4下方失效",
+          "短周期（1-10交易日）催化不足，不宜作为优先研究标的"
+        ]
+      },
+      "risk_manager": {
+        "stance": "风险事件偏重，需优先提示",
+        "notes": [
+          "基本面（中报利润大幅下滑）、资金面（净流出）、治理面（股权质押）三重风险叠加",
+          "K线量价确认弱、上影线长，短周期技术风险偏高",
+          "建议人工复核时优先标注风险，控制观察仓位",
+          "失效条件：跌破40.4或量能持续萎缩则结构转弱，需重新评估"
+        ]
+      }
+    },
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [
+      "candle_spinning_top"
+    ],
+    "candle_confirm_score": 2.0,
+    "committee_disagreement_flags": [
+      "技术信号方向（MKF穿越阈值20偏多）与基本面/资金面方向（利润下滑、机构减持、资金净流出）存在明显分歧",
+      "bullish_researcher认为低位区存在均值回归空间，bearish_researcher与risk_manager强调多重风险，chief_strategist折中降为risk_attention",
+      "量能确认缺失导致技术确认度不足，各角色对短周期动能延续性判断不一致"
+    ],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  },
+  {
+    "code": "sh.601666",
+    "signal_date": "2026-09-29",
+    "review_state": "ai_unavailable",
+    "confidence": 0.0,
+    "research_summary": "AI不可用，使用本地MKF、Japanese candlestick/OHLCV与CNstock兼容新闻上下文保守分层。",
+    "technical_observations": [
+      "MKF红蓝线上穿日及后第1/2个交易日仍未过热",
+      "信号日收盘位置偏强",
+      "信号日无明显长上影风险"
+    ],
+    "risk_flags": [],
+    "local_score": 6.7,
+    "model": null,
+    "source_selection_reason": "mkf_red_blue_cross20_post_lag0_lag1_lag2_lag3_lag4_lag5_exclude_chop_ge4_v6_and_existing_hard_gates",
+    "committee_summary": null,
+    "committee_roles": [
+      "technical_analyst",
+      "sentiment_analyst",
+      "fundamental_analyst",
+      "bullish_researcher",
+      "bearish_researcher",
+      "chief_strategist",
+      "risk_manager"
+    ],
+    "technical_context_status": "ok",
+    "candlestick_patterns": [
+      "candle_spinning_top"
+    ],
+    "candle_confirm_score": 5.0,
+    "committee_disagreement_flags": [],
+    "news_context_status": "refreshed",
+    "news_cache_status": "refreshed",
+    "fatal_news_risks": [],
+    "attention_news_risks": [],
+    "experimental_unvalidated": true
+  }
+]

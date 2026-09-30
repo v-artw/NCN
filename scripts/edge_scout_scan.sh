@@ -26,7 +26,7 @@ fi
 # 数据目录：本项目内的前复权研究数据；迁移期可通过环境变量覆盖。
 DATA_ROOT="${EDGE_SCOUT_DATA_ROOT:-${PROJECT_ROOT}/PFrontStockData}"
 CONFIG="${EDGE_SCOUT_CONFIG:-${PROJECT_ROOT}/yaml/edge_scout_v1.yaml}"
-MKF_AI_CONFIG="${EDGE_SCOUT_MKF_AI_CONFIG:-${PROJECT_ROOT}/yaml/mkf_ai_review.yaml}"
+MKF_AI_CONFIG="${EDGE_SCOUT_MKF_AI_CONFIG:-${PROJECT_ROOT}/yaml/mkf_ai_committee_selector.yaml}"
 BAOSTOCK_CONFIG="${EDGE_SCOUT_BAOSTOCK_CONFIG:-${PROJECT_ROOT}/yaml/baostock_config.yaml}"
 VENV="${VENV_PYTHON:-${PROJECT_ROOT}/.venv/bin/python}"
 AUTO_UPDATE="${EDGE_SCOUT_AUTO_UPDATE:-1}"
