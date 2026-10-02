@@ -15,7 +15,7 @@ from ashare_edge_scout.mkf_candidate_selector import MkfCandidateRow, _atomic_pu
 
 
 class FakeClient:
-    def __init__(self, payload: dict[str, object] | None = None, fail: bool = False):
+    def __init__(self, payload: dict[str, object] | None = None, fail: bool = False, fail_times: int = 0):
         self.calls: list[str] = []
         self.payload = payload or {
             "review_state": "priority_research",
@@ -30,6 +30,8 @@ class FakeClient:
             "committee_disagreement_flags": [],
         }
         self.fail = fail
+        self.fail_times = fail_times
+        self.failures = 0
         self.candidate: dict[str, object] | None = None
         self.context: dict[str, object] | None = None
         self.news_context: dict[str, object] | None = None
@@ -39,7 +41,8 @@ class FakeClient:
         self.candidate = candidate
         self.context = context
         self.news_context = news_context
-        if self.fail:
+        if self.fail or self.failures < self.fail_times:
+            self.failures += 1
             raise ValueError("boom")
         return self.payload, "fake-model"
 
@@ -136,6 +139,16 @@ def test_mkf_ai_review_validates_source_manifest_hash(tmp_path: Path) -> None:
         validate_mkf_selection_run(run)
 
 
+def test_mkf_ai_review_accepts_immutable_v5_selection(tmp_path: Path) -> None:
+    run = _mkf_run(tmp_path / "selections")
+    for name in ("summary.json", "manifest.json"):
+        path = run / name
+        value = json.loads(path.read_text(encoding="utf-8"))
+        value["schema_version"] = "ncn_mkf_candidate_selector_v5"
+        path.write_text(json.dumps(value) + "\n", encoding="utf-8")
+    validate_mkf_selection_run(run)
+
+
 def _fake_news_context(code: str, config: dict[str, object]) -> object:
     class News:
         def to_dict(self) -> dict[str, object]:
@@ -207,6 +220,12 @@ def test_mkf_ai_review_publishes_research_labels_and_source_hash(tmp_path: Path,
         header = next(csv.reader(file))
     assert header[header.index("confidence") + 1] == "local_score"
     assert header[:5] == ["code", "signal_date", "review_state", "confidence", "local_score"]
+    messages = mkf_ai_review.build_mkf_ai_messages(client.candidate, client.context, client.news_context, "test")
+    request = json.loads(messages[1]["content"])
+    assert request["response_contract"]["output_kind"] == "research_review"
+    assert request["response_contract"]["extension_fields_preserved"] is True
+    assert "execution_intent_allowed" not in request["response_contract"]
+    assert "forbidden_response_fields" not in request
     assert client.context is not None
     assert client.context["excluded_contexts"]["pmkf_kalman_used"] is False
     assert client.context["excluded_contexts"]["futu_fields_used"] is False
@@ -376,6 +395,62 @@ def test_mkf_ai_review_fails_closed_when_ai_fails(tmp_path: Path) -> None:
     assert summary["ai_success_count"] == 0
 
 
+def test_mkf_ai_review_retries_failed_ai_call_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(mkf_ai_review, "build_mkf_news_context", _fake_news_context)
+    selection_root = tmp_path / "selections"
+    run = _mkf_run(selection_root)
+    stages: list[tuple[str, dict[str, object]]] = []
+    client = FakeClient(fail_times=1)
+    result = run_mkf_ai_review(
+        selection_root=selection_root,
+        selection_run=run,
+        output_root=tmp_path / "mkf_ai_reviews",
+        config_path=_config(tmp_path),
+        data_root=_data(tmp_path),
+        ai_client=client,
+        run_id="mkf-ai-retry-recovers",
+        progress=lambda index, total, code, stage, detail=None: stages.append((stage, detail or {})),
+    )
+
+    rows = json.loads(result.reviews_path.read_text())
+    summary = json.loads(result.summary_path.read_text())
+    assert client.calls == ["sh.600001", "sh.600001"]
+    assert rows[0]["review_state"] == "priority_research"
+    assert summary["status"] == "success"
+    assert summary["ai_attempt_count"] == 2
+    assert summary["ai_called_count"] == 1
+    assert summary["ai_success_count"] == 1
+    assert summary["ai_error_counts"] == {}
+    assert [stage for stage, _ in stages if stage in {"ai", "ai_retry"}] == ["ai", "ai_retry"]
+
+
+def test_mkf_ai_review_records_full_error_text_after_retries(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(mkf_ai_review, "build_mkf_news_context", _fake_news_context)
+    selection_root = tmp_path / "selections"
+    run = _mkf_run(selection_root)
+    stages: list[tuple[str, dict[str, object]]] = []
+    client = FakeClient(fail=True)
+    result = run_mkf_ai_review(
+        selection_root=selection_root,
+        selection_run=run,
+        output_root=tmp_path / "mkf_ai_reviews",
+        config_path=_config(tmp_path),
+        data_root=_data(tmp_path),
+        ai_client=client,
+        run_id="mkf-ai-retry-exhausted",
+        progress=lambda index, total, code, stage, detail=None: stages.append((stage, detail or {})),
+    )
+
+    summary = json.loads(result.summary_path.read_text())
+    assert client.calls == ["sh.600001", "sh.600001"]
+    assert summary["status"] == "ai_failed"
+    assert summary["ai_attempt_count"] == 2
+    assert summary["ai_called_count"] == 1
+    assert summary["ai_error_counts"] == {"ValueError": 1}
+    final_detail = [detail for stage, detail in stages if stage == "ai_unavailable"][-1]
+    assert final_detail["error"] == "ValueError: boom"
+
+
 def test_mkf_ai_review_treats_incomplete_read_as_ai_unavailable(tmp_path: Path) -> None:
     class IncompleteReadClient:
         def analyze(self, candidate: dict[str, object], context: dict[str, object], news_context: dict[str, object]) -> tuple[dict[str, object], str]:
@@ -473,9 +548,8 @@ def test_mkf_ai_review_orders_ai_unavailable_after_risk_attention(tmp_path: Path
         '{"review_state":"priority_research","confidence":0.8,"real_money_pnl":"positive"}',
     ],
 )
-def test_mkf_ai_review_rejects_execution_claims(payload: str) -> None:
-    with pytest.raises(ValueError, match="forbidden"):
-        parse_ai_response(payload)
+def test_mkf_ai_review_allows_execution_content(payload: str) -> None:
+    assert parse_ai_response(payload)["review_state"] == "priority_research"
 
 
 @pytest.mark.parametrize(
@@ -493,6 +567,99 @@ def test_mkf_ai_review_rejects_execution_claims(payload: str) -> None:
 def test_mkf_ai_review_allows_human_research_advice(payload: str) -> None:
     parsed = parse_ai_response(payload)
     assert parsed["review_state"] == "priority_research"
+
+
+# Synthetic contract regressions, not reconstructed historical model responses.
+@pytest.mark.parametrize("text", [
+    "杠杆会放大亏损风险", "无法保证收益", "本研究不构成自动交易指令",
+    "真实成交量变化需结合量价确认", "并不代表已经发生真实成交",
+    "禁止自动下单，仅供人工复核", "BUY/SELL/WAIT 均为人工研究判断",
+    "自动交易风险需要人工评估", "真实成交存在不确定性",
+])
+@pytest.mark.parametrize("field", ["research_summary", "risk_flags", "committee"])
+@pytest.mark.parametrize("ensure_ascii", [True, False])
+def test_research_terms_do_not_grant_execution_permissions(text, field, ensure_ascii):
+    payload = {"review_state": "standard_research", "confidence": 0.6}
+    payload[field] = ({"risk_manager": {"stance": "cautious", "notes": [text]}}
+                      if field == "committee" else [text] if field == "risk_flags" else text)
+    assert parse_ai_response(json.dumps(payload, ensure_ascii=ensure_ascii))["review_state"] == "standard_research"
+
+
+def test_research_response_preserves_execution_extensions():
+    payload = {
+        "review_state": "standard_research",
+        "confidence": 0.6,
+        "execution_intent": {"orders": [{"brokerSession": "connected", "AUTO_ORDER": False}]},
+        "real_money_pnl": {"value": 12.3},
+        "committee": {
+            "risk_manager": {
+                "stance": "cautious",
+                "notes": ["系统将自动下单", "保证收益"],
+                "execution_assumptions": {"execution_id": "x", "filled_order": True},
+            },
+        },
+    }
+    parsed = parse_ai_response(json.dumps(payload))
+    assert parsed["execution_intent"] == payload["execution_intent"]
+    assert parsed["committee"]["risk_manager"]["execution_assumptions"] == payload["committee"]["risk_manager"]["execution_assumptions"]
+
+
+@pytest.mark.parametrize("extra", [
+    {"committee": {"unknown_role": {"notes": []}}},
+    {"committee": {"risk_manager": {"notes": "not an array"}}},
+    {"risk_flags": [{"execution_intent": None}]},
+])
+def test_research_response_rejects_malformed_known_structures(extra):
+    with pytest.raises(ValueError):
+        parse_ai_response(json.dumps({"review_state": "standard_research", "confidence": 0.6, **extra}))
+
+
+@pytest.mark.parametrize("content", [
+    '说明：{"review_state":"standard_research","confidence":0.6}',
+    '{"review_state":"standard_research","confidence":0.6}额外说明',
+    '{"review_state":"standard_research","confidence":0.6}{}',
+    '{"review_state":"standard_research","confidence":0.6,"confidence":0.7}',
+])
+def test_research_response_requires_one_unambiguous_json_object(content):
+    with pytest.raises(ValueError):
+        parse_ai_response(content)
+
+
+@pytest.mark.parametrize("confidence", [None, True, float("nan"), float("inf"), -1, 2, {}, 10**1000])
+def test_research_response_rejects_invalid_confidence(confidence):
+    with pytest.raises(ValueError, match="confidence"):
+        mkf_ai_review.validate_research_response({"review_state": "standard_research", "confidence": confidence})
+
+
+def test_research_response_accepts_full_json_fence():
+    assert parse_ai_response('```json\n{"review_state":"standard_research","confidence":0.6}\n```')["confidence"] == 0.6
+
+
+def test_injected_client_preserves_execution_extensions(tmp_path, monkeypatch):
+    monkeypatch.setattr(mkf_ai_review, "build_mkf_news_context", _fake_news_context)
+    payload = {
+        "review_state": "standard_research",
+        "confidence": 0.6,
+        "research_summary": "杠杆会放大亏损风险；无法保证收益，买入/卖出仅供人工复核。",
+        "execution_intent": {"orders": [{"order_status": "filled"}]},
+        "committee": {"risk_manager": {"notes": ["系统将自动下单"], "broker_session": "connected"}},
+    }
+    run = _mkf_run(tmp_path / "selections")
+    before = (run / "candidates.json").read_bytes()
+    result = run_mkf_ai_review(selection_root=run.parent, selection_run=run,
+                              output_root=tmp_path / "reviews", config_path=_config(tmp_path),
+                              data_root=_data(tmp_path), ai_client=FakeClient(payload), run_id="contract")
+    rows = json.loads(result.reviews_path.read_text())
+    summary = json.loads(result.summary_path.read_text())
+    assert rows[0]["review_state"] == "standard_research"
+    assert rows[0]["committee_output"]["execution_intent"] == payload["execution_intent"]
+    assert rows[0]["committee_output"]["committee"]["risk_manager"]["broker_session"] == "connected"
+    assert summary["response_contract"]["output_kind"] == "research_review"
+    assert "allow_live_order_submission" not in summary["boundaries"]
+    assert (run / "candidates.json").read_bytes() == before
+    assert sorted(p.name for p in tmp_path.iterdir()) == [
+        "ai_providers.yaml", "data", "fake.key", "mkf_ai.yaml", "mkf_news_context.yaml", "reviews", "selections",
+    ]
 
 
 def test_mkf_ai_config_loads_unified_provider_yaml(tmp_path: Path) -> None:
@@ -525,9 +692,14 @@ def test_repository_mkf_ai_config_loads_yaml_prompt() -> None:
     assert "未来1-10个交易日" in prompt
     assert "来源日期、发布日期" in prompt
     assert "不得给出priority_research" in prompt
-    assert "允许你给出买入/卖出/持有/等待确认等研究判断" in prompt
-    assert "参考目标区间、参考止盈止损" in prompt
-    assert "禁止输出或暗示系统已经连接券商、会自动下单" in prompt
+    assert "允许自由给出买入/卖出/持有/等待确认、下单、成交、券商" in prompt
+    assert "执行型JSON对象和字段会作为委员会研究输出保留" in prompt
+    assert "不必为规避关键词改写结论" in prompt
+    assert "不得触发交易接口或转换为真实订单" not in prompt
+    assert "输入证据和数据日期" in prompt
+    assert "不是校准胜率" in prompt
+    assert "扩展字段" in prompt
+    assert "禁止输出买入" not in mkf_ai_review.DEFAULT_MKF_AI_SYSTEM_PROMPT
     assert loaded["prompt"]["sha256"] == hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
 
@@ -605,10 +777,11 @@ def test_repository_internet_committee_uses_isolated_qwen_flash_provider() -> No
     assert loaded["ai"]["provider"] == "aliweek"
     assert loaded["ai"]["providers"]["aliweek"]["model"] == "qwen3.8-flash"
     assert loaded["ai_config_path"] == str((root / "yaml" / "mkf_ai_providers_aliweek_qwen38_flash.yaml").resolve())
-    assert "自动交易" not in loaded["prompt"]["system"]
-    assert "真实下单" not in loaded["prompt"]["system"]
-    assert "杠杆" not in loaded["prompt"]["system"]
-    assert "资金倍数/借贷放大" in loaded["prompt"]["system"]
+    prompt = loaded["prompt"]["system"]
+    assert "自动交易" in prompt
+    assert "下单" in prompt
+    assert "杠杆" in prompt
+    assert "不得讨论系统化执行" not in prompt
 
 
 def test_mkf_ai_committee_selector_fails_closed_for_missing_or_self_target(tmp_path: Path) -> None:

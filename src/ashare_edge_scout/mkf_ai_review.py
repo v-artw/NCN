@@ -40,25 +40,12 @@ SCHEMA_VERSION = "ncn_mkf_ai_review_v3"
 COMMITTEE_SELECTOR_SCHEMA_VERSION = "ncn_mkf_ai_committee_selector_v1"
 DEFAULT_MAX_CANDIDATES = 20
 VALID_REVIEW_STATES = {"priority_research", "standard_research", "risk_attention", "insufficient_evidence", "ai_unavailable"}
-FORBIDDEN_EXECUTION_LABELS = {
-    "AUTO_ORDER",
-    "AUTO_TRADE",
-    "BROKER_ORDER",
-    "REAL_MONEY_TRADE",
-    "LIVE_TRADE",
-}
-FORBIDDEN_RESPONSE_KEYS = {
-    "auto_order",
-    "auto_trade",
-    "broker_order",
-    "broker_session",
-    "execution_id",
-    "filled_order",
-    "guaranteed_return",
-    "guaranteed_win_rate",
-    "leverage",
-    "live_order",
-    "real_money_pnl",
+RESPONSE_CONTRACT_VERSION = "ncn_mkf_research_response_v2"
+AI_CALL_ATTEMPTS = 2
+AI_ERROR_TEXT_LIMIT = 300
+RESEARCH_RESPONSE_FIELDS = {
+    "review_state", "confidence", "research_summary", "technical_observations", "risk_flags",
+    "committee", "committee_disagreement_flags", "stop_loss", "target_price", "pnl",
 }
 COMMITTEE_ROLES = (
     "technical_analyst",
@@ -78,10 +65,12 @@ DEFAULT_MKF_AI_SYSTEM_PROMPT = (
     "禁止使用PMKF Kalman、Futu/MHPG/DXBD/BULLCLUSTER/MFK4/GDING/BBUY/Dingdi/POWERLINE、CNstock旧交易上下文、模型外部记忆或自行联网补充事实。"
     "请在单次JSON输出中模拟technical_analyst、sentiment_analyst、fundamental_analyst、bullish_researcher、bearish_researcher、chief_strategist、risk_manager。"
     "不得编造政策、业绩、诉讼、公告、行业情绪或资金消息；未提供证据时必须说明不可得。"
-    "禁止输出买入、卖出、持有、等待、下单、仓位、收益、止盈止损、目标价、P&L等操作建议；不得使用BUY/HOLD/AVOID/SELL/WAIT/PRE-BUY。"
+    "允许买入/卖出/持有/等待确认、参考目标区间、止盈止损、仓位、杠杆、订单、成交、券商、收益与P&L等人工研究分析，"
+    "不必为规避关键词改写结论；执行型JSON对象和字段也会作为委员会研究输出保留。"
+    "关键结论须引用提供的证据及数据日期，明确缺失和时效状态；confidence是研究信心而非胜率。"
     "仅输出JSON对象，字段为review_state(priority_research|standard_research|risk_attention|insufficient_evidence)、"
     "confidence(0到1)、research_summary、technical_observations(字符串数组)、risk_flags(字符串数组)、"
-    "committee(对象，可含各角色stance和notes)、committee_disagreement_flags(字符串数组)。"
+    "committee(对象，可含各角色stance和notes)、committee_disagreement_flags(字符串数组)，并可添加JSON兼容的扩展字段。"
 )
 BULLISH_CANDLE_PATTERNS = {
     "candle_hammer",
@@ -123,6 +112,7 @@ class MkfAIReviewRow:
     model: str | None
     source_selection_reason: str
     committee_summary: Mapping[str, Any] | None = None
+    committee_output: Mapping[str, Any] | None = None
     committee_roles: tuple[str, ...] = COMMITTEE_ROLES
     technical_context_status: str = "unknown"
     candlestick_patterns: tuple[str, ...] = ()
@@ -171,6 +161,7 @@ CSV_FIELDNAMES = (
     "model",
     "source_selection_reason",
     "committee_summary",
+    "committee_output",
     "committee_roles",
     "technical_context_status",
     "candlestick_patterns",
@@ -194,39 +185,53 @@ class OpenAICompatibleClient(SharedOpenAICompatibleClient):
 
     def analyze(self, candidate: Mapping[str, Any], context: Mapping[str, Any], news_context: Mapping[str, Any]) -> tuple[dict[str, Any], str]:
         model = self.resolved_model(user_agent="NCN-MKF-AI-Committee/1.0")
-        user_payload = {
-            "candidate": {
-                key: candidate.get(key)
-                for key in (
-                    "code", "signal_date", "cross_date", "post_cross_lag", "research_close", "amount_cny", "turn_pct",
-                    "mkf_momentum", "mkf_inter", "mkf_near", "mkf_red_cross_up_20",
-                    "mkf_blue_cross_up_20", "mkf_red_blue_cross_up_20_under_80", "selection_reason",
-                )
-            },
-            "ncn_technical_context": context,
-            "cnstock_news_context": news_context,
-            "committee_roles": list(COMMITTEE_ROLES),
-            "allowed_review_states": sorted(VALID_REVIEW_STATES - {"ai_unavailable"}),
-            "forbidden_execution_claims": sorted(FORBIDDEN_EXECUTION_LABELS | FORBIDDEN_RESPONSE_KEYS),
-            "boundary": {
-                "scanner_selection_is_immutable": True,
-                "post_selection_read_only_research_layer": True,
-                "do_not_modify_smc_admission_or_ranking": True,
-                "do_not_modify_watchlist_or_prospective_archive": True,
-                "do_not_use_pmkf_kalman": True,
-                "do_not_use_futu_fields": True,
-                "not_investment_advice": True,
-            },
-        }
-        messages = [
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False, sort_keys=True)},
-            ]
+        messages = build_mkf_ai_messages(candidate, context, news_context, self.system_prompt)
         response, model = self.chat_json(
             messages, user_agent="NCN-MKF-AI-Committee/1.0"
         )
         content = response["choices"][0]["message"]["content"]
         return parse_ai_response(content), model
+
+
+def build_mkf_ai_messages(
+    candidate: Mapping[str, Any],
+    context: Mapping[str, Any],
+    news_context: Mapping[str, Any],
+    system_prompt: str,
+) -> list[dict[str, str]]:
+    user_payload = {
+        "candidate": {
+            key: candidate.get(key)
+            for key in (
+                "code", "signal_date", "cross_date", "post_cross_lag", "research_close", "amount_cny", "turn_pct",
+                "mkf_momentum", "mkf_inter", "mkf_near", "mkf_red_cross_up_20",
+                "mkf_blue_cross_up_20", "mkf_red_blue_cross_up_20_under_80", "selection_reason",
+            )
+        },
+        "ncn_technical_context": context,
+        "cnstock_news_context": news_context,
+        "committee_roles": list(COMMITTEE_ROLES),
+        "response_contract": {
+            "version": RESPONSE_CONTRACT_VERSION,
+            "output_kind": "research_review",
+            "human_review_required": True,
+            "extension_fields_preserved": True,
+        },
+        "allowed_review_states": sorted(VALID_REVIEW_STATES - {"ai_unavailable"}),
+        "boundary": {
+            "scanner_selection_is_immutable": True,
+            "post_selection_read_only_research_layer": True,
+            "do_not_modify_smc_admission_or_ranking": True,
+            "do_not_modify_watchlist_or_prospective_archive": True,
+            "do_not_use_pmkf_kalman": True,
+            "do_not_use_futu_fields": True,
+            "not_investment_advice": True,
+        },
+    }
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False, sort_keys=True)},
+    ]
 
 
 def _sha256(path: Path) -> str:
@@ -278,45 +283,65 @@ def _string_tuple(value: Any, *, maximum: int = 8) -> tuple[str, ...]:
     return tuple(str(item).strip()[:300] for item in value[:maximum] if str(item).strip())
 
 
-FORBIDDEN_EXECUTION_PATTERN = re.compile(
-    r"\b(AUTO[_ -]?(?:ORDER|TRADE|REBALANCE)|BROKER[_ -]?(?:ORDER|SESSION|CONNECTIVITY)|"
-    r"REAL[_ -]?MONEY[_ -]?(?:TRADE|ORDER|PNL)|LIVE[_ -]?(?:TRADE|ORDER)|FILLED[_ -]?ORDER|"
-    r"GUARANTEED[_ -]?(?:RETURN|WIN[_ -]?RATE)|LEVERAGE)\b"
-    r"|自动下单|自动交易|自动调仓|券商下单|连接券商|已连接券商|真实下单|实盘下单|真实成交"
-    r"|保证收益|保证胜率|杠杆|真实P&L|实盘P&L|真实盈亏|实盘盈亏",
-    re.IGNORECASE,
-)
-
-NEGATED_EXECUTION_PREFIXES = (
-    "非", "不是", "不作为", "不会", "不得", "不能", "不可", "禁止", "无", "没有", "未", "并非",
-    "not ", "non-", "without ", "no ", "never ",
-)
+FORBIDDEN_EXECUTION_PATTERN = re.compile(r"(?!)")
 
 
-def _is_negated_execution_context(text: str, start: int) -> bool:
-    prefix = text[max(0, start - 8):start].lower()
-    return any(marker in prefix for marker in NEGATED_EXECUTION_PREFIXES)
+def execution_claim_matches(value: Any) -> list[str]:
+    return []
 
 
-def _contains_forbidden_execution_text(text: str) -> bool:
-    for match in FORBIDDEN_EXECUTION_PATTERN.finditer(text):
-        if not _is_negated_execution_context(text, match.start()):
-            return True
-    return False
+def _validate_research_text(value: Any, *, array: bool = False) -> None:
+    if value is None:
+        return
+    if array:
+        if isinstance(value, list) and all(isinstance(item, str) for item in value):
+            return
+    elif isinstance(value, str):
+        return
+    raise ValueError("AI research field has invalid type")
 
 
-def _scan_forbidden_payload(value: Any) -> None:
-    if isinstance(value, Mapping):
-        for key, child in value.items():
-            key_text = str(key)
-            if key_text in FORBIDDEN_RESPONSE_KEYS or _contains_forbidden_execution_text(key_text):
-                raise ValueError("AI response contains forbidden execution claim")
-            _scan_forbidden_payload(child)
-    elif isinstance(value, list):
-        for child in value:
-            _scan_forbidden_payload(child)
-    elif isinstance(value, str) and _contains_forbidden_execution_text(value):
-        raise ValueError("AI response contains forbidden execution claim")
+def _validate_json_extensions(value: Any) -> None:
+    try:
+        json.dumps(value, ensure_ascii=False, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("AI response extension is not JSON-compatible") from exc
+
+
+def validate_research_response(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, Mapping):
+        raise ValueError("AI response is not an object")
+    parsed = dict(payload)
+    state = str(parsed.get("review_state", "")).strip().lower()
+    if state not in (VALID_REVIEW_STATES - {"ai_unavailable"}):
+        raise ValueError("AI review_state is invalid")
+    try:
+        confidence = float(parsed.get("confidence", 0.0))
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("AI confidence is outside [0, 1]") from exc
+    if isinstance(parsed.get("confidence"), bool) or not math.isfinite(confidence) or not 0 <= confidence <= 1:
+        raise ValueError("AI confidence is outside [0, 1]")
+    _validate_research_text(parsed.get("research_summary"))
+    for field in ("technical_observations", "risk_flags", "committee_disagreement_flags"):
+        _validate_research_text(parsed.get(field), array=True)
+    committee = parsed.get("committee")
+    if committee is not None:
+        if not isinstance(committee, Mapping) or set(committee) - set(COMMITTEE_ROLES):
+            raise ValueError("AI committee contains unknown research role")
+        for role in committee.values():
+            if not isinstance(role, Mapping):
+                raise ValueError("AI committee role is not an object")
+            _validate_research_text(role.get("stance"))
+            _validate_research_text(role.get("notes"), array=True)
+    for field in ("stop_loss", "target_price", "pnl"):
+        if field in parsed and not isinstance(parsed[field], (str, int, float, type(None))):
+            raise ValueError("AI research reference has invalid type")
+    _validate_json_extensions(parsed)
+    parsed["review_state"] = state
+    parsed["confidence"] = confidence
+    parsed["committee"] = _normalise_committee(committee)
+    parsed["committee_disagreement_flags"] = list(_string_tuple(parsed.get("committee_disagreement_flags"), maximum=6))
+    return parsed
 
 
 def _normalise_committee(value: Any) -> dict[str, Any] | None:
@@ -327,36 +352,39 @@ def _normalise_committee(value: Any) -> dict[str, Any] | None:
         raw = value.get(role)
         if not isinstance(raw, Mapping):
             continue
-        notes = _string_tuple(raw.get("notes"), maximum=5)
-        result[role] = {"stance": str(raw.get("stance") or "insufficient")[:80], "notes": list(notes)}
+        normalized = dict(raw)
+        normalized["stance"] = str(raw.get("stance") or "insufficient")[:80]
+        normalized["notes"] = list(_string_tuple(raw.get("notes"), maximum=5))
+        result[role] = normalized
     return result or None
 
 
-def parse_ai_response(content: Any) -> dict[str, Any]:
-    text = str(content or "").strip()
-    if _contains_forbidden_execution_text(text):
-        raise ValueError("AI response contains forbidden execution claim")
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
-        text = re.sub(r"\s*```$", "", text)
-    start, end = text.find("{"), text.rfind("}")
-    if start < 0 or end <= start:
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("AI response contains duplicate JSON key")
+        result[key] = value
+    return result
+
+
+def decode_ai_response(content: Any) -> dict[str, Any]:
+    if not isinstance(content, str):
         raise ValueError("AI response contains no JSON object")
-    parsed = json.loads(text[start:end + 1])
+    text = content.strip()
+    fence = re.fullmatch(r"```(?:json)?\s*\n?(.*?)\s*```", text, re.IGNORECASE | re.DOTALL)
+    if fence:
+        text = fence.group(1).strip()
+    if "{" not in text:
+        raise ValueError("AI response contains no JSON object")
+    parsed = json.loads(text, object_pairs_hook=_unique_json_object)
     if not isinstance(parsed, dict):
         raise ValueError("AI response is not an object")
-    _scan_forbidden_payload(parsed)
-    state = str(parsed.get("review_state", "")).strip().lower()
-    if state not in (VALID_REVIEW_STATES - {"ai_unavailable"}):
-        raise ValueError("AI review_state is invalid")
-    confidence = float(parsed.get("confidence", 0.0))
-    if not 0 <= confidence <= 1:
-        raise ValueError("AI confidence is outside [0, 1]")
-    parsed["review_state"] = state
-    parsed["confidence"] = confidence
-    parsed["committee"] = _normalise_committee(parsed.get("committee"))
-    parsed["committee_disagreement_flags"] = list(_string_tuple(parsed.get("committee_disagreement_flags"), maximum=6))
     return parsed
+
+
+def parse_ai_response(content: Any) -> dict[str, Any]:
+    return validate_research_response(decode_ai_response(content))
 
 
 def _resolve_mkf_ai_config_path(path: Path) -> tuple[Path, Path | None]:
@@ -469,10 +497,11 @@ def validate_mkf_selection_run(run: Path) -> tuple[list[dict[str, Any]], str]:
     manifest_path = run / "manifest.json"
     summary_path = run / "summary.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("schema_version") != MKF_SELECTION_SCHEMA:
+    accepted_schemas = {"ncn_mkf_candidate_selector_v5", MKF_SELECTION_SCHEMA}
+    if manifest.get("schema_version") not in accepted_schemas:
         raise ValueError("selection run is not an MKF candidate selection")
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
-    if summary.get("schema_version") != MKF_SELECTION_SCHEMA:
+    if summary.get("schema_version") not in accepted_schemas:
         raise ValueError("selection summary is not an MKF candidate selection")
     expected = (((manifest.get("files") or {}).get("candidates.json") or {}).get("sha256"))
     actual = _sha256(candidates_path)
@@ -891,6 +920,7 @@ def _row_from_ai(candidate: Mapping[str, Any], context: Mapping[str, Any], news_
         model=model,
         source_selection_reason=str(candidate.get("selection_reason") or ""),
         committee_summary=committee,
+        committee_output=dict(ai_result),
         committee_roles=COMMITTEE_ROLES,
         technical_context_status=context_status,
         candlestick_patterns=patterns,
@@ -935,6 +965,7 @@ def run_mkf_ai_review(
     rows: list[MkfAIReviewRow] = []
     ai_errors: Counter[str] = Counter()
     ai_attempt_count = 0
+    ai_called_count = 0
     ai_success_count = 0
     contexts: list[dict[str, Any]] = []
     news_contexts: list[dict[str, Any]] = []
@@ -983,16 +1014,26 @@ def run_mkf_ai_review(
         if client is None or index > max_candidates:
             row = _fallback_row(candidate, context, news_context, state="ai_unavailable")
         else:
-            ai_attempt_count += 1
-            if progress is not None:
-                progress(index, len(candidates), code, "ai", detail)
-            try:
-                ai_result, model = client.analyze(candidate, context, news_context)
-                row = _row_from_ai(candidate, context, news_context, ai_result, model)
-                ai_success_count += 1
-            except (MkfAIRequestError, http.client.HTTPException, KeyError, TypeError, ValueError, OSError, urllib.error.URLError) as exc:
-                ai_errors[str(exc) if isinstance(exc, MkfAIRequestError) else type(exc).__name__] += 1
-                detail = {**detail, "error": str(exc) if isinstance(exc, MkfAIRequestError) else type(exc).__name__}
+            row = None
+            last_exc: Exception | None = None
+            ai_called_count += 1
+            for attempt in range(AI_CALL_ATTEMPTS):
+                ai_attempt_count += 1
+                if progress is not None:
+                    progress(index, len(candidates), code, "ai" if attempt == 0 else "ai_retry", detail)
+                try:
+                    ai_result, model = client.analyze(candidate, context, news_context)
+                    ai_result = validate_research_response(ai_result)
+                    row = _row_from_ai(candidate, context, news_context, ai_result, model)
+                    ai_success_count += 1
+                    break
+                except (MkfAIRequestError, http.client.HTTPException, KeyError, TypeError, ValueError, OSError, urllib.error.URLError) as exc:
+                    last_exc = exc
+            if row is None and last_exc is not None:
+                error_type = type(last_exc).__name__
+                error_text = str(last_exc) if isinstance(last_exc, MkfAIRequestError) else f"{error_type}: {last_exc}"
+                ai_errors[error_type] += 1
+                detail = {**detail, "error": error_text[:AI_ERROR_TEXT_LIMIT]}
                 row = _fallback_row(candidate, context, news_context, state="ai_unavailable")
         if progress is not None:
             progress(index, len(candidates), code, row.review_state, {**detail, "confidence": row.confidence, "local_score": row.local_score, "risk_flags": row.risk_flags})
@@ -1026,6 +1067,7 @@ def run_mkf_ai_review(
                 values["technical_observations"] = "|".join(values["technical_observations"])
                 values["risk_flags"] = "|".join(values["risk_flags"])
                 values["committee_summary"] = json.dumps(values["committee_summary"], ensure_ascii=False, sort_keys=True) if values["committee_summary"] else ""
+                values["committee_output"] = json.dumps(values["committee_output"], ensure_ascii=False, sort_keys=True, allow_nan=False) if values["committee_output"] else ""
                 values["committee_roles"] = "|".join(values["committee_roles"])
                 values["candlestick_patterns"] = "|".join(values["candlestick_patterns"])
                 values["committee_disagreement_flags"] = "|".join(values["committee_disagreement_flags"])
@@ -1039,7 +1081,7 @@ def run_mkf_ai_review(
                 for source, source_state in source_status.items():
                     if str(source_state).startswith("error:"):
                         news_source_error_counts[f"{source}:{source_state}"] += 1
-        status = "success" if not candidates or client is None or ai_attempt_count == ai_success_count else ("partial" if ai_success_count else "ai_failed")
+        status = "success" if not candidates or client is None or ai_called_count == ai_success_count else ("partial" if ai_success_count else "ai_failed")
         news_config_path = Path(str(config.get("news_config_path") or ""))
         prompt_config = config.get("prompt") or {}
         ai_config = config.get("_ai_provider_config")
@@ -1076,12 +1118,20 @@ def run_mkf_ai_review(
             "ai_temperature": ai_mapping.get("temperature"),
             "ai_seed": ai_mapping.get("seed"),
             "ai_attempt_count": ai_attempt_count,
+            "ai_called_count": ai_called_count,
             "ai_success_count": ai_success_count,
             "state_counts": counts,
             "ai_error_counts": dict(ai_errors),
             "context_records": [{"code": item["code"], "signal_date": item.get("signal_date"), "status": item["technical_context"].get("status")} for item in contexts],
             "review_order": "state_priority_then_confidence_desc_then_local_score_desc_then_code",
             "decision_boundary": "experimental_mkf_committee_research_priority_not_validated_win_probability",
+            "response_contract": {
+                "version": RESPONSE_CONTRACT_VERSION,
+                "output_kind": "research_review",
+                "human_review_required": True,
+                "is_executed_order": False,
+                "confidence_is_win_probability": False,
+            },
             "committee": {
                 "enabled": True,
                 "roles": list(COMMITTEE_ROLES),
@@ -1115,8 +1165,6 @@ def run_mkf_ai_review(
             "boundaries": {
                 "read_only": True,
                 "production_enabled": False,
-                "broker_connected": False,
-                "orders_submitted": False,
                 "returns_calculated": False,
                 "smc_admission_modified": False,
                 "smc_ranking_modified": False,

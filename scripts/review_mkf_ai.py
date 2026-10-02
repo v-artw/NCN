@@ -62,6 +62,7 @@ def main(argv: list[str] | None = None) -> int:
             "persisted_context": "读取已发布技术/新闻上下文（不重建、不刷新）",
             "news": "抓取/刷新CNstock兼容新闻上下文",
             "ai": "调用AI委员会研究分层",
+            "ai_retry": "AI首次调用失败，重试中",
             "priority_research": "完成：优先研究",
             "standard_research": "完成：标准研究",
             "risk_attention": "完成：风险关注",
