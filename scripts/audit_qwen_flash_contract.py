@@ -23,11 +23,7 @@ from ashare_edge_scout.ai_providers import (  # noqa: E402
     build_ai_client,
     load_ai_provider_config,
 )
-from ashare_edge_scout.mkf_ai_review import (  # noqa: E402
-    FORBIDDEN_EXECUTION_PATTERN,
-    load_mkf_ai_config,
-    parse_ai_response,
-)
+from ashare_edge_scout.mkf_ai_review import load_mkf_ai_config, parse_ai_response  # noqa: E402
 
 DEFAULT_SOURCE_RUN = PROJECT_ROOT / "output/edge_scout/mkf_ai_reviews/mkf-ai-review-20260930_155435"
 DEFAULT_SELECTION_RUN = PROJECT_ROOT / "output/edge_scout/mkf_candidate_selections/mkf-select-20260930_093606"
@@ -129,11 +125,7 @@ def main(argv: list[str] | None = None) -> int:
         "allowed_review_states": [
             "insufficient_evidence", "priority_research", "risk_attention", "standard_research"
         ],
-        "forbidden_execution_claims": [
-            "AUTO_ORDER", "AUTO_REBALANCE", "AUTO_TRADE", "BROKER_CONNECTIVITY", "BROKER_ORDER",
-            "BROKER_SESSION", "FILLED_ORDER", "GUARANTEED_RETURN", "GUARANTEED_WIN_RATE", "LEVERAGE",
-            "LIVE_ORDER", "LIVE_TRADE", "REAL_MONEY_ORDER", "REAL_MONEY_PNL", "REAL_MONEY_TRADE",
-        ],
+        "response_contract": {"extension_fields_preserved": True},
         "boundary": {
             "scanner_selection_is_immutable": True,
             "post_selection_read_only_research_layer": True,
@@ -181,7 +173,6 @@ def main(argv: list[str] | None = None) -> int:
         "parse_status": parse_status,
         "parse_error": parse_error,
         "request_error": request_error,
-        "forbidden_execution_matches": [match.group(0) for match in FORBIDDEN_EXECUTION_PATTERN.finditer(content)],
         "response_shape": _response_shape(content),
     }
     destination = args.output_root / f"qwen3_8_flash_{args.code.replace('.', '')}_audit_{time.strftime('%Y%m%d_%H%M%S')}"

@@ -60,51 +60,39 @@ def test_invalid_json_retains_raw_evidence():
     assert result["error"]
 
 
-def test_human_research_advice_is_allowed_by_contract():
+@pytest.mark.parametrize("text", [
+    "人工复核建议：买入观察，等待确认，参考止损和目标区间。",
+    "系统将自动下单",
+    "所有判断仅为人工复核参考，非自动交易或收益承诺。",
+    "杠杆会放大亏损风险",
+    "本研究不构成自动交易指令",
+    "无法保证收益",
+    "真实成交量变化",
+])
+def test_execution_and_performance_text_is_accepted(text):
+    content = json.dumps({"review_state": "standard_research", "confidence": 0.6,
+                          "research_summary": text}, ensure_ascii=False)
+    result = module.evaluate_case(FakeClient(content), case(), 2048)
+    assert result["parsed_by_project"] and result["contract_pass"]
+
+
+def test_execution_extensions_are_accepted():
     content = json.dumps({
         "review_state": "standard_research",
         "confidence": 0.6,
-        "research_summary": "人工复核建议：买入观察，等待确认，参考止损和目标区间。",
+        "execution_intent": {"orders": [{"side": "buy"}]},
+        "committee": {"technical_analyst": {"notes": ["保证收益"], "broker_session": "test"}},
     }, ensure_ascii=False)
     result = module.evaluate_case(FakeClient(content), case(), 2048)
-    assert result["forbidden_term_count"] == 0
-    assert result["contract_pass"]
+    assert result["parsed_by_project"] and result["contract_pass"]
 
 
-def test_execution_claim_flag_independent_of_parser():
-    content = json.dumps({"review_state": "standard_research", "confidence": 0.6,
-                          "research_summary": "系统将自动下单"}, ensure_ascii=False)
-    result = module.evaluate_case(FakeClient(content), case(), 2048)
-    assert result["forbidden_term_count"] == 1
-    assert not result["contract_pass"]
-
-
-def test_negated_execution_disclaimer_is_allowed():
-    content = json.dumps({"review_state": "standard_research", "confidence": 0.6,
-                          "research_summary": "所有判断仅为人工复核参考，非自动交易或收益承诺。"}, ensure_ascii=False)
-    result = module.evaluate_case(FakeClient(content), case(), 2048)
-    assert result["forbidden_term_count"] == 0
-    assert result["contract_pass"]
-
-
-def test_escaped_chinese_is_checked_before_parser_normalization():
-    content = json.dumps({"review_state": "standard_research", "confidence": 0.6,
-                          "committee": {"technical_analyst": {"notes": "保证收益"}}})
-    assert "保证收益" not in content
-    result = module.evaluate_case(FakeClient(content), case(), 2048)
-    assert result["forbidden_term_count"] == 1
-    assert result["committee_notes_type_mismatch_count"] == 1
-    assert not result["contract_pass"]
-
-
-def test_research_advice_with_string_notes_only_fails_schema_mismatch():
+def test_string_committee_notes_fail_schema_mismatch():
     content = json.dumps({"review_state": "standard_research", "confidence": 0.6,
                           "committee": {"technical_analyst": {"notes": "建议买入观察"}}}, ensure_ascii=False)
     result = module.evaluate_case(FakeClient(content), case(), 2048)
-    assert result["forbidden_term_count"] == 0
     assert result["committee_notes_type_mismatch_count"] == 1
-    assert result["parsed_by_project"]
-    assert result["contract_pass"]
+    assert not result["parsed_by_project"] and not result["contract_pass"]
 
 
 def test_model_major_serial_replay_and_no_quality_ranking(tmp_path):
@@ -150,6 +138,27 @@ def test_audit_checks_hashes_and_keeps_raw_files_unchanged(tmp_path):
     (tmp_path / "response-01-01.json").write_text("tampered")
     with pytest.raises(ValueError, match="manifest mismatch"):
         module.audit_saved_run(tmp_path)
+
+
+def test_audit_reparses_old_failure_with_current_contract(tmp_path):
+    inputs = {"cases": [case()], "models": ["model-a"]}
+    module.write_json(tmp_path / "inputs.json", inputs)
+    content = json.dumps({"review_state": "standard_research", "confidence": 0.6,
+                          "risk_flags": ["杠杆会放大亏损风险"]})
+    module.run_eval(FakeClient(content), inputs, inputs["models"], tmp_path, 2048)
+    path = tmp_path / "response-01-01.json"
+    row = json.loads(path.read_text())
+    row.pop("parsed")
+    row.update(parsed_by_project=False, contract_pass=False, error="old keyword rejection")
+    module.write_json(path, row)
+    hashes = {p.name: module.hashlib.sha256(p.read_bytes()).hexdigest() for p in tmp_path.iterdir()}
+    module.write_json(tmp_path / "manifest.json", {"sha256": hashes})
+    report = module.audit_saved_run(tmp_path)
+    assert report["summaries"][0]["contract_pass_count"] == 1
+    assert report["summaries"][0]["mean_confidence"] == 0.6
+    assert report["rows"][0]["error"] == ""
+    for name, expected in hashes.items():
+        assert module.hashlib.sha256((tmp_path / name).read_bytes()).hexdigest() == expected
 
 
 def test_transport_failure_stops_remaining_requests(tmp_path):

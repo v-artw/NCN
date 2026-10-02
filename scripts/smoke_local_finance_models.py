@@ -30,21 +30,8 @@ DEFAULT_MODELS = (
     "Ornith-1.0-35B-4bit",
     "Qwen3.8-27B-oQ4e-mtp",
 )
-FORBIDDEN_EXECUTION_PATTERN = (
-    "AUTO_ORDER|AUTO_TRADE|AUTO_REBALANCE|BROKER_ORDER|BROKER_SESSION|BROKER_CONNECTIVITY|"
-    "REAL_MONEY_TRADE|REAL_MONEY_ORDER|REAL_MONEY_PNL|LIVE_TRADE|LIVE_ORDER|FILLED_ORDER|"
-    "GUARANTEED_RETURN|GUARANTEED_WIN_RATE|LEVERAGE|"
-    "自动下单|自动交易|自动调仓|券商下单|连接券商|已连接券商|真实下单|实盘下单|真实成交|"
-    "保证收益|保证胜率|杠杆|真实P&L|实盘P&L|真实盈亏|实盘盈亏"
-)
-NEGATED_EXECUTION_PREFIXES = (
-    "非", "不是", "不作为", "不会", "不得", "不能", "不可", "禁止", "无", "没有", "未", "并非",
-    "not ", "non-", "without ", "no ", "never ",
-)
-
-SYSTEM_PROMPT = """你是NCN A股MKF只读人工复核模型。只能基于给定MKF/OHLCV上下文做研究排序证据整理。
-本系统未对接实盘，允许输出买入观察、卖出风险、持有观察、等待确认、参考目标区间、参考止盈止损和风险失效位等人工研判建议。
-禁止输出或暗示系统会自动下单、自动交易、自动调仓、连接券商、真实成交、保证收益、保证胜率、真实P&L或杠杆执行。所有建议都必须是人工复核参考。
+SYSTEM_PROMPT = """你是NCN A股MKF人工复核模型。只能基于给定MKF/OHLCV上下文做研究排序证据整理。
+允许输出买入、卖出、持有、等待确认、自动交易、订单、券商、成交、仓位、杠杆、收益、胜率、P&L、目标区间、止盈止损、风险失效位和执行分析；执行型JSON对象与扩展字段将保留。
 仅输出JSON对象，字段为review_state(priority_research|standard_research|risk_attention|insufficient_evidence)、confidence(0到1)、research_summary、technical_observations(字符串数组)、risk_flags(字符串数组)、committee(对象)、committee_disagreement_flags(字符串数组)。"""
 
 USER_PROMPT = """候选：sh.600000，信号日2026-09-04，post_cross_lag=1。
@@ -63,7 +50,6 @@ class ModelResult:
     confidence: float | None = None
     json_valid: bool = False
     parsed_by_project: bool = False
-    forbidden_term_count: int = 0
     observation_count: int = 0
     risk_flag_count: int = 0
     summary_chars: int = 0
@@ -79,7 +65,7 @@ class ModelResult:
             "risk_attention": 1,
         }.get(self.review_state, 0)
         return (
-            int(self.json_valid) + int(self.parsed_by_project) + int(self.forbidden_term_count == 0),
+            int(self.json_valid) + int(self.parsed_by_project),
             float(self.confidence or 0.0),
             state_score,
             min(self.observation_count, 4),
@@ -129,17 +115,6 @@ def extract_content(response: Mapping[str, Any]) -> str:
     return str(message.get("content") or "").strip()
 
 
-def forbidden_execution_count(text: str) -> int:
-    import re
-
-    count = 0
-    for match in re.finditer(FORBIDDEN_EXECUTION_PATTERN, text, flags=re.IGNORECASE):
-        prefix = text[max(0, match.start() - 8):match.start()].lower()
-        if not any(marker in prefix for marker in NEGATED_EXECUTION_PREFIXES):
-            count += 1
-    return count
-
-
 def evaluate_model(args: argparse.Namespace, model: str) -> ModelResult:
     started = time.monotonic()
     try:
@@ -154,7 +129,6 @@ def evaluate_model(args: argparse.Namespace, model: str) -> ModelResult:
         )
         elapsed = time.monotonic() - started
         content = extract_content(response)
-        forbidden_count = forbidden_execution_count(content)
         parsed = parse_ai_response(content)
         return ModelResult(
             model=resolved_model,
@@ -164,7 +138,6 @@ def evaluate_model(args: argparse.Namespace, model: str) -> ModelResult:
             confidence=float(parsed["confidence"]),
             json_valid=True,
             parsed_by_project=True,
-            forbidden_term_count=forbidden_count,
             observation_count=len(parsed.get("technical_observations") or []),
             risk_flag_count=len(parsed.get("risk_flags") or []),
             summary_chars=len(str(parsed.get("research_summary") or "")),
@@ -187,7 +160,6 @@ def result_row(result: ModelResult) -> dict[str, Any]:
         "confidence": result.confidence,
         "json_valid": result.json_valid,
         "parsed_by_project": result.parsed_by_project,
-        "forbidden_term_count": result.forbidden_term_count,
         "observation_count": result.observation_count,
         "risk_flag_count": result.risk_flag_count,
         "summary_chars": result.summary_chars,

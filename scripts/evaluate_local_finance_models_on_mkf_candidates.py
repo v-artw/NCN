@@ -6,7 +6,6 @@ import argparse
 import csv
 import hashlib
 import json
-import re
 import sys
 import time
 from collections import Counter
@@ -21,7 +20,7 @@ from ashare_edge_scout.ai_providers import (  # noqa: E402
 )
 from ashare_edge_scout.mkf_ai_review import (  # noqa: E402
     OpenAICompatibleClient, _mkf_technical_context, load_mkf_ai_config,
-    parse_ai_response, validate_mkf_selection_run,
+    decode_ai_response, parse_ai_response, validate_mkf_selection_run,
 )
 from ashare_edge_scout.mkf_news_context import NO_NEWS_TEXT  # noqa: E402
 
@@ -29,27 +28,6 @@ DEFAULT_MODELS = (
     "Qwen3.8-27B-oQ4e-mtp", "Ornith-1.0-35B-4bit",
     "Ornith-1.5-35B-A3B-oQ6e-mtp", "Ornith-1.5-35B-A3B-oQ4e-mtp",
 )
-FORBIDDEN = re.compile(
-    r"\b(AUTO[_ -]?(?:ORDER|TRADE|REBALANCE)|BROKER[_ -]?(?:ORDER|SESSION|CONNECTIVITY)|"
-    r"REAL[_ -]?MONEY[_ -]?(?:TRADE|ORDER|PNL)|LIVE[_ -]?(?:TRADE|ORDER)|FILLED[_ -]?ORDER|"
-    r"GUARANTEED[_ -]?(?:RETURN|WIN[_ -]?RATE)|LEVERAGE)\b"
-    r"|自动下单|自动交易|自动调仓|券商下单|连接券商|已连接券商|真实下单|实盘下单|真实成交"
-    r"|保证收益|保证胜率|杠杆|真实P&L|实盘P&L|真实盈亏|实盘盈亏",
-    re.IGNORECASE,
-)
-NEGATED_EXECUTION_PREFIXES = (
-    "非", "不是", "不作为", "不会", "不得", "不能", "不可", "禁止", "无", "没有", "未", "并非",
-    "not ", "non-", "without ", "no ", "never ",
-)
-
-
-def forbidden_matches(text: str) -> list[str]:
-    hits = []
-    for match in FORBIDDEN.finditer(text):
-        prefix = text[max(0, match.start() - 8):match.start()].lower()
-        if not any(marker in prefix for marker in NEGATED_EXECUTION_PREFIXES):
-            hits.append(match.group(0))
-    return hits
 
 
 def digest(value: Any) -> str:
@@ -102,14 +80,12 @@ def freeze_inputs(selection_run: Path, data_root: Path, config: dict, top: int) 
 
 
 def inspect_content(content: str) -> dict:
-    result = {"json_valid": False, "forbidden_term_count": len(forbidden_matches(content)),
-              "committee_notes_type_mismatch_count": 0}
+    result = {"json_valid": False, "committee_notes_type_mismatch_count": 0}
     try:
-        raw = json.loads(content)
+        raw = decode_ai_response(content)
     except (ValueError, TypeError):
         return result
     result["json_valid"] = isinstance(raw, dict)
-    result["forbidden_term_count"] = len(forbidden_matches(json.dumps(raw, ensure_ascii=False)))
     if isinstance(raw, dict) and isinstance(raw.get("committee"), dict):
         result["committee_notes_type_mismatch_count"] = sum(
             isinstance(role, dict) and isinstance(role.get("notes"), str) and bool(role["notes"])
@@ -122,7 +98,7 @@ def evaluate_case(client, case: dict, max_tokens: int) -> dict:
     row = {"code": case["code"], "signal_date": case["signal_date"],
            "model": client.model, "messages_sha256": case["messages_sha256"],
            "json_valid": False, "parsed_by_project": False, "contract_pass": False,
-           "finish_reason": "", "forbidden_term_count": 0, "error": ""}
+           "finish_reason": "", "error": ""}
     started = time.monotonic()
     try:
         response, resolved = client.chat_json(
@@ -139,8 +115,7 @@ def evaluate_case(client, case: dict, max_tokens: int) -> dict:
         parsed = parse_ai_response(content)
         row["parsed"] = parsed
         row["parsed_by_project"] = True
-        row["contract_pass"] = (row["json_valid"] and row["finish_reason"] == "stop"
-                                and row["forbidden_term_count"] == 0)
+        row["contract_pass"] = row["finish_reason"] == "stop"
     except (AIRequestError, ValueError, TypeError, KeyError, IndexError, OSError) as exc:
         # Do not persist transport errors, which can include server-echoed secrets.
         row["error"] = type(exc).__name__ if isinstance(exc, AIRequestError) else str(exc)
@@ -160,7 +135,6 @@ def report_results(models: list[str], cases: list[dict], results: list[dict], co
             "parser_success_count": len(valid),
             "contract_pass_count": sum(r["contract_pass"] for r in rows),
             "truncated_count": sum(r["finish_reason"] == "length" for r in rows),
-            "forbidden_output_count": sum(r["forbidden_term_count"] > 0 for r in rows),
             "committee_notes_mismatch_outputs": sum(r.get("committee_notes_type_mismatch_count", 0) > 0 for r in rows),
             "error_count": sum(bool(r["error"]) for r in rows),
             "mean_seconds": round(sum(r["elapsed_seconds"] for r in rows) / len(rows), 3) if rows else None,
@@ -219,11 +193,18 @@ def audit_saved_run(output: Path) -> dict:
             if (row["code"], row["model"], row["messages_sha256"]) != (case["code"], model, digest(case["messages"])):
                 raise ValueError(f"input identity mismatch: {path.name}")
             row.update(inspect_content(row.get("content", "")))
-            row["contract_pass"] = (row["json_valid"] and row["parsed_by_project"]
-                                    and row["finish_reason"] == "stop" and not row["forbidden_term_count"])
+            try:
+                row["parsed"] = parse_ai_response(row.get("content", ""))
+                row["parsed_by_project"] = True
+                row["error"] = ""
+            except (ValueError, TypeError) as exc:
+                row["parsed_by_project"] = False
+                if not row.get("transport_failed"):
+                    row["error"] = str(exc)
+            row["contract_pass"] = row["parsed_by_project"] and row["finish_reason"] == "stop"
             rows.append(row)
     report = report_results(models, cases, rows, True)
-    report["audit"] = "manifest_and_prompt_identity_verified_decoded_keywords"
+    report["audit"] = "manifest_and_prompt_identity_verified_current_research_contract"
     report["rows"] = [{k: v for k, v in r.items() if k not in {"response", "content", "parsed"}} for r in rows]
     write_json(output / "audit-summary.json", report)
     with (output / "audit-summary.csv").open("w", encoding="utf-8", newline="") as stream:

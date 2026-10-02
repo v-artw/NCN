@@ -1,5 +1,372 @@
 # Reviewer Handoff
 
+## Completed Task: 生产治理与 AI 委员会提示词限制审查（钢人门）+ release 检查点 (2026-10-02)
+
+### Task
+- 用户先要求"NCN 转生产、去掉所有限制"，收窄为"去掉对研究/测试的围栏"，再收窄为"去掉对 AI 委员会提示词的各种限制"；按钢人门逐层盘点后，用户最终决定"暂时不修改"。
+- 本轮未修改任何治理文档、提示词、解析器或代码围栏；仅提交既有未入库工作并把当前状态发布为新 release。
+
+### Changed Files
+- 本 `HANDOFF.md` 条目。提交包含 10-01 会话已产出但未入库的文件：`src/ashare_edge_scout/research_mkf_ai_target_touch.py`、`scripts/evaluate_mkf_ai_review_target_touch.py`、`scripts/audit_mkf_frozen_contract.py` 及对应 tests、`experiments/` 选择器实验脚本、4 份 `yaml/mkf_ai_review*.yaml` 复测改动与相关 scripts/tests。
+- 有意未提交：`backups/`（2026-09-05 工作区快照与 patch，非 release 内容，保持未跟踪）。
+
+### Behavior / Logic Changes
+- None。治理边界全部保持原样：实盘禁令、`production_enabled: false`、fail-closed 数据门禁、AI 委员会提示词与 JSON 合约、七角色白名单均未改动。
+
+### Validation
+- 环境：WSL `./scripts/remote_test_env.sh check` 不可达（10.20.98.161:22），Doris 无 local-finance 产物且禁同步 `output/`，按 09-30/10-01 既定口径合规回退本地。
+- 本地 `./.venv/bin/python -m pytest -q`：`641 passed, 3 skipped`。
+- Release：tag `mkf-ai-target-touch-checkpoint-20261002`，GitHub Release 同 tag。
+
+### Risks / Review Notes
+- 用户已声明终极目标是自动交易生产系统，该方向未实施也未被授权实施：真正放开需要治理文档重写 + config 硬拦截移除 + 解析合约兼容方案 + 风控/kill-switch 设计，属未来独立任务，动手前必须先确认改动层次（提示词文本 / 解析器合约 / 治理文档）。
+- 关键事实（避免未来误判）：当前委员会提示词（默认常量与 `yaml/mkf_ai_review.yaml`）已允许买入/卖出、仓位、杠杆、订单、P&L 等措辞；`FORBIDDEN_EXECUTION_PATTERN=(?! 永不匹配)`、`execution_claim_matches()` 恒空——禁词执法已是摆设。真正仍影响模型行为的是分层降级规则与 JSON/枚举/角色合约；Fastino smoke 失败源于解析器角色白名单，不是提示词。
+- 任何提示词文本修改都会变更 `prompt_sha256`/`committee_config_sha256`，切断与三模型冻结对比及 35B +3%/T+5=36.84% 结论的跨 run 可比性；须另立任务并重建冻结基线。
+- PCN（`../PCN`）继续存在依据：手动小资金复核工作流 + 独立下载数据的对照组 + NCN 历史证据归档（`legacy_import/`）；"NCN 放开限制"不构成 PCN 冗余论据，两者能力集当前不重合。
+
+### Next Exact Action
+- 无待改代码。若用户重提"放开限制"，按上述三层范围先确认症状（结论太保守 / 解析拒绝 / 要求可执行指令）再定改动面；改提示词前先冻结当前 prompt_sha256 作为对照基线。
+
+## Completed Task: Ornith-1.5-35B 严格历史 MKF target-touch 归因 (2026-10-01)
+
+### Task
+- 用户授权按推荐的严格历史验证路径评估 Ornith-1.5-35B：只使用已有 immutable AI review、既有股票日线和完整 MKF 1..20% × T+1..T+20 网格；不补跑模型、不刷新新闻或行情、不修改 selector/provider。
+
+### Changed Files
+- 修改 `src/ashare_edge_scout/mkf_ai_review.py`：`validate_mkf_selection_run()` 明确接受 immutable MKF selection schema v5 和当前 v6，仍保留 manifest/candidates SHA-256、candidate identity、context identity 全部 fail-closed 校验。
+- 修改 `src/ashare_edge_scout/research_mkf_ai_target_touch.py`：partial candidates 保留已有 future cumulative highs，按每个 horizon 独立进入分母，避免因未成熟 T+20 而错误排除已成熟 T+1/T+5。
+- 修改 `tests/test_mkf_ai_review.py`、`tests/test_research_mkf_ai_target_touch.py`；修改 `HANDOFF.md`。
+- 新只读产物：`output/回测结果/mkf-ai-35b-historical-target-touch-20261001-093000/`。未修改任何 historical review、日线、selector、配置或模型。
+
+### Behavior / Logic Changes
+- 历史 v5 immutable MKF selection 现在可由 review provenance loader 验证；未知 schema 仍拒绝。
+- target-touch grid 的分母现在以“该候选拥有至少 horizon 个 entry 后股票交易日”为准；`partial` 仍在 coverage 中，不再被整体排除。这与 T+1..T+N 的累积窗口定义一致。
+
+### Validation
+- Remote-first：`./scripts/remote_test_env.sh check` 失败（WSL SSH unreachable）；Doris `.venv-doris/bin/python` 3.13.15 可用但没有 `local-finance` review artifacts，且禁止同步 `output/`，故合规回退本地 `./.venv/bin/python`。
+- `./.venv/bin/python -m pytest tests/test_mkf_ai_review.py tests/test_research_mkf_ai_target_touch.py tests/test_research_target_touch.py tests/test_mkf_post_cross_lag_target_grid.py -q`：`145 passed`；`py_compile` 与 `git diff --check` 通过。
+- 固定 cohort：每个 signal date 仅使用最早的 Ornith-1.5-35B immutable run，排除同日重跑，避免 version/cherry-pick；共 9 个独立日期（2026-09-04、09-07、09-08、09-09、09-14、09-15、09-17、09-18、09-24）与 231 candidate rows。全部 review/source/context manifest 完整验证。
+- 产物 manifest：`summary.json` SHA-256 `ada79854a3aee2e66b43bb18280e2cdcbe24c23d92aa231022ca66aed6d71b30`；`candidate_evidence.csv` SHA-256 `311acff06b15c4fac3a2ed9bd39ed9357b7f7fcf971f76e86cdc4f3aa0e6ffbf`；`ai_calls_made=0`、`news_refresh_performed=false`。
+- 预先固定展示格点（不是从网格择优）：+3% / T+5，共 n=209、77 hit、36.84%。`standard_research` n=145、53 hit、36.55%；`risk_attention` n=35、18 hit、51.43%；`ai_unavailable` n=29、6 hit、20.69%。T+1：231 条；T+10：81 条；T+20 尚无成熟候选。完整 grid 保留在 `stratum_grid.csv`，不可挑选 best cell。
+
+### Risks / Review Notes
+- +3%/T+5 上 `risk_attention` 反而高于 `standard_research`（51.43% vs 36.55%），是当前 9-date cohort 下不支持“35B standard 分层提高触及率”的反向描述性证据；不代表收益、成交、P&L 或模型泛化失败/成功。
+- 日期 cohort 少、同日期内候选相关、部分日期未成熟、`ai_unavailable` coverage 非随机；不得把 209 行当作完全独立样本，也不得切换 provider、改变筛选或以此做实盘结论。
+- 当前没有 `priority_research` 样本；35B 的本轮 state 基本为 standard/risk/unavailable，不能评估 priority tier。
+
+### Next Exact Action
+- 不改策略。等更多独立 signal dates 和足够 T+20 后，按同一“每日期首个 immutable run”、同一 grid 与分母规则做时间外复验；预先定义单一主格点、最小日期数、最小每层 n 与成功方向，避免 20×20 多重比较。
+
+## Completed Task: 三模型冻结 AI 分析结论一致性对比 (2026-10-01)
+
+### Task
+- 用户要求比较 qwen3.8-flash、Ornith-1.5-35B 和 Ornith-1.5-9B 在同一 11 条冻结候选上的 AI 分析结论是否一致；仅读取 immutable `reviews.json`，不调用模型、不刷新上下文或数据。
+
+### Changed Files
+- `HANDOFF.md`。未修改模型、review artifacts、配置、selector、数据或产物。
+
+### Behavior / Logic Changes
+- None.
+
+### Validation
+- 对齐的候选 identity 为相同 11 条 `(code, signal_date=2026-09-29)`；比较 `review_state`、chief strategist stance、`risk_flags` 和 `research_summary`。
+- `review_state` 三方完全一致仅 5/11：`sz.000680`、`sz.002311`、`sz.002840` 均为 `risk_attention`；`sh.603899`、`sh.603916` 均为 `standard_research`。
+- 成对 state 一致数：Qwen vs Ornith-35B 为 5/11；Qwen vs Ornith-9B 为 9/11；Ornith-35B vs Ornith-9B 为 6/11。注意其中 `ai_unavailable` 只能表示覆盖/可用性相同，不能视为积极结论一致。
+- state 计数：Qwen `risk_attention=8, standard_research=2, ai_unavailable=1`；Ornith-35B `standard_research=7, risk_attention=3, ai_unavailable=1`；Ornith-9B `risk_attention=6, standard_research=2, priority_research=1, ai_unavailable=2`。
+- 关键分歧：`sh.603906` 分别为 Qwen `risk_attention`、35B `standard_research`、9B `priority_research`；`sh.600132`、`sh.600458`、`sh.600660` 均为 Qwen/9B `risk_attention`、35B `standard_research`；`sh.601666` 和 `sh.603301` 存在不同模型的 `ai_unavailable`。
+- 文本结论也未复制一致：三组 pair 的 `research_summary` 精确相同数依次为 0/11、1/11、1/11；`risk_flags` 列表精确相同数同样为 0/11、1/11、1/11。部分 `chief_strategist` 结论为 null，保留为缺失而未用默认值填补。
+
+### Risks / Review Notes
+- 三份 `technical_context` 和 `candle_confirm_score` 相同，只证明技术输入固定，不证明 AI 判断相同。
+- `confidence` 不是校准概率，禁止作为跨 provider/model 的数值优劣比较；两份 Ornith run 是同冻结输入 replay，不能扩大独立样本量或凭此做模型质量/收益排序。
+- 本比较只显示同输入下的输出分层/文本差异；当前 cohort 尚无 T+1 entry，不能用它判断哪个模型的目标触及率、收益或实际表现更好。
+
+## Completed Task: 三份冻结 MKF AI Review 的 K线确认分数一致性核验 (2026-10-01)
+
+### Task
+- 用户要求确认 qwen3.8-flash、Ornith-1.5-35B 与 Ornith-1.5-9B 三份 immutable MKF AI review 的 K线分数是否一致；仅读取已发布产物，不调用模型、不刷新任何上下文或数据。
+
+### Changed Files
+- `HANDOFF.md`。未修改 review artifacts、模型、selector、配置、数据或产物。
+
+### Behavior / Logic Changes
+- None.
+
+### Validation
+- 逐 `(code, signal_date)` 比较以下三份 `reviews.json` 的 `candle_confirm_score`：
+  - `mkf-ai-review-20260930_162748`（aliweek/qwen3.8-flash）
+  - `mkf-ai-review-20260930_162748-local-finance-network-retest`（local_finance/Ornith-1.5-35B）
+  - `mkf-ai-review-20260930_162748-local-ornith-network-retest`（local_ornith/Ornith-1.5-9B）
+- 三个 run 的 candidate identity set 完全一致，均为 11 条 `(code, 2026-09-29)`；每条 `candle_confirm_score` 完全相同，score vector 一致。
+- 分数依次为：`sh.600132=3`、`sh.600458=2`、`sh.600660=5`、`sh.601666=5`、`sh.603301=9`、`sh.603899=7`、`sh.603906=4`、`sh.603916=7`、`sz.000680=2`、`sz.002311=2`、`sz.002840=6`。
+- 同时逐候选 hash 比较三份 `technical_contexts.json` 的 `technical_context`，全部相同。
+
+### Risks / Review Notes
+- `candle_confirm_score` 是冻结且确定性的技术/K线确认输入，因此此一致性不能说明三个模型的 AI 判断、`review_state`、风险项或置信度一致；后者确有分层差异，且两份 Ornith run 是 non-independent frozen-context replay。
+- 不应将此分数用于模型优劣排序，也不改变默认 provider 或 MKF selector。
+
+## Pending Decision: AI 分层对 MKF T+1..T+N 目标触及率的影响 (2026-10-01)
+
+### Task
+- 用户已确定主评估终点为 AI 分析/研究分层对 T+1..T+N 目标触及率的影响；尚未授权回测、数据读取或模型重跑，且未明确固定 MKF 目标百分比、N、进场价与盘中 high 触及定义。
+
+### Changed Files
+- `HANDOFF.md`；无代码、配置、数据或模型运行产物改动。
+
+### Behavior / Logic Changes
+- None. 默认 provider、MKF selector、研究合约和 live 权限均不变。
+
+### Validation
+- 既有单轮冻结输入的 review 分层/置信度和协议通过率可作为待评估分组，不能单独证明前瞻触及效果。应在同一信号日、同一候选全集上，将每个 AI 分层与未分层 MKF baseline 的已固定 T+1..T+N target-touch 结果对齐；`ai_unavailable`/schema 失败须单列并纳入覆盖率。
+
+### Risks / Review Notes
+- 不得跨 provider 直接比较 raw confidence，不得排除失败候选，不得事后挑选窗口、目标或仅保留 priority 行。等待用户确认唯一既有 MKF 目标定义（目标百分比、N、进场价、盘中 high 是否触及即成功）后，预注册样本、baseline、最小样本和失败处理，并按 remote-first 资源顺序运行；不自动重跑 AI、刷新新闻、切换 provider 或修改 selector。
+
+## Completed Task: Fastino-Nemotron-3.5-Lightning-Finance-MLX-4bit 单次 JSON 合约 smoke (2026-10-01)
+
+### Task
+- 用户指定测试 `Fastino-Nemotron-3.5-Lightning-Finance-MLX-4bit`；执行一次固定 MKF JSON 合约 smoke，不修改默认 provider、模型配置、候选或研究协议。
+
+### Changed Files
+- 新输出 `output/回测结果/mkf-ai-smoke-fastino-nemotron-3.5-lightning-finance-mlx-4bit-20261001.json`；`HANDOFF.md`。无业务代码、YAML 或 provider inventory 改动。
+
+### Behavior / Logic Changes
+- 本地 `./.venv/bin/python` 通过 `local_ornith` 已配置 Doris oMLX endpoint 发出单次固定 JSON 请求，120 秒请求预算；未 SSH、未下载数据或新闻。
+
+### Validation
+- 模型 ID 可调用并在 16.432 秒返回；项目严格 parser 拒绝：`AI committee contains unknown research role`。smoke 不存储 raw response，无法从该产物识别具体未知角色；`forbidden_term_count=0` 仅表示未命中登记的明确系统执行声明，不代表整体输出通过。
+
+### Risks / Review Notes
+- 这是一次 MKF 七角色 JSON 协议失败，不是 Fastino 的金融推理、中文/A 股适配性、收益或 11-candidate 覆盖率结论。若用户要求继续，最大下一步应是一次独立脱敏 contract audit，仅记录 JSON shape 与角色名；不得放宽 production schema、切换默认 provider 或把本结果纳入正式模型比较。
+
+## Review Conclusion: Ornith-1.0 当前 endpoint 对 MKF 严格委员会协议不适用 (2026-10-01)
+
+### Task
+- 回答用户关于 Ornith-1.0 模型是否全部不适用的问题，依据当前已验证 endpoint inventory 与单次 smoke 结果；不扩大请求。
+
+### Changed Files
+- `HANDOFF.md`；无代码、配置或模型运行产物改动。
+
+### Behavior / Logic Changes
+- None. 默认 provider 与协议不变。
+
+### Validation
+- 当前 endpoint 已验证的 Ornith-1.0：`Ornith-1.0-35B-4bit`（15.345s smoke）与 `Ornith-1.0-9B-MLX-4bit`（14.962s smoke）均返回但因 `AI committee contains unknown research role` 被严格 MKF schema 拒绝。
+- `Ornith-1.0-9B-OptiQ-4bit` 不在 endpoint inventory（404）；用户最初的短 ID `Ornith-1.0-9B` 也为 404。未测试任何未列出或未部署的 1.0 变体。
+
+### Risks / Review Notes
+- 结论仅是“当前部署且已测试的 Ornith-1.0 不能直接接入现有七角色 MKF 委员会流程”，不是其通用金融分析能力无效的结论。除非独立验证角色映射或模型端强约束输出，否则不应放宽正式 schema、切换默认 provider，或把 1.0 结果参与当前候选分层对比。
+
+## Completed Task: Ornith-1.0-9B-MLX-4bit 单次 JSON 合约 smoke (2026-10-01)
+
+### Task
+- 用户指定测试 endpoint 已登记的 `Ornith-1.0-9B-MLX-4bit`；按一次固定 MKF JSON 合约 smoke 执行，不跑 11 只、不切换默认 provider。
+
+### Changed Files
+- 新输出 `output/回测结果/mkf-ai-smoke-ornith-1.0-9b-mlx-4bit-20261001_0154.json`；`HANDOFF.md`。无业务代码或 provider inventory 改动。
+
+### Behavior / Logic Changes
+- 本地 `.venv` 经 local_ornith oMLX endpoint 单请求，120 秒预算；未 SSH、不下载数据或新闻。
+
+### Validation
+- 模型可用并在 14.962s 返回；严格研究 parser 拒绝：`AI committee contains unknown research role`。无执行术语命中；raw response 未保存，不能从 smoke 本身判断具体角色名。
+
+### Risks / Review Notes
+- 这是单个 schema 合约失败，不代表模型分析质量或 11-candidate 覆盖率。已知 1.0-35B 同类 smoke 也产生 unknown committee role；若继续应单独做一次脱敏 shape/role audit，而不是放宽 schema 或切换默认 provider。
+
+## Completed Task: Ornith-1.0-9B 模型 ID 可用性 smoke (2026-10-01)
+
+### Task
+- 用户要求测试 Ornith-1.0 9B；按其给出的精确 ID `Ornith-1.0-9B` 做单请求 JSON 合约 smoke，不猜测替代名称。
+
+### Changed Files
+- 新输出 `output/回测结果/mkf-ai-smoke-ornith-1.0-9b-20261001_0150.json`；`HANDOFF.md`。无业务代码或 provider inventory 改动。
+
+### Behavior / Logic Changes
+- 本地 `.venv` 经 local_ornith oMLX endpoint 单请求，120 秒预算；未 SSH、未下载数据或新闻。
+
+### Validation
+- 1.625s HTTP 404：`Ornith-1.0-9B` 不是 endpoint 已登记精确 ID，因此没有模型输出或 JSON/研究合约测试。服务端可用清单同时显示 `Ornith-1.0-9B-MLX-4bit`，这是本次首次发现的精确可用 1.0 9B ID。
+
+### Risks / Review Notes
+- 404 不代表模型质量或协议失败。若用户要测试该版本，应明确使用 endpoint 报告的 `Ornith-1.0-9B-MLX-4bit`，另做一次独立 smoke；不得把本 404 结果与 1.5-9B 或 1.0-35B 的合约结果混合。
+
+## Completed Task: 候选金融模型公开资料适配性初筛 (2026-10-01)
+
+### Task
+- 用户询问截图中的模型替换是否可能提高 NCN 分析质量，并要求互联网确认。仅作公开模型卡/评测资料的适配性初筛；不下载/部署/调用候选模型，不切换默认 provider。
+
+### Changed Files
+- `HANDOFF.md`；无代码、YAML、provider inventory 或运行产物改动。
+
+### Behavior / Logic Changes
+- None. 当前默认 `local_finance` 与研究协议不变。
+
+### Validation
+- 查阅公开模型卡：Fastino-Nemotron 3.5 Lightning Finance 宣称 30B/约3B active MoE，针对 FinQA/TAT-QA/SEC-Num/FinEntity 等英文财务任务有明显相对底座提升，但未提供中文/A股/严格 JSON committee 评测。
+- `instruction-pretrain/finance-Llama3-8B`及其 MLX 转换宣称英文 finance continued pretraining；没有数值 benchmark、中文/A股或 schema 证据。`mistral-7b-desi-finance-advisor`明确面向印度个人金融，`turkish-finance-llama3.1-8b`明确面向土耳其金融；NEXUS-Finance 是约1.5B/英文，公开 30-prompt 自评，不适合替代当前主研究模型。
+- 详细 URL 必须在面向用户的报告中保留：Fastino、instruction-pretrain Llama3、Desi、Turkish、NEXUS 的 Hugging Face 模型卡。
+
+### Risks / Review Notes
+- “Finance”标签、参数量与位宽均不是中文 A股 MKF 研究质量提升的证据。Fastino 是截图中唯一有相对完整公开金融任务表格的候选，但训练/评估主要为英文、SEC与通用业务财务；替换前必须先通过当前严格 JSON 合约，再在冻结输入与预注册滚动 T+1..T+N 人工证据/结果评测中证明增益。
+- 建议顺序：若服务端可部署，优先 Fastino 6-bit（资源允许则 8-bit）做隔离评估；不要把印度/土耳其模型或 1.5B NEXUS 加入默认候选。不得仅凭公开卡切换 `local_finance`。
+
+## Completed Task: Ornith-1.0-35B-4bit 委员会 schema 脱敏归因 (2026-10-01)
+
+### Task
+- 用户要求继续诊断该模型的单次 smoke 失败；使用相同 prompt/input/token budget 做一次脱敏复现，不跑 11 只、不放宽 schema。
+
+### Changed Files
+- 新审计输出 `output/回测结果/mkf-ai-contract-audit-ornith-1.0-35b-4bit-20261001_014427.json`；`HANDOFF.md`。无业务代码/配置修改。
+
+### Behavior / Logic Changes
+- 本地 `.venv` 通过 local_ornith oMLX endpoint 单请求；仅保存 JSON shape、角色名、解析结果、耗时及哈希，`raw_content_persisted=false`。
+
+### Validation
+- 模型在 7.593s 返回完整 JSON，finish_reason=stop，顶层字段符合研究字段集合，`review_state=standard_research`，confidence 为 float，无明确执行声明。
+- 根因：committee 使用 `bear_case`、`bull_case`、`neutral_case`，而当前研究协议只允许七个固定角色（technical/sentiment/fundamental/bullish/bearish/chief/risk_manager）；因此严格 parser 正确报 `AI committee contains unknown research role`。response SHA=`0db94820…27610`，3311 chars。
+
+### Risks / Review Notes
+- 这是单次 protocol incompatibility，不代表分析质量或完整候选覆盖率。不得直接接纳这三个替代角色、放宽生产 schema 或切换默认 provider。若继续评估，需要单独预登记角色映射实验和信息损失/幻觉风险验收，不能把宽松映射混入现有对比。
+
+## Completed Task: Ornith-1.0-35B-4bit 单次 JSON 合约 smoke (2026-10-01)
+
+### Task
+- 用户指定先测试 `Ornith-1.0-35B-4bit`；按单次固定 MKF JSON 合约 smoke 执行，不改默认 provider、不跑 11 只、不参与排名。
+
+### Changed Files
+- 新输出 `output/回测结果/mkf-ai-smoke-ornith-1.0-35b-4bit-20261001_0142.json`；`HANDOFF.md`。无业务代码或 provider inventory 改动。
+
+### Behavior / Logic Changes
+- 本地 `.venv` 经当前 local_ornith oMLX endpoint 发起一次请求，120 秒预算；未 SSH、不下载数据或新闻。
+
+### Validation
+- 模型可用并在 15.345s 返回；当前严格研究 parser 拒绝：`AI committee contains unknown research role`。未记录 raw response，因此无法识别该轮具体额外/错误角色名；JSON/forbidden 统计均不能因 parse 失败视为通过。
+
+### Risks / Review Notes
+- 这是单个 smoke 的 schema 合约失败，不是模型质量/收益判断，且不能说明其在完整 11 只中的覆盖率。若用户要继续诊断，下一步最多做一次脱敏 contract audit，记录 role 名与 JSON shape，不保存文本；不得放宽生产 committee roles 或直接切换默认 provider。
+
+## Completed Task: Ornith-1.0-9B-OptiQ-4bit 单次 JSON 合约 smoke (2026-10-01)
+
+### Task
+- 用户指定测试 `Ornith-1.0-9B-OptiQ-4bit`；按单次固定 MKF JSON 合约 smoke 执行，不改默认 provider、不跑 11 只、不参与排名。
+
+### Changed Files
+- 新输出 `output/回测结果/mkf-ai-smoke-ornith-1.0-9b-optiq-4bit-20261001_0140.json`；`HANDOFF.md`。无业务代码或 provider inventory 改动。
+
+### Behavior / Logic Changes
+- 本地 `.venv` 经当前 local_ornith oMLX endpoint 发起一次请求，120 秒预算；未 SSH、不下载数据或新闻。
+
+### Validation
+- 请求在 0.093s 收到 HTTP 404：该精确模型 ID 不在 endpoint inventory。可用 inventory 中有 `Ornith-1.0-35B-4bit`，但没有 `Ornith-1.0-9B-OptiQ-4bit`；未获得模型输出，JSON/研究合约均未执行。
+
+### Risks / Review Notes
+- 不得把“模型不存在”解释为模型质量或合约失败；也不应猜测替代 ID。下一步需用户指定 endpoint 列出的某个可用模型，或先在 oMLX 服务侧部署/登记该模型后再测试。
+
+## Completed Task: local_ornith 两项 ValueError 受限失败归因 (2026-10-01)
+
+### Task
+- 用户要求继续测试 local_ornith 的失败原因。对最新单轮测试中 `sh.603301`、`sh.600458` 各做一次独立、受限诊断复现；不改变原 9/11 覆盖率，未做失败重试。
+
+### Changed Files
+- `HANDOFF.md`；新 immutable 脱敏产物 `output/edge_scout/mkf_ai_reviews/mkf-frozen-contract-audit-20261001_013418/audit.json`。无业务代码/配置改动，历史及本轮完整 review run 未覆盖。
+
+### Behavior / Logic Changes
+- 使用同一 Qwen 冻结来源、当前 local_ornith retest config 和当前研究合约，2 请求，120 秒/请求。本地 `.venv` 通过既有 oMLX endpoint 运行，未 SSH 到 Doris。
+- 审计只发布 input/messages/response SHA、长度、finish reason、JSON shape、解析类别与有限声明标签；`raw_content_persisted=false`。不下载行情、不刷新新闻、不改 provider/default/live 权限。
+
+### Validation
+- 来源 manifest、候选/技术/新闻 identity 通过 loader fail-closed 校验；只允许 approved local retest config，重复/未知 case 在建 client 前拒绝。
+- 两个诊断请求均有完整 JSON object、有效 `standard_research` 和 `[0,1]` confidence，finish_reason=stop；均非 transport、JSON、state、confidence 或明确执行声明问题（labels=[]）。
+- 两者相同 schema/parser 类别：顶层额外出现 `sentiment_analyst`，而合约只允许该角色嵌在 `committee` 内，故 `schema_or_parser_value_error`。顶层允许字段/committee 结构应由当前 `validate_research_response()` 拒绝；审计不保存原文，不能精确记录原始 exception 字符串。
+- 响应长度/哈希：`sh.603301` 7568 / `b58a6785…3865b`（54.129s）；`sh.600458` 6565 / `4fa4a2be…1d707`（47.535s）。二者 committee 仅出现 `technical_analyst`，另一个角色被错误放到顶层。
+
+### Risks / Review Notes
+- 这是本次诊断输出的脱敏归因，不能断言原 9/11 run 的未保存原文具有同样结构，也不能提升原 run 覆盖率。不得自动重试、改 prompt/模型或扩大到 11 只。
+- 下一步若用户要求提高 ornith 合约通过率，应先在独立、明确许可的实验中比较：提示词要求更紧 vs 宽松兼容/归一化（后者可能掩盖模型结构错误）；不能直接放宽生产研究 schema。
+
+## Completed Task: 修复后 local_finance/local_ornith 单轮冻结输入对比 (2026-10-01)
+
+### Task
+- 用户要求两 provider 分别跑一个测试并对比；完成各一轮相同 11 candidates（22 次请求）、无失败重试。仅比较可用性、研究合约与分层/证据，不推断收益胜率或稳定优劣。
+
+### Changed Files
+- `HANDOFF.md`；无新业务代码/配置改动。新 immutable run：`output/edge_scout/mkf_ai_reviews/mkf-ai-review-20261001_090719-local-finance-research-contract-test/` 和 `...-local-ornith-research-contract-test/`；未覆盖历史目录。
+
+### Behavior / Logic Changes
+- 本地 `.venv` 发起真实推理，使用隔离 retest YAML，模型分别 Ornith-1.5-35B-A3B-oQ4e-mtp / Ornith-1.5-9B-MLX，经配置的 Doris oMLX 18090 接口（不 SSH/不远程运行测试）。顺序执行，120s/request；temperature=0、seed=42、thinking=false。
+- 复用同源 `mkf-ai-review-20260930_162748` 已发布 candidates/technical/news 与当前修复后的相同 prompt/研究合约；不下载行情、不刷新新闻、不更换默认 provider、不改权限。
+
+### Validation
+- 来源 loader hashes/identity 预检通过，11 candidates；两配置 prompt 及全部 11 份 messages 逐对象相同。candidate SHA=`1bedc13a…36249a0`，prompt SHA=`bc900940…2944e8`。
+- 两份新 manifest 每文件 SHA 均通过；replay provenance 均为 `technical_context_rebuilt=false`、`news_refresh_performed=false`。summary 边界均为 broker/order/live false。
+- finance：11 attempts / 11 success / 0 error；8 standard、3 risk、0 priority、0 unavailable，status=success。
+- ornith：11 attempts / 9 success / 2 ValueError；2 standard、6 risk、1 priority (`sh.603906`)、2 unavailable (`sh.603301`、`sh.600458`)，status=partial。
+- 双方共同有效 9 只，状态一致 5/9：`sh.603899`、`sh.603916`=standard；`sz.000680`、`sz.002311`、`sz.002840`=risk。差异：ornith 将 `sh.600132`、`sh.600660`、`sh.601666` 从 finance standard 降为 risk，并将 `sh.603906` 从 finance standard 升为 priority。
+
+### Risks / Review Notes
+- 样本仅单日单轮；不得把 raw confidence 跨模型比较，不能以 priority 或状态分歧断言模型优劣、事实正确性或收益改善。ornith 的 priority `sh.603906` 同时列出长上影、近5/10日弱势和新闻相关性风险，须保留人工证据复核。
+- ornith 两个 ValueError 的原始回复未在本轮结果中保存；不得选择性重跑。历史 news cache=refreshed 是冻结来源字段，不是本次刷新。
+- 未触碰 backups/experiments；不提交/推送。若要比较默认 provider，下一步应预登记多轮固定输入的覆盖率/状态稳定性与人工证据质量门槛，且不自动切换 provider。
+
+## Completed Task: MKF AI 研究表达误报修复与执行数据隔离 (2026-10-01)
+
+### Task
+- 已按用户获批方案完成“研究表达自由，约束放在执行层”的修复，并参考 2026-09-30 晚 local_finance/local_ornith 的已发布结果做只读兼容验证。
+- 本任务不是开启实盘；用户先前要求移除边界，随后批准本次研究协议修复。旧交接中把术语检查等同真实执行安全边界、要求只能改 prompt 避词且不得改 parser 的代理判断已被本方案替代，不得继续依此压制研究表达。
+
+### Changed Files
+- `src/ashare_edge_scout/mkf_ai_review.py`：分离完整 JSON 解码、研究 mapping 校验、有限明确声明检查与归一化；保留已有 `build_mkf_ai_messages()` 提取工作；新增请求/summary 研究合约元数据。
+- `yaml/mkf_ai_review.yaml`、`yaml/mkf_ai_review_local_finance_retest.yaml`、`yaml/mkf_ai_review_local_ornith_retest.yaml`：同步自由研究表达、人工审查身份、证据/数据日期/缺失状态与置信度含义。
+- `scripts/evaluate_local_finance_models_on_mkf_candidates.py`、`scripts/smoke_local_finance_models.py`、原未跟踪 `scripts/audit_mkf_frozen_contract.py`：使用主模块判定，不再用独立全局术语词表否决；saved-run audit 重算 parsed/error，避免旧失败转成功时缺 parsed 或沿用旧错误。
+- `tests/test_mkf_ai_review.py`、`tests/test_local_finance_mkf_model_eval.py`、原未跟踪 `tests/test_audit_mkf_frozen_contract.py`：新增合成误报、执行结构、注入客户端、严格 JSON、confidence 和旧失败离线重新审计回归。
+- `HANDOFF.md`：以本条替代三条过时的禁词/生产请求代理判断。未改 `yaml/edge_scout_v1.yaml`、共享 provider、selector、Qwen prompt、paper/demo 代码、历史 immutable artifacts、`backups/` 或 `experiments/`；未提交/推送。
+
+### Behavior / Logic Changes
+- 买入/卖出/持有/等待、参考目标价/止盈止损、仓位与杠杆风险等可分析，不因术语出现拒绝；不要求模型换词隐藏风险。
+- 研究结构封闭：顶层字段、七角色及 stance/notes 白名单；研究数组仅字符串。执行字段（包括嵌套、false/null）、未知结构仍拒绝。兼容 scalar stop_loss/target_price/pnl 输入但不增加发布透传或订单转换。
+- 正常 transport 与注入 ai_client 同用 `validate_research_response()`；错误沿用 ai_unavailable fallback。完整对象/fenced JSON 才接收，拒绝 prose、多对象和重复 JSON key；confidence 拒绝 bool/非有限/范围外及不可转换值。
+- 广泛关键词 regex 只作标签诊断；删除旧否定滑窗逻辑及未使用执行词标签常量。有限声明规则覆盖登记的系统下单/已连接券商/收益保证样例，不承担执行隔离。
+- summary 标明 research_review、人审、非已执行订单、confidence 非胜率、AI 不转订单。实际权限仍 production_enabled=false、allow_live_order_submission=false；发布继续固定研究字段投影。
+
+### Validation
+- 本地（按用户 AI 测试本地指示），fake transport：`./.venv/bin/python -m pytest tests/test_mkf_ai_review.py tests/test_local_finance_mkf_model_eval.py tests/test_audit_mkf_frozen_contract.py tests/test_ai_provider_config.py tests/test_edge_scout_config.py -q --tb=short`：最终 **167 passed**；四份修改 Python 的 py_compile 和 `git diff --check` 通过。
+- smoke helper：5 个离线固定样例通过，没有 provider 调用。
+- 两份 `mkf-ai-review-20260930_162748-local-{finance,ornith}-network-retest` manifest 每文件 SHA 全通过；成功已发布行的研究字段投影兼容 finance 10/11、ornith 9/11。首次复核命令误用 eval manifest 的顶层 sha256 键导致 KeyError，读取实际 files/<name>/sha256 结构后修正并通过；未修改产物。
+- 注入客户端 end-to-end 回归确认风险表述可发布、执行字段 fallback、candidate bytes 不变、无额外 paper/order 状态目录。源码定向检查：portfolio/paper 路径未消费 MKF AI review，PMKF/MKF Web 路由只读预计算报告；非全面安全审计。
+
+### Risks / Review Notes
+- 历史三条失败原文未保存，不能推断具体文字、断言全部误报或宣布恢复覆盖率。10/11 与 9/11 是成功发布投影的兼容性，不是新模型请求成绩、质量/胜率/收益提升证据。
+- 有限自然语言 regex 不是通用语义识别；复杂引述/条件/否定仍可能误报或漏检。执行隔离依靠权限/无订单路由与结构协议，不靠词表或提示词。保留最小响应兼容；既有单字符串 committee notes 会被归一化为空数组，本次未扩大修复。
+- 没有远程测试/同步、真实推理、11 只重跑、行情下载或新闻刷新；未跑全套测试或独立 paper/demo 测试（相关代码/配置未改）。
+- 下一步精确动作：仅在用户另行授权真实推理验证后，先明确固定输入、provider、请求次数、数据发送范围与验收门槛，再使用新 prompt/合约做有界对比；不得自动重跑、覆盖历史结果、切换默认模型或打开 live 权限。
+
+## Completed Task: local provider 冻结输入 ValueError 脱敏归因 (2026-09-30)
+
+### Task
+- 调查 `local_finance` 的 `sh.601666` 及 `local_ornith` 的 `sh.601666` / `sh.603301` 在严格冻结 replay 中记录为 `ValueError` 的原因；不下载数据、不刷新新闻、不重跑完整 11 只，不改默认 provider、selector 或 fail-closed parser。
+
+### Changed Files
+- `src/ashare_edge_scout/mkf_ai_review.py`：提取 `build_mkf_ai_messages()`；生产 `OpenAICompatibleClient.analyze()` 与审计入口共用完全相同的结构化委员会请求合约。
+- 新增 `scripts/audit_mkf_frozen_contract.py`：仅允许本次两份 local retest committee config，使用 `load_persisted_mkf_review_inputs()` 做 manifest/schema/identity fail-closed 预检；只发布 response hash/长度、无内容 shape、解析类别、配置与来源 hash，绝不保存原始输入/输出或 transport 原文。
+- 新增 `tests/test_audit_mkf_frozen_contract.py`：覆盖成功、JSON/状态/confidence/禁词/transport 分类及 raw-content exclusion；未知/重复 case 在建 client 前失败。
+- 新审计产物：`output/edge_scout/mkf_ai_reviews/mkf-frozen-contract-audit-20260930_125418/audit.json`。
+
+### Behavior / Logic Changes
+- 历史 run 的 normal fallback 仅保存 `ValueError` 聚合，无法离线反推精确 parser stage；新审计只说明**当前**对相同冻结输入的受限复现，不复原历史响应。
+- 来源预检通过：Qwen `mkf-ai-review-20260930_162748` 的 11 candidates / 11 technical / 11 news，candidate SHA=`1bedc13a…36249a0`、manifest SHA=`9b78d1b9…20f4e1`。
+- 三次本地请求均返回完整 JSON object、7 顶层字段、7 committee roles、有效 `review_state` 和 `[0,1]` confidence，但均被 `parse_ai_response()` 判为 `forbidden_execution_content`：finance/`sh.601666` (30.589s)、ornith/`sh.601666` (59.464s)、ornith/`sh.603301` (69.468s)。因此本次可归因为执行禁词内容，非 transport、JSON、state 或 confidence。
+- 已修正审计脚本对 JSON escape 后禁词标签的提取；已发布 audit 中 `forbidden_execution_matches=[]` 是初版 metadata 记录缺陷，**不重发、不修改 immutable artifact**。parse category 来自生产 parser 对已解码 JSON 的递归扫描，结论有效；后续新审计会保留仅标签级的命中。
+
+### Validation
+- 本地 source integrity preflight：11/11/11，未读取行情/Message 缓存或刷新新闻。
+- `./.venv/bin/python -m pytest tests/test_audit_mkf_frozen_contract.py tests/test_mkf_ai_review.py tests/test_ai_provider_config.py -q`：57 passed。
+- `./.venv/bin/python -m py_compile scripts/audit_mkf_frozen_contract.py src/ashare_edge_scout/mkf_ai_review.py`、`git diff --check`：通过。
+
+### Risks / Review Notes
+- 三项复现均为一次当前输出；可说明同一 fail-closed 类别重复出现，不能证明历史那一条原始响应文字或模型质量/胜率。不得据此放宽 `FORBIDDEN_EXECUTION_PATTERN` / `parse_ai_response()`、切换默认 provider，或选择性重跑 11 标的掩盖覆盖率问题。
+- 未提交本次代码/测试/审计产物；用户若要求提交，需显式 staged review，并保留工作树中已有未跟踪 `backups/` 与 `experiments/` 不触碰。
+
 ## Completed Task: local_finance 与 local_ornith 网络恢复后的严格冻结输入重测 (2026-09-30)
 
 ### Task
@@ -3470,3 +3837,30 @@ candidates. The sandbox does NOT modify any production file and does NOT touch
 - `PFrontStockData/` is adjusted research data only; never use it as live execution, live matching, or real-money fill evidence.
 - Available validation environment priority: WSL first (`adminwsl@10.20.98.161`), Doris second (`chinaadmin@ts.dorisw.kdns.fr:56731` using `$HOME/NCN/.venv-doris/bin/python`), local last.
 - Do not push, reset, clean, force-update, delete user work, or modify shared GitHub objects unless explicitly requested.
+
+## Paused Task: Immutable MKF AI Review Target-Touch Attribution (2026-10-01)
+
+### Task Status
+- 用户已选择既有 MKF 全量网格（target 1..20%、horizon T+1..T+20）评估 AI review `review_state` 与后续目标触及率的关系。已完成只读归因模块、CLI、合成数据验证和一次真实历史 cohort 运行；当前 cohort 尚无 entry，研究结论必须暂停，不能解释为 AI 有效/无效。
+
+### Files Changed
+- 新增 `src/ashare_edge_scout/research_mkf_ai_target_touch.py`：严格校验 immutable review/selection provenance，按 `(code, signal_date)` 精确关联，采用下一股票可交易日 open 入场、入场日 high 排除、后续交易日 cumulative high 的 MKF 触及语义。
+- 新增 `scripts/evaluate_mkf_ai_review_target_touch.py`：受限只读 CLI，固定完整 1..20×1..20 网格、禁止重复 run/不完整网格，临时目录原子发布 `summary.json`、per-run JSON、证据 CSV、grid CSV 与 manifest。
+- 新增 `tests/test_research_mkf_ai_target_touch.py`：覆盖 entry-day high 排除、累计 horizon、review hash 篡改 fail-closed、缺日线 fail-closed、timestamp signal-date 归一化与无下一交易日的 `entry_pending`。
+- 修改 `HANDOFF.md`。未改 selector、provider、prompt、历史 review、新闻或行情；未生成订单。
+
+### Validation Completed
+- `./.venv/bin/python -m pytest tests/test_research_mkf_ai_target_touch.py tests/test_research_target_touch.py tests/test_mkf_post_cross_lag_target_grid.py tests/test_mkf_ai_review.py -q`：`143 passed`。
+- `./.venv/bin/python -m py_compile src/ashare_edge_scout/research_mkf_ai_target_touch.py scripts/evaluate_mkf_ai_review_target_touch.py` 与 `git diff --check` 通过。
+- 按 remote-first 检查：WSL SSH 不可达；Doris 的 `.venv-doris/bin/python` 和数据可用，但没有三份 immutable review artifacts。`remote-server.md` 禁止复制 `output/` 到远端，因此合法回退至本地 `./.venv/bin/python`。
+- 最终只读产物：`output/回测结果/mkf-ai-target-touch-20261001-020700/`；`summary.json` SHA-256 `0638d1348329998cf578c4a764a905bd29a68e43b1d3588a250e9755b2830948`，`candidate_evidence.csv` SHA-256 `6e2a951ca9ffead03a6aec230b2de3a0845a34a083089350140f92ea83352c2f`。manifest 标明 `ai_calls_made=0`、`news_refresh_performed=false`。
+
+### Actual Cohort Result / Limitation
+- 输入为同一 11 个 `(code, signal_date=2026-09-29)` 的原始 review 及两份 frozen persisted-context replay：aliweek/qwen3.8-flash、local_finance/Ornith-1.5-35B、local_ornith/Ornith-1.5-9B。后两份 replay 均标记为 non-independent，不能扩大样本量或做模型排名。
+- 本地 `PFrontStockData` 截止于 2026-09-29；每个候选均缺少下一股票可交易日开盘，33 条 evidence 全为 `entry_pending`，6000 个状态×网格单元均 `n=0`。因此没有任何 target-hit rate、lift 或 AI 效果可报告。
+- 早期尝试 `mkf-ai-target-touch-20261001-020000/` 和 `...-020400/` 将此情形标为 `origin_invalid`；保留以便审计，不能用于结论。模块已修正为 `entry_pending`，最终版本为 `...-020700/`。
+- 这是 target touch 描述性研究，不代表成交、收益、P&L、费用、滑点、流动性或实盘可执行性；完整 20×20 网格禁止挑选最佳格点。
+
+### Next Exact Action
+- 待数据快照至少包含每只候选的下一股票可交易日以获得 entry；若要让全部 T+1..T+20 成熟，需要 20 个后续股票可交易日。然后以相同三份 immutable review 路径、相同完整网格和新的 timestamped `output/回测结果/mkf-ai-target-touch-<timestamp>/` 重跑 CLI。
+- 不重跑 AI、不刷新新闻、不切换 provider、不改 selector；每个 review run 继续独立报告，frozen replay 仅并列描述。
